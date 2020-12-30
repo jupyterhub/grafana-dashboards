@@ -8,8 +8,6 @@ local template = grafana.template;
 local row = grafana.row;
 local heatmapPanel = grafana.heatmapPanel;
 
-local namespace = "utoronto-prod";
-
 local standardDims = { w: 12, h: 8};
 
 local templates = [
@@ -252,7 +250,7 @@ local prometheusNetwork = graphPanel.new(
 ]);
 
 dashboard.new(
-  'Cluster Health',
+  'JupyterHub Dashboard',
   tags=['kubernetes'],
   editable=true
 ).addTemplates(
