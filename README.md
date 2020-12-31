@@ -52,6 +52,7 @@ Grafana doesn't populate the 'hub' variable properly by default. You'll need to:
 4. Click the 'Update' button
 
 This will show you the hubs on your cluster, and then you can select them from the dropdown.
+Unfortunately, right now there seem to be no easy way to [automatically update these](https://community.grafana.com/t/template-update-variable-api/1882/4).
 
 **NOTE: ANY CHANGES YOU MAKE VIA THE GRAFANA UI WILL BE OVERWRITTEN NEXT TIME YOU RUN deploy.py.
 TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN**
