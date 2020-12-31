@@ -1,4 +1,6 @@
 #!/usr/bin/env jsonnet -J vendor
+# Deploys one dashboard - "JupyterHub dashboard",
+# with useful stats about usage & diagnostics.
 local grafana = import 'grafonnet/grafana.libsonnet';
 local dashboard = grafana.dashboard;
 local singlestat = grafana.singlestat;
@@ -28,7 +30,7 @@ local templates = [
   )
 ];
 
-# Cluster-wide visualizations
+# Cluster-wide stats
 local userNodes = graphPanel.new(
   'User Nodes',
 ).addTarget(
@@ -50,6 +52,7 @@ local clusterUtilization = graphPanel.new(
   )
 ]);
 
+# Hub usage stats
 local currentRunningUsers = graphPanel.new(
   'Current running users',
 ).addTargets([
@@ -75,6 +78,7 @@ local userAgeDistribution = heatmapPanel.new(
   prometheus.target('(time() - kube_pod_created{pod=~"^jupyter.*", namespace="$hub"})')
 ]);
 
+# Hub diagnostics
 local hubResponseLatency = graphPanel.new(
   'Hub response latency',
   formatY1='s'
@@ -168,6 +172,7 @@ local usersPerNode = graphPanel.new(
 ]);
 
 
+# Cluster diagnostics
 local userNodesRSS = graphPanel.new(
   'User Nodes Memory usage (RSS)',
   formatY1='bytes'
