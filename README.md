@@ -2,6 +2,8 @@
 
 Grafana Dashboards for use with [Zero to JupyterHub on Kubernetes](http://z2jh.jupyter.org/)
 
+![Grafana Dasboard Screencast](demo.gif)
+
 ## What?
 
 Grafana dashboards displaying prometheus metrics are *extremely* useful in diagnosing
