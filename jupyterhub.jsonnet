@@ -194,6 +194,18 @@ local userNodesCPU = graphPanel.new(
   )
 ]);
 
+
+local nonRunningPods = graphPanel.new(
+  'Non Running User Pods',
+  stack=true
+).addTargets([
+  prometheus.target(
+    'sum(kube_pod_status_phase{phase!="Running"}) by (phase)',
+    legendFormat='{{phase}}'
+  )
+]);
+
+# NFS Stats
 local userNodesNFSOps = graphPanel.new(
   'User Nodes NFS Ops'
 ).addTargets([
@@ -203,13 +215,61 @@ local userNodesNFSOps = graphPanel.new(
   )
 ]);
 
-local nonRunningPods = graphPanel.new(
-  'Non Running User Pods',
-  stack=true
+local userNodesIOWait = graphPanel.new(
+  'iowait % on each node'
 ).addTargets([
   prometheus.target(
-    'sum(kube_pod_status_phase{phase!="Running"}) by (phase)',
-    legendFormat='{{phase}}'
+    'sum(rate(node_nfs_requests_total{kubernetes_node=~".*user.*"}[5m])) by (kubernetes_node)',
+    legendFormat="{{kubernetes_node}}"
+  )
+]);
+
+local userNodesHighNFSOps = graphPanel.new(
+  'NFS Operation Types on user nodes (>1/s)'
+).addTargets([
+  prometheus.target(
+    'sum(rate(node_nfs_requests_total[5m])) by (method) > 1',
+    legendFormat="{{method}}"
+  )
+]);
+
+local nfsServerCPU = graphPanel.new(
+  'NFS Server CPU'
+).addTargets([
+  prometheus.target(
+    'avg(rate(node_cpu_seconds_total{job="prometheus-nfsd-server", mode!="idle"}[2m])) by (mode)',
+    legendFormat="{{mode}}"
+  )
+]);
+
+local nfsServerIOPS = graphPanel.new(
+  'NFS Server Disk ops'
+).addTargets([
+  prometheus.target(
+    'sum(rate(node_nfsd_disk_bytes_read_total[5m]))',
+    legendFormat='Read'
+  ),
+  prometheus.target(
+    'sum(rate(node_nfsd_disk_bytes_written_total[5m]))',
+    legendFormat='Write'
+  ),
+]);
+
+local nfsServerWriteLatency = graphPanel.new(
+  'NFS Server disk write latency'
+).addTargets([
+  prometheus.target(
+    'sum(rate(node_disk_write_time_seconds_total{job="prometheus-nfsd-server"}[5m])) by (device) / sum(rate(node_disk_writes_completed_total{job="prometheus-nfsd-server"}[5m])) by (device)',
+    legendFormat="{{device}}"
+  )
+]);
+
+local nfsServerReadLatency = graphPanel.new(
+  'NFS Server disk read latency'
+).addTargets([
+  prometheus.target(
+    'sum(rate(node_disk_read_time_seconds_total{job="prometheus-nfsd-server"}[5m])) by (device) / sum(rate(node_disk_reads_completed_total{job="prometheus-nfsd-server"}[5m])) by (device)',
+    legendFormat="{{device}}"
   )
 ]);
 
@@ -283,12 +343,19 @@ dashboard.new(
 ).addPanel(row.new('Cluster Diagnostics'), {y: 56}
 ).addPanel(userNodesRSS, {x: 0, y: 56} + standardDims
 ).addPanel(userNodesCPU, {x: 12, y: 56} + standardDims
-).addPanel(userNodesNFSOps, {x: 0, y: 64 } + standardDims
-).addPanel(nonRunningPods, {x: 12, y: 64 } + standardDims
+).addPanel(nonRunningPods, {x: 0, y: 64 } + standardDims
+).addPanel(row.new('NFS diagnostics'), {y: 72}
+).addPanel(userNodesNFSOps, {x: 0, y: 72 } + standardDims
+).addPanel(userNodesIOWait, {x: 12, y:72} + standardDims
+).addPanel(userNodesHighNFSOps, {x: 0, y: 80} + standardDims
+).addPanel(nfsServerCPU, {x: 12, y: 80} + standardDims
+).addPanel(nfsServerIOPS, {x: 0, y: 88} + standardDims
+).addPanel(nfsServerWriteLatency, {x: 0, y: 96} + standardDims
+).addPanel(nfsServerReadLatency, {x: 12, y: 96} + standardDims
 
-).addPanel(row.new('Support system diagnostics'), {y: 72}
-).addPanel(prometheusCPU, {x: 0, y: 72} + standardDims
-).addPanel(prometheusMemory, {x: 12, y: 72} + standardDims
-).addPanel(prometheusDiskSpace, {x: 0, y: 80} + standardDims
-).addPanel(prometheusNetwork, {x: 12, y: 80} + standardDims
+).addPanel(row.new('Support system diagnostics'), {y: 104}
+).addPanel(prometheusCPU, {x: 0, y: 104} + standardDims
+).addPanel(prometheusMemory, {x: 12, y: 104} + standardDims
+).addPanel(prometheusDiskSpace, {x: 0, y: 112} + standardDims
+).addPanel(prometheusNetwork, {x: 12, y: 112} + standardDims
 )
