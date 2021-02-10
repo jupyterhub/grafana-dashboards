@@ -84,6 +84,7 @@ dashboard.new(
 
 ).addPanel(monthlyActiveUsers, {x: 12, y: 0} + standardDims
 ).addPanel(dailyActiveUsers, {x: 0, y: 12} + standardDims
-).addPanel(userDistribution, {x: 0, y: 24} + standardDims
-).addPanel(currentRunningUsers, {x: 12, y: 24} + standardDims
+).addPanel(currentRunningUsers, {x: 0, y: 24} + standardDims
+# FIXME: This graph does not seem to make sense yet
+// ).addPanel(userDistribution, {x: 0, y: 24} + standardDims
 )
