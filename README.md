@@ -37,11 +37,11 @@ via code. This can then be deployed on any Grafana instance!
    
 ## Deployment
 
-There's a helper `deploy.py` script that can deploy the dashboard to any grafana installation.
+There's a helper `deploy.bash` script that can deploy the dashboard to any grafana installation.
 
 ```bash
 export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
-./deploy.py <url-to-your-grafana-install> jupyterhub.jsonnet
+./deploy.bash <url-to-your-grafana-install> jupyterhub.jsonnet
 ```
 
 This should create a dashboard called 'JupyterHub Dashboard' in your grafana installation!
@@ -56,5 +56,5 @@ Grafana doesn't populate the 'hub' variable properly by default. You'll need to:
 This will show you the hubs on your cluster, and then you can select them from the dropdown.
 Unfortunately, right now there seem to be no easy way to [automatically update these](https://community.grafana.com/t/template-update-variable-api/1882/4).
 
-**NOTE: ANY CHANGES YOU MAKE VIA THE GRAFANA UI WILL BE OVERWRITTEN NEXT TIME YOU RUN deploy.py.
+**NOTE: ANY CHANGES YOU MAKE VIA THE GRAFANA UI WILL BE OVERWRITTEN NEXT TIME YOU RUN deploy.bash.
 TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN**
