@@ -58,3 +58,9 @@ Unfortunately, right now there seem to be no easy way to [automatically update t
 
 **NOTE: ANY CHANGES YOU MAKE VIA THE GRAFANA UI WILL BE OVERWRITTEN NEXT TIME YOU RUN deploy.bash.
 TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN**
+
+## Upgrading grafonnet version
+
+The grafonnet jsonnet library is bundled here with [jsonnet-bundler](https://github.com/jsonnet-bundler/jsonnet-bundler).
+Just running `jb update` in the git repo root dir after installing jsonnet-bunder should bring
+you up to speed.
