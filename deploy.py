@@ -7,6 +7,7 @@ from functools import partial
 import subprocess
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
+from copy import deepcopy
 
 # UID for the folder under which our dashboards will be setup
 DEFAULT_FOLDER_UID = '70E5EE84-1217-4021-A89E-1E3DE0566D93'
@@ -40,22 +41,50 @@ def ensure_folder(name, uid, api):
 
 
 
-def build_dashboard(dashboard):
+def build_dashboard(dashboard_path):
     return json.loads(subprocess.check_output([
         'jsonnet', '-J', 'vendor',
-        dashboard
+        dashboard_path
     ]).decode())
 
 
-def deploy_dashboard(dashboard, folder_uid, api):
-    db = build_dashboard(dashboard)
-    print(db)
+def layout_dashboard(dashboard):
+    """
+    Automatically layout panels.
+
+    - Default to 12x10 panels
+    - Reset x axes when we encounter a row
+    - Assume 24 unit width
+
+    Grafana's autolayout is not available in the API, so we
+    have to do thos.
+    """
+    # Make a copy, since we're going to modify this dict
+    dashboard = deepcopy(dashboard)
+    cur_x = 0
+    cur_y = 0
+    for panel in dashboard['panels']:
+        pos = panel['gridPos']
+        pos['h'] = pos.get('h', 10)
+        pos['w'] = pos.get('w', 12)
+        pos['x'] = cur_x
+        pos['y'] = cur_y
+
+        cur_y += pos['h']
+        if panel['type'] == 'row':
+            cur_x = 0
+        else:
+            cur_x = (cur_x + pos['w']) % 24
+
+    return dashboard
+
+def deploy_dashboard(dashboard_path, folder_uid, api):
     data = {
-        'dashboard': build_dashboard(dashboard),
+        'dashboard': layout_dashboard(build_dashboard(dashboard_path)),
         'folderId': folder_uid,
         'overwrite': True
     }
-    print(api('/dashboards/db', data))
+    api('/dashboards/db', data)
 
 
 def main():
