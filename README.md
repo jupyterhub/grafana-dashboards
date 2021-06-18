@@ -33,22 +33,24 @@ via code. This can then be deployed on any Grafana instance!
 
 4. An API key with 'editor' permissions. This is per-organization, and you can make a new one
    by going to the configuration pane for your Grafana (the gear icon on the left bar), and
-   selecting 'API Keys'. 
-   
+   selecting 'API Keys'.
+
 ## Deployment
 
 There's a helper `deploy.bash` script that can deploy the dashboard to any grafana installation.
 
 ```bash
 export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
-./deploy.bash <url-to-your-grafana-install> jupyterhub.jsonnet
+./deploy.py dashboards <your-grafana-url>
 ```
 
-This should create a dashboard called 'JupyterHub Dashboard' in your grafana installation!
+This creates a folder called 'JupyterHub Default Dashboards' in your grafana, and adds
+a couple of dashboards to it.
 
+On clusters with multiple hubs, it is important to show per-hub dashboards. Unfortunately,
 Grafana doesn't populate the 'hub' variable properly by default. You'll need to:
 
-1. Go to your Dashboard 
+1. Go to the dashboard that needs per-hub usage
 2. Go to settings (gear icon in top right)
 3. Select the 'hub' variable
 4. Click the 'Update' button

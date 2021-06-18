@@ -76,7 +76,8 @@ local currentRunningUsers = graphPanel.new(
 
 dashboard.new(
   'Usage Dashboard',
-  tags=['kubernetes'],
+  uid='usage-dashboard',
+  tags=['jupyterhub'],
   editable=true,
   time_from='now-30d'
 ).addTemplates(

@@ -1,4 +1,4 @@
-#!/usr/bin/env jsonnet -J vendor
+#!/usr/bin/env jsonnet -J ../vendor
 # Deploys one dashboard - "JupyterHub dashboard",
 # with useful stats about usage & diagnostics.
 local grafana = import 'grafonnet/grafana.libsonnet';
@@ -316,7 +316,8 @@ local prometheusNetwork = graphPanel.new(
 
 dashboard.new(
   'JupyterHub Dashboard',
-  tags=['kubernetes'],
+  tags=['jupyterhub'],
+  uid='hub-dashboard',
   editable=true
 ).addTemplates(
   templates
