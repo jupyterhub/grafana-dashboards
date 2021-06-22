@@ -26,15 +26,18 @@ local templates = [
     regex='.*-(?:staging|prod)$',
     # FIXME: Grafana needs a manual 'refresh variables' before it populates this.
     # Maybe another API call?
-    current="utoronto-prod"
+    current="jupyterhub"
   )
 ];
 
 # Cluster-wide stats
 local userNodes = graphPanel.new(
   'User Nodes',
+  legend_show=false,
 ).addTarget(
-  prometheus.target('sum(kube_node_info{node=~\".*user.*\"})')
+  prometheus.target(
+    expr='sum(kube_node_info{node=~".*user.*"})',
+  )
 );
 
 local clusterUtilization = graphPanel.new(
@@ -43,11 +46,27 @@ local clusterUtilization = graphPanel.new(
   stack=true
 ).addTargets([
   prometheus.target(
-    expr='sum(kube_pod_container_resource_requests_memory_bytes{node=~\".*user.*\"} and on (pod) (kube_pod_container_status_ready{pod=~\"^jupyter.*\"})) / sum(kube_node_status_allocatable_memory_bytes{node=~\".*user.*\"})',
+    |||
+      sum(
+        kube_pod_container_resource_requests_memory_bytes{node=~".*user.*"}
+        and on (pod, namespace) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace="$hub"}
+        and on (pod) (kube_pod_container_status_ready)
+      ) / sum(
+        kube_node_status_allocatable_memory_bytes{node=~".*user.*"}
+      )
+    |||,
     legendFormat='User Pods'
   ),
   prometheus.target(
-    expr='sum(kube_pod_container_resource_requests_memory_bytes{node=~\".*user.*\"} and on (pod) (kube_pod_container_status_ready{pod=~\"^user-placeholder.*\"})) / sum(kube_node_status_allocatable_memory_bytes{node=~\".*user.*\"})',
+    |||
+      sum(
+        kube_pod_container_resource_requests_memory_bytes{node=~".*user.*"}
+        and on (pod, namespace) kube_pod_labels{label_app="jupyterhub", label_component=~".*placeholder", namespace="$hub"}
+        and on (pod) (kube_pod_container_status_ready)
+      ) / sum(
+        kube_node_status_allocatable_memory_bytes{node=~".*user.*"}
+      )
+    |||,
     legendFormat='Placeholder Pods'
   )
 ]);
@@ -57,7 +76,13 @@ local currentRunningUsers = graphPanel.new(
   'Current running users',
 ).addTargets([
   prometheus.target(
-    'sum(kube_pod_status_phase{phase="Running", pod=~"^jupyter-.*", namespace="$hub"}) by (phase)',
+    |||
+      sum(
+        kube_pod_status_phase{phase="Running"}
+        * on (pod, namespace) group_right(phase) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace="$hub"}
+
+      ) by (phase)
+    |||,
     legendFormat='{{phase}}'
   )
 ]);
@@ -65,9 +90,16 @@ local currentRunningUsers = graphPanel.new(
 local userMemoryDistribution = heatmapPanel.new(
     'User memory usage distribution',
     yAxis_format='bytes',
-    color_colorScheme="interpolateViridis"
+    color_colorScheme="interpolateViridis",
   ).addTargets([
-    prometheus.target('sum(container_memory_working_set_bytes{pod=~\"^jupyter-.*\",namespace=\"$hub\"}) by (pod)')
+    prometheus.target(
+      |||
+        sum(
+          container_memory_working_set_bytes
+          * on (pod, namespace) group_left(container) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace="$hub"}
+        ) by (pod)
+      |||
+    )
 ]);
 
 local userAgeDistribution = heatmapPanel.new(
@@ -75,13 +107,23 @@ local userAgeDistribution = heatmapPanel.new(
   yAxis_format='s',
   color_colorScheme="interpolateViridis"
 ).addTargets([
-  prometheus.target('(time() - kube_pod_created{pod=~"^jupyter.*", namespace="$hub"})')
+  prometheus.target(
+    |||
+      (
+        time()
+        - (
+          kube_pod_created
+          * on (pod, namespace) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace="$hub"}
+        )
+      )
+    |||
+  )
 ]);
 
 # Hub diagnostics
 local hubResponseLatency = graphPanel.new(
   'Hub response latency',
-  formatY1='s'
+  formatY1='s',
 ).addTargets([
   prometheus.target(
     'histogram_quantile(0.99, sum(rate(request_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace="$hub"}[5m])) by (le))',
@@ -95,56 +137,92 @@ local hubResponseLatency = graphPanel.new(
 
 local proxyMemory = graphPanel.new(
   'Proxy Memory (RSS)',
-  formatY1='bytes'
+  formatY1='bytes',
+  legend_show=false,
 ).addTargets([
   prometheus.target(
-    'sum(container_memory_rss{pod=~"proxy-.*", namespace="$hub"})'
+    |||
+      sum(
+        container_memory_rss{name!=""}
+        * on (pod, namespace) group_left(container) kube_pod_labels{label_app="jupyterhub", label_component="proxy", namespace="$hub"}
+      )
+    |||,
   )
 ]);
 
 local proxyCPU = graphPanel.new(
-  'Proxy CPU'
+  'Proxy CPU',
+  legend_show=false,
 ).addTargets([
   prometheus.target(
-    'sum(rate(container_cpu_usage_seconds_total{pod=~"proxy-.*",namespace="$hub"}[5m]))'
+    |||
+      sum(
+        rate(container_cpu_usage_seconds_total{name!=""}[5m])
+        * on (pod, namespace) group_left(container) kube_pod_labels{label_app="jupyterhub", label_component="proxy", namespace="$hub"}
+      )
+    |||,
   )
 ]);
 
 local hubMemory = graphPanel.new(
   'Hub Memory (RSS)',
-  formatY1='bytes'
+  formatY1='bytes',
+  legend_show=false,
 ).addTargets([
   prometheus.target(
-    'sum(container_memory_rss{pod=~"hub-.*", namespace="$hub"})'
+    |||
+      sum(
+        container_memory_rss{name!=""}
+        * on (pod, namespace) group_left(container) kube_pod_labels{label_app="jupyterhub", label_component="hub", namespace="$hub"}
+      )
+    |||,
   )
 ]);
 
 local hubCPU = graphPanel.new(
-  'Hub CPU'
+  'Hub CPU',
+  legend_show=false,
 ).addTargets([
   prometheus.target(
-    'sum(rate(container_cpu_usage_seconds_total{pod=~"hub-.*",namespace="$hub"}[5m]))'
+    |||
+      sum(
+        rate(container_cpu_usage_seconds_total{name!=""}[5m])
+        * on (pod, namespace) group_left(container) kube_pod_labels{label_app="jupyterhub", label_component="hub", namespace="$hub"}
+      )
+    |||,
   )
 ]);
 
-local userSchedulerMemory = graphPanel.new(
-  'User Scheduler Memory (RSS)',
-  formatY1='bytes'
+local allComponentsMemory = graphPanel.new(
+  'All Hub component Memory (RSS)',
+  formatY1='bytes',
 ).addTargets([
   prometheus.target(
-    'sum(container_memory_rss{pod=~"user-scheduler-.*", namespace="$hub"})'
+    |||
+      sum(
+        container_memory_rss{name!=""}
+        * on (pod, namespace) group_left(container, label_component) kube_pod_labels{label_app="jupyterhub", label_component!="singleuser-server", namespace="$hub"}
+      ) by (label_component)
+    |||,
+    legendFormat="{{ label_component }}",
   )
 ]);
 
-local userSchedulerCPU = graphPanel.new(
-  'User Scheduler CPU'
+local allComponentsCPU = graphPanel.new(
+  'All Hub component CPU',
 ).addTargets([
   prometheus.target(
-    'sum(rate(container_cpu_usage_seconds_total{pod=~"user-scheduler-.*",namespace="$hub"}[5m]))'
+    |||
+      sum(
+        rate(container_cpu_usage_seconds_total{name!=""}[5m])
+        * on (pod, namespace) group_left(container, label_component) kube_pod_labels{label_app="jupyterhub", label_component!="singleuser-server", namespace="$hub"}
+      ) by (label_component)
+    |||,
+    legendFormat="{{ label_component }}",
   )
 ]);
 
-local serverStartTimes =   graphPanel.new(
+local serverStartTimes = graphPanel.new(
   'Server Start Times',
   formatY1='s',
   lines=false,
@@ -166,8 +244,12 @@ local usersPerNode = graphPanel.new(
   'Users per node'
 ).addTargets([
   prometheus.target(
-    'sum(kube_pod_info{pod=~"jupyter-.*", namespace="$hub"}) by (node)',
-    legendFormat='{{node}}'
+    |||
+      sum(
+        kube_pod_labels{label_app="jupyterhub", namespace="$hub", label_component="singleuser-server"}
+      ) by (kubernetes_node)
+    |||,
+    legendFormat='{{ kubernetes_node }}'
   )
 ]);
 
@@ -190,7 +272,7 @@ local userNodesCPU = graphPanel.new(
 ).addTargets([
   prometheus.target(
     'sum(rate(node_cpu_seconds_total{mode!="idle", kubernetes_node=~".*user.*"}[5m])) by (kubernetes_node)',
-    legendFormat="{{kubernetes_node}}}"
+    legendFormat="{{kubernetes_node}}"
   )
 ]);
 
@@ -339,7 +421,9 @@ dashboard.new(
 ).addPanel(hubMemory, {x: 12, y: 32} + standardDims
 ).addPanel(proxyCPU, {x: 0, y: 40} + standardDims
 ).addPanel(proxyMemory, {x: 12, y: 40} + standardDims
-).addPanel(usersPerNode, {x: 0, y: 48} + standardDims
+).addPanel(allComponentsCPU, {x: 0, y: 48} + standardDims
+).addPanel(allComponentsMemory, {x: 12, y: 48} + standardDims
+).addPanel(usersPerNode, {x: 0, y: 56} + standardDims
 
 ).addPanel(row.new('Cluster Diagnostics'), {y: 56}
 ).addPanel(userNodesRSS, {x: 0, y: 56} + standardDims
