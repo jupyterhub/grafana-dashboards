@@ -246,10 +246,13 @@ local usersPerNode = graphPanel.new(
   prometheus.target(
     |||
       sum(
-        kube_pod_labels{label_app="jupyterhub", namespace="$hub", label_component="singleuser-server"}
-      ) by (kubernetes_node)
+          # kube_pod_info.node identifies the pod node,
+          # while kube_pod_labels.kubernetes_node is the metrics exporter's node
+          kube_pod_info{node!=""}
+          * on(pod, namespace) group_right(node)  kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server"}
+      ) by (node)
     |||,
-    legendFormat='{{ kubernetes_node }}'
+    legendFormat='{{ node }}'
   )
 ]);
 
