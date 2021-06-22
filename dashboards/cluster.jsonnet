@@ -39,10 +39,9 @@ local userPods = graphPanel.new(
   prometheus.target(
     |||
       sum(
-        # Running pods
-        # FIXME: This is just all pods that have an entry, maybe filter with phase=Running?
-        kube_pod_info{pod=~"^jupyter-.*"}
-      ) by (namespace) > 0
+        kube_pod_status_phase{phase="Running"}
+        * on(pod, namespace) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server"}
+      ) by (namespace)
     |||,
     legendFormat='{{namespace}}'
   )

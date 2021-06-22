@@ -29,7 +29,19 @@ local monthlyActiveUsers = graphPanel.new(
 ).addTargets([
   prometheus.target(
     # Removes any pods caused by stress testing
-    'count(sum(min_over_time(kube_pod_info{pod=~"^jupyter-.*",pod!~"^(jupyter-service|jupyter-hubtraf|jupyter-perf)-.*"}[30d])) by (pod))',
+    |||
+      count(
+        sum(
+          min_over_time(
+            kube_pod_labels{
+              label_app="jupyterhub",
+              label_component="singleuser-server",
+              label_hub_jupyter_org_username!~"(service|perf|hubtraf)-",
+            }[30d]
+          )
+        ) by (pod)
+      )
+    |||,
     legendFormat='Active Users',
     interval="30d"
   )
@@ -42,8 +54,20 @@ local dailyActiveUsers = graphPanel.new(
   lines=false
 ).addTargets([
   prometheus.target(
-    # Removes any pods caused by stress testing
-    'count(sum(min_over_time(kube_pod_info{pod=~"^jupyter-.*",pod!~"^(jupyter-service|jupyter-hubtraf|jupyter-perf)-.*"}[1d])) by (pod))',
+    # count singleuser-server pods
+    |||
+      count(
+        sum(
+          min_over_time(
+            kube_pod_labels{
+              label_app="jupyterhub",
+              label_component="singleuser-server",
+              label_hub_jupyter_org_username!~"(service|perf|hubtraf)-",
+            }[1d]
+          )
+        ) by (pod)
+      )
+    |||,
     legendFormat='Active Users',
     interval="1d"
   )
@@ -56,8 +80,18 @@ local userDistribution = graphPanel.new(
   x_axis_mode='histogram',
 ).addTargets([
   prometheus.target(
-    # Removes any pods caused by stress testing
-    'sum(min_over_time(kube_pod_info{pod=~"^jupyter-.*",pod!~"^(jupyter-service|jupyter-hubtraf|jupyter-perf)-.*"}[90d])) by (pod)',
+    # count singleuser-server pods
+    |||
+      sum(
+        min_over_time(
+          kube_pod_labels{
+            label_app="jupyterhub",
+            label_component="singleuser-server",
+            label_hub_jupyter_org_username!~"(service|perf|hubtraf)-",
+          }[90d]
+        )
+      ) by (pod)
+    |||,
     legendFormat='User logins Login Count',
   )
 ]);
@@ -69,7 +103,12 @@ local currentRunningUsers = graphPanel.new(
   legend_current=true
 ).addTargets([
   prometheus.target(
-    'sum(kube_pod_status_phase{phase="Running", pod=~"^jupyter-.*"})',
+    |||
+      sum(
+        kube_pod_status_phase{phase="Running"}
+        * on(pod, namespace) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server"}
+      )
+    |||,
     legendFormat='Users'
   )
 ]);
