@@ -84,11 +84,11 @@ local hubResponseLatency = graphPanel.new(
   formatY1='s'
 ).addTargets([
   prometheus.target(
-    'histogram_quantile(0.99, sum(rate(request_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace="$hub"}[5m])) by (le))',
+    'histogram_quantile(0.99, sum(rate(jupyterhub_request_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace="$hub"}[5m])) by (le))',
     legendFormat="99th percentile"
   ),
   prometheus.target(
-    'histogram_quantile(0.50, sum(rate(request_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace="$hub"}[5m])) by (le))',
+    'histogram_quantile(0.50, sum(rate(jupyterhub_request_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace="$hub"}[5m])) by (le))',
     legendFormat="50th percentile"
   )
 ]);
@@ -153,11 +153,11 @@ local serverStartTimes =   graphPanel.new(
 ).addTargets([
   prometheus.target(
     # Metrics from hub seems to have `kubernetes_namespace` rather than just `namespace`
-    'histogram_quantile(0.99, sum(rate(server_spawn_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace="$hub"}[5m])) by (le))',
+    'histogram_quantile(0.99, sum(rate(jupyterhub_server_spawn_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace="$hub"}[5m])) by (le))',
     legendFormat="99th percentile"
   ),
   prometheus.target(
-    'histogram_quantile(0.5, sum(rate(server_spawn_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace="$hub"}[5m])) by (le))',
+    'histogram_quantile(0.5, sum(rate(jupyterhub_server_spawn_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace="$hub"}[5m])) by (le))',
     legendFormat="50th percentile"
   )
 ]);
