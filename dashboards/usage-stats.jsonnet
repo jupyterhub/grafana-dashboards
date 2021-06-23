@@ -1,6 +1,6 @@
 #!/usr/bin/env jsonnet -J vendor
-# Deploys one dashboard - "JupyterHub dashboard",
-# with useful stats about usage & diagnostics.
+// Deploys one dashboard - "JupyterHub dashboard",
+// with useful stats about usage & diagnostics.
 local grafana = import 'grafonnet/grafana.libsonnet';
 local dashboard = grafana.dashboard;
 local singlestat = grafana.singlestat;
@@ -10,15 +10,15 @@ local template = grafana.template;
 local row = grafana.row;
 local heatmapPanel = grafana.heatmapPanel;
 
-local standardDims = { w: 12, h: 12};
+local standardDims = { w: 12, h: 12 };
 
 local templates = [
-   template.datasource(
+  template.datasource(
     'PROMETHEUS_DS',
     'prometheus',
     'Prometheus',
     hide='label',
-   )
+  ),
 ];
 
 
@@ -28,7 +28,7 @@ local monthlyActiveUsers = graphPanel.new(
   lines=false
 ).addTargets([
   prometheus.target(
-    # Removes any pods caused by stress testing
+    // Removes any pods caused by stress testing
     |||
       count(
         sum(
@@ -43,8 +43,8 @@ local monthlyActiveUsers = graphPanel.new(
       )
     |||,
     legendFormat='Active Users',
-    interval="30d"
-  )
+    interval='30d'
+  ),
 ]);
 
 
@@ -54,7 +54,7 @@ local dailyActiveUsers = graphPanel.new(
   lines=false
 ).addTargets([
   prometheus.target(
-    # count singleuser-server pods
+    // count singleuser-server pods
     |||
       count(
         sum(
@@ -69,8 +69,8 @@ local dailyActiveUsers = graphPanel.new(
       )
     |||,
     legendFormat='Active Users',
-    interval="1d"
-  )
+    interval='1d'
+  ),
 ]);
 
 local userDistribution = graphPanel.new(
@@ -80,7 +80,7 @@ local userDistribution = graphPanel.new(
   x_axis_mode='histogram',
 ).addTargets([
   prometheus.target(
-    # count singleuser-server pods
+    // count singleuser-server pods
     |||
       sum(
         min_over_time(
@@ -93,7 +93,7 @@ local userDistribution = graphPanel.new(
       ) by (pod)
     |||,
     legendFormat='User logins Login Count',
-  )
+  ),
 ]);
 
 local currentRunningUsers = graphPanel.new(
@@ -110,7 +110,7 @@ local currentRunningUsers = graphPanel.new(
       )
     |||,
     legendFormat='Users'
-  )
+  ),
 ]);
 
 dashboard.new(
@@ -122,9 +122,12 @@ dashboard.new(
 ).addTemplates(
   templates
 
-).addPanel(monthlyActiveUsers, {x: 12, y: 0} + standardDims
-).addPanel(dailyActiveUsers, {x: 0, y: 12} + standardDims
-).addPanel(currentRunningUsers, {x: 0, y: 24} + standardDims
-# FIXME: This graph does not seem to make sense yet
-// ).addPanel(userDistribution, {x: 0, y: 24} + standardDims
+).addPanel(
+  monthlyActiveUsers, { x: 12, y: 0 } + standardDims
+).addPanel(
+  dailyActiveUsers, { x: 0, y: 12 } + standardDims
+).addPanel(
+  currentRunningUsers, { x: 0, y: 24 } + standardDims
+  // FIXME: This graph does not seem to make sense yet
+  // ).addPanel(userDistribution, {x: 0, y: 24} + standardDims
 )
