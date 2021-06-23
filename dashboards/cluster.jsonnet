@@ -22,6 +22,8 @@ local templates = [
 // Cluster-wide stats
 local userNodes = graphPanel.new(
   'Node Count',
+  decimals=0,
+  min=0,
 ).addTarget(
   prometheus.target(
     expr='sum(kube_node_labels) by (label_cloud_google_com_gke_nodepool)',
@@ -34,7 +36,9 @@ local userPods = graphPanel.new(
   description=|||
     Count of running users, grouped by namespace
   |||,
-  stack=true
+  decimals=0,
+  min=0,
+  stack=true,
 ).addTargets([
   prometheus.target(
     |||
@@ -125,12 +129,13 @@ local clusterCPUCommitment = graphPanel.new(
 
 
 local nodeCPUCommit = graphPanel.new(
-  'CPU commit %',
+  'Node CPU Commit %',
   formatY1='percentunit',
   description=|||
     % of each node guaranteed to pods on it
   |||,
   min=0,
+  max=1,
 ).addTargets([
   prometheus.target(
     |||
@@ -154,12 +159,13 @@ local nodeCPUCommit = graphPanel.new(
 ]);
 
 local nodeMemoryCommit = graphPanel.new(
-  'Memory commit %',
+  'Node Memory Commit %',
   formatY1='percentunit',
   description=|||
     % of each node guaranteed to pods on it
   |||,
   min=0,
+  max=1,
 ).addTargets([
   prometheus.target(
     |||
@@ -190,7 +196,7 @@ local nodeMemoryUtil = graphPanel.new(
     % of available Memory currently in use
   |||,
   min=0,
-  max=1
+  max=1,
 ).addTargets([
   prometheus.target(
     |||
@@ -205,7 +211,7 @@ local nodeMemoryUtil = graphPanel.new(
         sum(node_memory_MemTotal_bytes) by (kubernetes_node)
       )
     |||,
-    legendFormat='{{kubernetes_node}}}'
+    legendFormat='{{kubernetes_node}}'
   ),
 ]);
 
@@ -216,7 +222,7 @@ local nodeCPUUtil = graphPanel.new(
     % of available CPUs currently in use
   |||,
   min=0,
-  max=1
+  max=1,
 ).addTargets([
   prometheus.target(
     |||
@@ -228,7 +234,7 @@ local nodeCPUUtil = graphPanel.new(
         label_replace(kube_node_status_capacity_cpu_cores, "kubernetes_node", "$1", "node", "(.*)")
       ) by (kubernetes_node)
     |||,
-    legendFormat='{{kubernetes_node}}}'
+    legendFormat='{{kubernetes_node}}'
   ),
 ]);
 
@@ -239,18 +245,24 @@ local nonRunningPods = graphPanel.new(
     Pods in states other than 'Running'.
 
     In a functional clusters, pods should not be in non-Running states for long.
-  |||
+  |||,
+  decimals=0,
+  legend_hideZero=true,
+  min=0,
 ).addTargets([
   prometheus.target(
     'sum(kube_pod_status_phase{phase!="Running"}) by (phase)',
-    legendFormat='{{phase}}'
+    legendFormat='{{phase}}',
+
   ),
 ]);
 
 
 // NFS Stats
 local userNodesNFSOps = graphPanel.new(
-  'User Nodes NFS Ops'
+  'User Nodes NFS Ops',
+  decimals=0,
+  min=0,
 ).addTargets([
   prometheus.target(
     'sum(rate(node_nfs_requests_total[5m])) by (kubernetes_node) > 0',
@@ -259,7 +271,9 @@ local userNodesNFSOps = graphPanel.new(
 ]);
 
 local userNodesIOWait = graphPanel.new(
-  'iowait % on each node'
+  'iowait % on each node',
+  decimals=0,
+  min=0,
 ).addTargets([
   prometheus.target(
     'sum(rate(node_nfs_requests_total[5m])) by (kubernetes_node)',
@@ -268,7 +282,9 @@ local userNodesIOWait = graphPanel.new(
 ]);
 
 local userNodesHighNFSOps = graphPanel.new(
-  'NFS Operation Types on user nodes'
+  'NFS Operation Types on user nodes',
+  decimals=0,
+  min=0,
 ).addTargets([
   prometheus.target(
     'sum(rate(node_nfs_requests_total[5m])) by (method) > 0',
@@ -277,7 +293,8 @@ local userNodesHighNFSOps = graphPanel.new(
 ]);
 
 local nfsServerCPU = graphPanel.new(
-  'NFS Server CPU'
+  'NFS Server CPU',
+  min=0,
 ).addTargets([
   prometheus.target(
     'avg(rate(node_cpu_seconds_total{job="prometheus-nfsd-server", mode!="idle"}[2m])) by (mode)',
@@ -286,7 +303,9 @@ local nfsServerCPU = graphPanel.new(
 ]);
 
 local nfsServerIOPS = graphPanel.new(
-  'NFS Server Disk ops'
+  'NFS Server Disk ops',
+  decimals=0,
+  min=0,
 ).addTargets([
   prometheus.target(
     'sum(rate(node_nfsd_disk_bytes_read_total[5m]))',
@@ -299,7 +318,8 @@ local nfsServerIOPS = graphPanel.new(
 ]);
 
 local nfsServerWriteLatency = graphPanel.new(
-  'NFS Server disk write latency'
+  'NFS Server disk write latency',
+  min=0,
 ).addTargets([
   prometheus.target(
     'sum(rate(node_disk_write_time_seconds_total{job="prometheus-nfsd-server"}[5m])) by (device) / sum(rate(node_disk_writes_completed_total{job="prometheus-nfsd-server"}[5m])) by (device)',
@@ -308,7 +328,8 @@ local nfsServerWriteLatency = graphPanel.new(
 ]);
 
 local nfsServerReadLatency = graphPanel.new(
-  'NFS Server disk read latency'
+  'NFS Server disk read latency',
+  min=0,
 ).addTargets([
   prometheus.target(
     'sum(rate(node_disk_read_time_seconds_total{job="prometheus-nfsd-server"}[5m])) by (device) / sum(rate(node_disk_reads_completed_total{job="prometheus-nfsd-server"}[5m])) by (device)',
@@ -319,7 +340,8 @@ local nfsServerReadLatency = graphPanel.new(
 // Support Metrics
 local prometheusMemory = graphPanel.new(
   'Prometheus Memory (RSS)',
-  formatY1='bytes'
+  formatY1='bytes',
+  min=0,
 ).addTargets([
   prometheus.target(
     'sum(container_memory_rss{pod=~"support-prometheus-server-.*", namespace="support"})'
@@ -327,7 +349,8 @@ local prometheusMemory = graphPanel.new(
 ]);
 
 local prometheusCPU = graphPanel.new(
-  'Prometheus CPU'
+  'Prometheus CPU',
+  min=0,
 ).addTargets([
   prometheus.target(
     'sum(rate(container_cpu_usage_seconds_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))'
@@ -336,7 +359,8 @@ local prometheusCPU = graphPanel.new(
 
 local prometheusDiskSpace = graphPanel.new(
   'Prometheus Free Disk space',
-  formatY1='bytes'
+  formatY1='bytes',
+  min=0,
 ).addTargets([
   prometheus.target(
     'sum(kubelet_volume_stats_available_bytes{namespace="support",persistentvolumeclaim="support-prometheus-server"})'
@@ -345,7 +369,9 @@ local prometheusDiskSpace = graphPanel.new(
 
 local prometheusNetwork = graphPanel.new(
   'Prometheus Network Usage',
-  formatY1='bytes'
+  formatY1='bytes',
+  decimals=0,
+  min=0,
 ).addTargets([
   prometheus.target(
     'sum(rate(container_network_receive_bytes_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))',

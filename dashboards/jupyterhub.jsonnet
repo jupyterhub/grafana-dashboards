@@ -34,6 +34,7 @@ local templates = [
 local userNodes = graphPanel.new(
   'User Nodes',
   legend_show=false,
+  min=0,
 ).addTarget(
   prometheus.target(
     expr='sum(kube_node_info{node=~".*user.*"})',
@@ -43,7 +44,8 @@ local userNodes = graphPanel.new(
 local clusterUtilization = graphPanel.new(
   'Cluster Utilization',
   formatY1='percentunit',
-  stack=true
+  min=0,
+  stack=true,
 ).addTargets([
   prometheus.target(
     |||
@@ -74,6 +76,8 @@ local clusterUtilization = graphPanel.new(
 // Hub usage stats
 local currentRunningUsers = graphPanel.new(
   'Current running users',
+  decimals=0,
+  min=0,
 ).addTargets([
   prometheus.target(
     |||
@@ -89,7 +93,10 @@ local currentRunningUsers = graphPanel.new(
 
 local userMemoryDistribution = heatmapPanel.new(
   'User memory usage distribution',
+  // xBucketSize and interval must match to get correct values out of heatmaps
+  xBucketSize='600s',
   yAxis_format='bytes',
+  yAxis_min=0,
   color_colorScheme='interpolateViridis',
 ).addTargets([
   prometheus.target(
@@ -98,14 +105,19 @@ local userMemoryDistribution = heatmapPanel.new(
         container_memory_working_set_bytes
         * on (pod, namespace) group_left(container) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace="$hub"}
       ) by (pod)
-    |||
+    |||,
+    interval='600s',
+    intervalFactor=1,
   ),
 ]);
 
 local userAgeDistribution = heatmapPanel.new(
   'User active age distribution',
+  // xBucketSize and interval must match to get correct values out of heatmaps
+  xBucketSize='600s',
   yAxis_format='s',
-  color_colorScheme='interpolateViridis'
+  yAxis_min=0,
+  color_colorScheme='interpolateViridis',
 ).addTargets([
   prometheus.target(
     |||
@@ -116,7 +128,9 @@ local userAgeDistribution = heatmapPanel.new(
           * on (pod, namespace) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace="$hub"}
         )
       )
-    |||
+    |||,
+    interval='600s',
+    intervalFactor=1,
   ),
 ]);
 
@@ -124,6 +138,7 @@ local userAgeDistribution = heatmapPanel.new(
 local hubResponseLatency = graphPanel.new(
   'Hub response latency',
   formatY1='s',
+  min=0,
 ).addTargets([
   prometheus.target(
     'histogram_quantile(0.99, sum(rate(jupyterhub_request_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace="$hub"}[5m])) by (le))',
@@ -139,6 +154,7 @@ local proxyMemory = graphPanel.new(
   'Proxy Memory (RSS)',
   formatY1='bytes',
   legend_show=false,
+  min=0,
 ).addTargets([
   prometheus.target(
     |||
@@ -152,7 +168,11 @@ local proxyMemory = graphPanel.new(
 
 local proxyCPU = graphPanel.new(
   'Proxy CPU',
+  // decimals=1 with percentunit means round to nearest 10%
+  decimalsY1=1,
+  formatY1='percentunit',
   legend_show=false,
+  min=0,
 ).addTargets([
   prometheus.target(
     |||
@@ -168,6 +188,7 @@ local hubMemory = graphPanel.new(
   'Hub Memory (RSS)',
   formatY1='bytes',
   legend_show=false,
+  min=0,
 ).addTargets([
   prometheus.target(
     |||
@@ -181,7 +202,11 @@ local hubMemory = graphPanel.new(
 
 local hubCPU = graphPanel.new(
   'Hub CPU',
+  // decimals=1 means round to nearest 10%
+  decimalsY1=1,
+  formatY1='percentunit',
   legend_show=false,
+  min=0,
 ).addTargets([
   prometheus.target(
     |||
@@ -196,6 +221,7 @@ local hubCPU = graphPanel.new(
 local allComponentsMemory = graphPanel.new(
   'All Hub component Memory (RSS)',
   formatY1='bytes',
+  min=0,
 ).addTargets([
   prometheus.target(
     |||
@@ -210,6 +236,10 @@ local allComponentsMemory = graphPanel.new(
 
 local allComponentsCPU = graphPanel.new(
   'All Hub component CPU',
+  // decimals=1 means round to nearest 10%
+  decimalsY1=1,
+  formatY1='percentunit',
+  min=0,
 ).addTargets([
   prometheus.target(
     |||
@@ -226,8 +256,9 @@ local serverStartTimes = graphPanel.new(
   'Server Start Times',
   formatY1='s',
   lines=false,
+  min=0,
   points=true,
-  pointradius=2
+  pointradius=2,
 ).addTargets([
   prometheus.target(
     // Metrics from hub seems to have `kubernetes_namespace` rather than just `namespace`
@@ -241,7 +272,9 @@ local serverStartTimes = graphPanel.new(
 ]);
 
 local usersPerNode = graphPanel.new(
-  'Users per node'
+  'Users per node',
+  decimals=0,
+  min=0,
 ).addTargets([
   prometheus.target(
     |||
@@ -260,7 +293,8 @@ local usersPerNode = graphPanel.new(
 // Cluster diagnostics
 local userNodesRSS = graphPanel.new(
   'User Nodes Memory usage (RSS)',
-  formatY1='bytes'
+  formatY1='bytes',
+  min=0,
 ).addTargets([
   prometheus.target(
     'sum(node_memory_Active_bytes{kubernetes_node=~".*user.*"}) by (kubernetes_node)',
@@ -271,7 +305,9 @@ local userNodesRSS = graphPanel.new(
 //
 local userNodesCPU = graphPanel.new(
   'User Nodes CPU',
-  formatY1='short'
+  formatY1='short',
+  decimalsY1=0,
+  min=0,
 ).addTargets([
   prometheus.target(
     'sum(rate(node_cpu_seconds_total{mode!="idle", kubernetes_node=~".*user.*"}[5m])) by (kubernetes_node)',
@@ -282,13 +318,16 @@ local userNodesCPU = graphPanel.new(
 
 local nonRunningPods = graphPanel.new(
   'Non Running User Pods',
-  stack=true
+  decimalsY1=0,
+  min=0,
+  stack=true,
 ).addTargets([
   prometheus.target(
     'sum(kube_pod_status_phase{phase!="Running"}) by (phase)',
     legendFormat='{{phase}}'
   ),
 ]);
+
 
 dashboard.new(
   'JupyterHub Dashboard',

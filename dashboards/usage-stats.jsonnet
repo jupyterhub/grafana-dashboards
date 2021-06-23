@@ -25,7 +25,8 @@ local templates = [
 local monthlyActiveUsers = graphPanel.new(
   'Active users (over 30 days)',
   bars=true,
-  lines=false
+  lines=false,
+  min=0,
 ).addTargets([
   prometheus.target(
     // Removes any pods caused by stress testing
@@ -51,7 +52,8 @@ local monthlyActiveUsers = graphPanel.new(
 local dailyActiveUsers = graphPanel.new(
   'Active users (over 24 hours)',
   bars=true,
-  lines=false
+  lines=false,
+  min=0,
 ).addTargets([
   prometheus.target(
     // count singleuser-server pods
@@ -77,6 +79,7 @@ local userDistribution = graphPanel.new(
   'User Login Count distribution (over 90d)',
   bars=true,
   lines=false,
+  min=0,
   x_axis_mode='histogram',
 ).addTargets([
   prometheus.target(
@@ -100,7 +103,8 @@ local currentRunningUsers = graphPanel.new(
   'Current running users',
   legend_min=true,
   legend_max=true,
-  legend_current=true
+  legend_current=true,
+  min=0,
 ).addTargets([
   prometheus.target(
     |||
