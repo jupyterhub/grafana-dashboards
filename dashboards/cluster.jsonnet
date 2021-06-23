@@ -60,6 +60,9 @@ local clusterMemoryCommitment = graphPanel.new(
     If autoscaling is efficient, this should be a fairly constant, high number (>70%).
   |||,
   min=0,
+  // max=1 may be exceeded in exceptional circumstances like evicted pods
+  // but full is still full. This gets a better view of 'fullness' most of the time.
+  // If the commitment is "off the chart" it doesn't super matter by how much.
   max=1,
 ).addTargets([
   prometheus.target(
@@ -98,6 +101,9 @@ local clusterCPUCommitment = graphPanel.new(
     JupyterHub users mostly are capped by memory, so this is not super useful.
   |||,
   min=0,
+  // max=1 may be exceeded in exceptional circumstances like evicted pods
+  // but full is still full. This gets a better view of 'fullness' most of the time.
+  // If the commitment is "off the chart" it doesn't super matter by how much.
   max=1,
 ).addTargets([
   prometheus.target(
@@ -135,6 +141,9 @@ local nodeCPUCommit = graphPanel.new(
     % of each node guaranteed to pods on it
   |||,
   min=0,
+  // max=1 may be exceeded in exceptional circumstances like evicted pods
+  // but full is still full. This gets a better view of 'fullness' most of the time.
+  // If the commitment is "off the chart" it doesn't super matter by how much.
   max=1,
 ).addTargets([
   prometheus.target(
@@ -165,6 +174,9 @@ local nodeMemoryCommit = graphPanel.new(
     % of each node guaranteed to pods on it
   |||,
   min=0,
+  // max=1 may be exceeded in exceptional circumstances like evicted pods
+  // but full is still full. This gets a better view most of the time.
+  // If the commitment is "off the chart" it doesn't super matter by how much.
   max=1,
 ).addTargets([
   prometheus.target(
@@ -196,6 +208,7 @@ local nodeMemoryUtil = graphPanel.new(
     % of available Memory currently in use
   |||,
   min=0,
+  // since this is actual measured utilization, it should not be able to exceed max=1
   max=1,
 ).addTargets([
   prometheus.target(
@@ -222,6 +235,7 @@ local nodeCPUUtil = graphPanel.new(
     % of available CPUs currently in use
   |||,
   min=0,
+  // since this is actual measured utilization, it should not be able to exceed max=1
   max=1,
 ).addTargets([
   prometheus.target(
