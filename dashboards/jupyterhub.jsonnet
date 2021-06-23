@@ -30,9 +30,58 @@ local templates = [
   ),
 ];
 
+/*
+ * Prometheus query for selecting pods
+ *
+ * @name componentLabel
+ *
+ * @param component The component being selected
+ * @param cmp (default `'='`) The comparison to use for the component label, e.g. for exclusions.
+ *
+ * @return prometheus query string selecting pods for a certain component
+ */
+local componentLabel(component, cmp='=') =
+  std.format(
+    'kube_pod_labels{label_app="jupyterhub", label_component%s"%s", namespace="$hub"}',
+    [
+      cmp,
+      component,
+    ]
+  );
+
+/*
+ * prometheus query join for filtering a metric to only pods for a given hub component
+ *
+ * @name onComponentLabel
+ *
+ * @param component The component being selected
+ * @param cmp (default `'='`) The comparison to use for the component label, e.g. for exclusions.
+ * @param group_left (optional) The body to use for a group_left on the join, e.g. `container` for `group_left(container)`
+ * @param group_right (optional) The body to use for a group_right on the join, e.g. `container` for `group_right(container)`
+ *
+ * @return prometheus query string starting with `* on(namespace, pod)` to apply any metric only to pods of a given hub component
+ */
+local onComponentLabel(component, cmp='=', group_left=false, group_right=false) =
+
+  std.format(
+    '* on (namespace, pod) %s %s', [
+      if group_left != false then
+        std.format('group_left(%s)', [group_left])
+      else if group_right != false then
+        std.format('group_right(%s)', [group_right])
+      else
+        ''
+      ,
+      componentLabel(component, cmp=cmp),
+    ]
+  )
+;
+
+
 // Cluster-wide stats
 local userNodes = graphPanel.new(
   'User Nodes',
+  decimalsY1=0,
   legend_show=false,
   min=0,
 ).addTarget(
@@ -51,24 +100,24 @@ local clusterUtilization = graphPanel.new(
     |||
       sum(
         kube_pod_container_resource_requests_memory_bytes{node=~".*user.*"}
-        and on (pod, namespace) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace="$hub"}
+        %s
         and on (pod) (kube_pod_container_status_ready)
       ) / sum(
         kube_node_status_allocatable_memory_bytes{node=~".*user.*"}
       )
-    |||,
+    ||| % onComponentLabel('singleuser-server'),
     legendFormat='User Pods'
   ),
   prometheus.target(
     |||
       sum(
         kube_pod_container_resource_requests_memory_bytes{node=~".*user.*"}
-        and on (pod, namespace) kube_pod_labels{label_app="jupyterhub", label_component=~".*placeholder", namespace="$hub"}
+        %s
         and on (pod) (kube_pod_container_status_ready)
       ) / sum(
         kube_node_status_allocatable_memory_bytes{node=~".*user.*"}
       )
-    |||,
+    ||| % onComponentLabel('.*placeholder', cmp='=~'),
     legendFormat='Placeholder Pods'
   ),
 ]);
@@ -83,11 +132,10 @@ local currentRunningUsers = graphPanel.new(
     |||
       sum(
         kube_pod_status_phase{phase="Running"}
-        * on (pod, namespace) group_right(phase) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace="$hub"}
-
+        %s
       ) by (phase)
-    |||,
-    legendFormat='{{phase}}'
+    ||| % onComponentLabel('singleuser-server', group_right='phase'),
+    legendFormat='{{phase}}',
   ),
 ]);
 
@@ -103,9 +151,9 @@ local userMemoryDistribution = heatmapPanel.new(
     |||
       sum(
         container_memory_working_set_bytes
-        * on (pod, namespace) group_left(container) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace="$hub"}
+        %s
       ) by (pod)
-    |||,
+    ||| % onComponentLabel('singleuser-server', group_left='container'),
     interval='600s',
     intervalFactor=1,
   ),
@@ -125,10 +173,10 @@ local userAgeDistribution = heatmapPanel.new(
         time()
         - (
           kube_pod_created
-          * on (pod, namespace) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace="$hub"}
+          %s
         )
       )
-    |||,
+    ||| % onComponentLabel('singleuser-server'),
     interval='600s',
     intervalFactor=1,
   ),
@@ -150,107 +198,98 @@ local hubResponseLatency = graphPanel.new(
   ),
 ]);
 
-local proxyMemory = graphPanel.new(
-  'Proxy Memory (RSS)',
-  formatY1='bytes',
-  legend_show=false,
+/**
+ * Creates a graph panel for a resource for one (or more) JupyterHub component(s).
+ * The given metric will be summed across pods for the given component.
+ * if `multi` a multi-component chart will be produced, with sums for each component.
+ *
+ * @name componentResourcePanel
+ *
+ * @param title The title of the graph panel.
+ * @param metric The metric to be observed.
+ * @param component The component to be measured (or excluded). Optional if `multi=true`, in which case it is an exclusion, otherwise required.
+ * @param formatY1 (optional) Passthrough `formatY1` to `graphPanel.new`
+ * @param decimalsY1 (optional) Passthrough `decimalsY1` to `graphPanel.new`
+ * @param multi (default `false`) If true, do a multi-component chart instead of single-component.
+ *     The chart will have a legend table for each component.
+ */
+local componentResourcePanel(title, metric, component='', formatY1=null, decimalsY1=null, multi=false) = graphPanel.new(
+  title,
+  decimalsY1=decimalsY1,
+  formatY1=formatY1,
+  // show legend as a table with current, avg, max values
+  legend_alignAsTable=true,
+  legend_current=true,
+  legend_avg=true,
+  legend_max=true,
+  legend_hideZero=true,
+  // legend_values is required for any of the above to work
+  legend_values=true,
   min=0,
 ).addTargets([
   prometheus.target(
-    |||
-      sum(
-        container_memory_rss{name!=""}
-        * on (pod, namespace) group_left(container) kube_pod_labels{label_app="jupyterhub", label_component="proxy", namespace="$hub"}
-      )
-    |||,
+    std.format(
+      |||
+        sum(
+          %s
+          %s
+        ) by (label_component)
+      |||,
+      [
+        metric,
+        onComponentLabel(component, cmp=if multi then '!=' else '=', group_left='container, label_component'),
+      ],
+    ),
+    legendFormat=if multi then '{{ label_component }}' else title,
   ),
-]);
+],);
 
-local proxyCPU = graphPanel.new(
-  'Proxy CPU',
+/**
+ * Creates a memory (RSS) graph panel for one (or more) JupyterHub component(s).
+ *
+ * @name memoryPanel
+ *
+ * @param name The name of the resource. Used to create the title.
+ * @param component The component to be measured (or excluded). Optional if `multi=true`, in which case it is an exclusion, otherwise required.
+ * @param multi (default `false`) If true, do a multi-component chart instead of single-component.
+ *     The chart will have a legend table for each component.
+ */
+local memoryPanel(name, component, multi=false) = componentResourcePanel(
+  std.format('%s Memory (RSS)', [name]),
+  component=component,
+  metric='container_memory_rss{name!=""}',
+  formatY1='bytes',
+  multi=multi,
+);
+
+/**
+ * Creates a CPU usage graph panel for one (or more) JupyterHub component(s).
+ *
+ * @name cpuPanel
+ *
+ * @param name The name of the resource. Used to create the title.
+ * @param component The component to be measured (or excluded). Optional if `multi=true`, in which case it is an exclusion, otherwise required.
+ * @param multi (default `false`) If true, do a multi-component chart instead of single-component.
+ *     The chart will have a legend table for each component.
+ */
+local cpuPanel(name, component, multi=false) = componentResourcePanel(
+  std.format('%s CPU', [name]),
+  component=component,
+  metric='irate(container_cpu_usage_seconds_total{name!=""}[5m])',
   // decimals=1 with percentunit means round to nearest 10%
   decimalsY1=1,
   formatY1='percentunit',
-  legend_show=false,
-  min=0,
-).addTargets([
-  prometheus.target(
-    |||
-      sum(
-        rate(container_cpu_usage_seconds_total{name!=""}[5m])
-        * on (pod, namespace) group_left(container) kube_pod_labels{label_app="jupyterhub", label_component="proxy", namespace="$hub"}
-      )
-    |||,
-  ),
-]);
+  multi=multi,
+);
 
-local hubMemory = graphPanel.new(
-  'Hub Memory (RSS)',
-  formatY1='bytes',
-  legend_show=false,
-  min=0,
-).addTargets([
-  prometheus.target(
-    |||
-      sum(
-        container_memory_rss{name!=""}
-        * on (pod, namespace) group_left(container) kube_pod_labels{label_app="jupyterhub", label_component="hub", namespace="$hub"}
-      )
-    |||,
-  ),
-]);
+local proxyMemory = memoryPanel('Proxy', component='proxy');
+local proxyCPU = cpuPanel('Proxy', component='proxy');
+local hubMemory = memoryPanel('Hub', component='hub');
+local hubCPU = cpuPanel('Hub', component='hub');
 
-local hubCPU = graphPanel.new(
-  'Hub CPU',
-  // decimals=1 means round to nearest 10%
-  decimalsY1=1,
-  formatY1='percentunit',
-  legend_show=false,
-  min=0,
-).addTargets([
-  prometheus.target(
-    |||
-      sum(
-        rate(container_cpu_usage_seconds_total{name!=""}[5m])
-        * on (pod, namespace) group_left(container) kube_pod_labels{label_app="jupyterhub", label_component="hub", namespace="$hub"}
-      )
-    |||,
-  ),
-]);
-
-local allComponentsMemory = graphPanel.new(
-  'All Hub component Memory (RSS)',
-  formatY1='bytes',
-  min=0,
-).addTargets([
-  prometheus.target(
-    |||
-      sum(
-        container_memory_rss{name!=""}
-        * on (pod, namespace) group_left(container, label_component) kube_pod_labels{label_app="jupyterhub", label_component!="singleuser-server", namespace="$hub"}
-      ) by (label_component)
-    |||,
-    legendFormat='{{ label_component }}',
-  ),
-]);
-
-local allComponentsCPU = graphPanel.new(
-  'All Hub component CPU',
-  // decimals=1 means round to nearest 10%
-  decimalsY1=1,
-  formatY1='percentunit',
-  min=0,
-).addTargets([
-  prometheus.target(
-    |||
-      sum(
-        rate(container_cpu_usage_seconds_total{name!=""}[5m])
-        * on (pod, namespace) group_left(container, label_component) kube_pod_labels{label_app="jupyterhub", label_component!="singleuser-server", namespace="$hub"}
-      ) by (label_component)
-    |||,
-    legendFormat='{{ label_component }}',
-  ),
-]);
+// with multi=true, component='singleuser-server' means all components *except* singleuser-server
+local allComponentsMemory = memoryPanel('All JupyterHub Components', component='singleuser-server', multi=true);
+local allComponentsCPU = cpuPanel('All JupyterHub Components', component='singleuser-server', multi=true);
 
 local serverStartTimes = graphPanel.new(
   'Server Start Times',
@@ -282,9 +321,9 @@ local usersPerNode = graphPanel.new(
           # kube_pod_info.node identifies the pod node,
           # while kube_pod_labels.kubernetes_node is the metrics exporter's node
           kube_pod_info{node!=""}
-          * on(pod, namespace) group_right(node)  kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server"}
+          %s
       ) by (node)
-    |||,
+    ||| % onComponentLabel('singleuser-server', group_right='node'),
     legendFormat='{{ node }}'
   ),
 ]);
@@ -342,45 +381,45 @@ dashboard.new(
 ).addPanel(
   userNodes, { x: 0, y: 0 } + standardDims
 ).addPanel(
-  clusterUtilization, { x: 12, y: 0 } + standardDims
+  clusterUtilization, { x: standardDims.w, y: 0 } + standardDims
 
 ).addPanel(
   row.new('Hub usage stats for $hub'), { y: 8 },
 ).addPanel(
   currentRunningUsers, { x: 0, y: 8 } + standardDims
 ).addPanel(
-  userMemoryDistribution, { x: 12, y: 8 } + standardDims
+  usersPerNode, { x: standardDims.w, y: 16 } + standardDims
 ).addPanel(
   userAgeDistribution, { x: 0, y: 16 } + standardDims
+).addPanel(
+  userMemoryDistribution, { x: standardDims.w, y: 8 } + standardDims
 
 ).addPanel(
   row.new('Hub Diagnostics for $hub'), { y: 24 }
 ).addPanel(
   serverStartTimes, { x: 0, y: 24 } + standardDims
 ).addPanel(
-  hubResponseLatency, { x: 12, y: 24 } + standardDims
+  hubResponseLatency, { x: standardDims.w, y: 24 } + standardDims
 
 ).addPanel(
   hubCPU, { x: 0, y: 32 } + standardDims
 ).addPanel(
-  hubMemory, { x: 12, y: 32 } + standardDims
+  hubMemory, { x: standardDims.w, y: 32 } + standardDims
 ).addPanel(
   proxyCPU, { x: 0, y: 40 } + standardDims
 ).addPanel(
-  proxyMemory, { x: 12, y: 40 } + standardDims
+  proxyMemory, { x: standardDims.w, y: 40 } + standardDims
 ).addPanel(
-  allComponentsCPU, { x: 0, y: 48 } + standardDims
+  allComponentsCPU, { x: 0, y: 48 } + standardDims + { h: standardDims.h * 1.5 },
 ).addPanel(
-  allComponentsMemory, { x: 12, y: 48 } + standardDims
-).addPanel(
-  usersPerNode, { x: 0, y: 56 } + standardDims
+  allComponentsMemory, { x: standardDims.w, y: 48 } + standardDims + { h: standardDims.h * 1.5 },
 
 ).addPanel(
-  row.new('Cluster Diagnostics'), { y: 56 }
+  row.new('Cluster Diagnostics'), { y: 64 }
 ).addPanel(
-  userNodesRSS, { x: 0, y: 56 } + standardDims
+  userNodesRSS, { x: 0, y: 64 } + standardDims
 ).addPanel(
-  userNodesCPU, { x: 12, y: 56 } + standardDims
+  userNodesCPU, { x: standardDims.w, y: 64 } + standardDims
 ).addPanel(
-  nonRunningPods, { x: 0, y: 64 } + standardDims
+  nonRunningPods, { x: 0, y: 72 } + standardDims
 )
