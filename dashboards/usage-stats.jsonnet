@@ -127,11 +127,11 @@ dashboard.new(
   templates
 
 ).addPanel(
-  monthlyActiveUsers, { x: 12, y: 0 } + standardDims
+  monthlyActiveUsers, {},
 ).addPanel(
-  dailyActiveUsers, { x: 0, y: 12 } + standardDims
+  dailyActiveUsers, {},
 ).addPanel(
-  currentRunningUsers, { x: 0, y: 24 } + standardDims
+  currentRunningUsers, {},
   // FIXME: This graph does not seem to make sense yet
-  // ).addPanel(userDistribution, {x: 0, y: 24} + standardDims
+  // ).addPanel(userDistribution, {}
 )

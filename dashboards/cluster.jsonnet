@@ -8,7 +8,8 @@ local template = grafana.template;
 local row = grafana.row;
 local heatmapPanel = grafana.heatmapPanel;
 
-local standardDims = { w: 12, h: 10 };
+local jupyterhub = import './jupyterhub.libsonnet';
+local standardDims = jupyterhub.standardDims;
 
 local templates = [
   template.datasource(
@@ -44,9 +45,9 @@ local userPods = graphPanel.new(
     |||
       sum(
         kube_pod_status_phase{phase="Running"}
-        * on(pod, namespace) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server"}
+        %s
       ) by (namespace)
-    |||,
+    ||| % jupyterhub.onComponentLabel('singleuser-server', namespace=null),
     legendFormat='{{namespace}}'
   ),
 ]);
@@ -406,7 +407,7 @@ dashboard.new(
 ).addPanel(
   row.new('Cluster Stats'), {},
 ).addPanel(
-  userPods, { w: 24, h: 12 },
+  userPods, { w: standardDims.w * 2 },
 ).addPanel(
   clusterMemoryCommitment, {},
 ).addPanel(
