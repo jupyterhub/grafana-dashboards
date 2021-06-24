@@ -9,8 +9,7 @@ local row = grafana.row;
 local heatmapPanel = grafana.heatmapPanel;
 
 local jupyterhub = import './jupyterhub.libsonnet';
-
-local standardDims = { w: 12, h: 10 };
+local standardDims = jupyterhub.standardDims;
 
 local templates = [
   template.datasource(
@@ -408,7 +407,7 @@ dashboard.new(
 ).addPanel(
   row.new('Cluster Stats'), {},
 ).addPanel(
-  userPods, { w: 24, h: 12 },
+  userPods, { w: standardDims.w * 2 },
 ).addPanel(
   clusterMemoryCommitment, {},
 ).addPanel(

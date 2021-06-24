@@ -4,6 +4,11 @@ local prometheus = grafana.prometheus;
 
 {
   /*
+   * standard panel dimensions
+   */
+  standardDims:: { w: 12, h: 8 },
+
+  /*
    * Prometheus query for selecting pods
    *
    * @name jupyterhub.componentLabel

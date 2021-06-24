@@ -11,8 +11,7 @@ local row = grafana.row;
 local heatmapPanel = grafana.heatmapPanel;
 
 local jupyterhub = import 'jupyterhub.libsonnet';
-
-local standardDims = { w: 12, h: 8 };
+local standardDims = jupyterhub.standardDims;
 
 local templates = [
   template.datasource(
@@ -249,49 +248,49 @@ dashboard.new(
   templates
 
 ).addPanel(
-  row.new('Cluster Stats'), { y: 0 }
+  row.new('Cluster Stats'), {}
 ).addPanel(
-  userNodes, { x: 0, y: 0 } + standardDims
+  userNodes, {}
 ).addPanel(
-  clusterUtilization, { x: standardDims.w, y: 0 } + standardDims
+  clusterUtilization, {}
 
 ).addPanel(
-  row.new('Hub usage stats for $hub'), { y: 8 },
+  row.new('Hub usage stats for $hub'), {}
 ).addPanel(
-  currentRunningUsers, { x: 0, y: 8 } + standardDims
+  currentRunningUsers, {}
 ).addPanel(
-  usersPerNode, { x: standardDims.w, y: 16 } + standardDims
+  usersPerNode, {}
 ).addPanel(
-  userAgeDistribution, { x: 0, y: 16 } + standardDims
+  userAgeDistribution, {}
 ).addPanel(
-  userMemoryDistribution, { x: standardDims.w, y: 8 } + standardDims
+  userMemoryDistribution, {}
 
 ).addPanel(
-  row.new('Hub Diagnostics for $hub'), { y: 24 }
+  row.new('Hub Diagnostics for $hub'), {}
 ).addPanel(
-  serverStartTimes, { x: 0, y: 24 } + standardDims
+  serverStartTimes, {}
 ).addPanel(
-  hubResponseLatency, { x: standardDims.w, y: 24 } + standardDims
+  hubResponseLatency, {}
 
 ).addPanel(
-  hubCPU, { x: 0, y: 32 } + standardDims
+  hubCPU, {}
 ).addPanel(
-  hubMemory, { x: standardDims.w, y: 32 } + standardDims
+  hubMemory, {}
 ).addPanel(
-  proxyCPU, { x: 0, y: 40 } + standardDims
+  proxyCPU, {}
 ).addPanel(
-  proxyMemory, { x: standardDims.w, y: 40 } + standardDims
+  proxyMemory, {}
 ).addPanel(
-  allComponentsCPU, { x: 0, y: 48 } + standardDims + { h: standardDims.h * 1.5 },
+  allComponentsCPU, { h: standardDims.h * 1.5 },
 ).addPanel(
-  allComponentsMemory, { x: standardDims.w, y: 48 } + standardDims + { h: standardDims.h * 1.5 },
+  allComponentsMemory, { h: standardDims.h * 1.5 },
 
 ).addPanel(
-  row.new('Cluster Diagnostics'), { y: 64 }
+  row.new('Cluster Diagnostics'), {}
 ).addPanel(
-  userNodesRSS, { x: 0, y: 64 } + standardDims
+  userNodesRSS, {}
 ).addPanel(
-  userNodesCPU, { x: standardDims.w, y: 64 } + standardDims
+  userNodesCPU, {}
 ).addPanel(
-  nonRunningPods, { x: 0, y: 72 } + standardDims
+  nonRunningPods, {}
 )
