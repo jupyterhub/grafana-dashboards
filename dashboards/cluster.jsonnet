@@ -8,6 +8,8 @@ local template = grafana.template;
 local row = grafana.row;
 local heatmapPanel = grafana.heatmapPanel;
 
+local jupyterhub = import './jupyterhub.libsonnet';
+
 local standardDims = { w: 12, h: 10 };
 
 local templates = [
@@ -44,9 +46,9 @@ local userPods = graphPanel.new(
     |||
       sum(
         kube_pod_status_phase{phase="Running"}
-        * on(pod, namespace) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server"}
+        %s
       ) by (namespace)
-    |||,
+    ||| % jupyterhub.onComponentLabel('singleuser-server', namespace=null),
     legendFormat='{{namespace}}'
   ),
 ]);
