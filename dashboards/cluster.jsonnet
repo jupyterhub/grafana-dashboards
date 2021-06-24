@@ -11,14 +11,6 @@ local heatmapPanel = grafana.heatmapPanel;
 local jupyterhub = import './jupyterhub.libsonnet';
 local standardDims = jupyterhub.standardDims;
 
-local templates = [
-  template.datasource(
-    'PROMETHEUS_DS',
-    'prometheus',
-    'Prometheus',
-    hide='label',
-  ),
-];
 
 // Cluster-wide stats
 local userNodes = graphPanel.new(
@@ -402,8 +394,6 @@ dashboard.new(
   'Cluster Information',
   tags=['jupyterhub', 'kubernetes'],
   editable=true
-).addTemplates(
-  templates
 ).addPanel(
   row.new('Cluster Stats'), {},
 ).addPanel(

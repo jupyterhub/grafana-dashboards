@@ -14,20 +14,10 @@ local jupyterhub = import 'jupyterhub.libsonnet';
 local standardDims = jupyterhub.standardDims;
 
 local templates = [
-  template.datasource(
-    'PROMETHEUS_DS',
-    'prometheus',
-    'Prometheus',
-    hide='label',
-  ),
   template.new(
     'hub',
-    datasource='$PROMETHEUS_DS',
-    query='label_values(kube_namespace_status_phase, namespace)',
-    regex='.*-(?:staging|prod)$',
-    // FIXME: Grafana needs a manual 'refresh variables' before it populates this.
-    // Maybe another API call?
-    current='jupyterhub'
+    datasource='prometheus',
+    query='label_values(kube_service_labels{service="hub"}, namespace)',
   ),
 ];
 

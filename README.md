@@ -47,17 +47,6 @@ export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
 This creates a folder called 'JupyterHub Default Dashboards' in your grafana, and adds
 a couple of dashboards to it.
 
-On clusters with multiple hubs, it is important to show per-hub dashboards. Unfortunately,
-Grafana doesn't populate the 'hub' variable properly by default. You'll need to:
-
-1. Go to the dashboard that needs per-hub usage
-2. Go to settings (gear icon in top right)
-3. Select the 'hub' variable
-4. Click the 'Update' button
-
-This will show you the hubs on your cluster, and then you can select them from the dropdown.
-Unfortunately, right now there seem to be no easy way to [automatically update these](https://community.grafana.com/t/template-update-variable-api/1882/4).
-
 **NOTE: ANY CHANGES YOU MAKE VIA THE GRAFANA UI WILL BE OVERWRITTEN NEXT TIME YOU RUN deploy.bash.
 TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN**
 
