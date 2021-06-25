@@ -33,7 +33,8 @@ via code. This can then be deployed on any Grafana instance!
 
 4. An API key with 'owner' permissions. This is per-organization, and you can make a new one
    by going to the configuration pane for your Grafana (the gear icon on the left bar), and
-   selecting 'API Keys'.
+   selecting 'API Keys'. The owner permission is needed to query list of data sources so we
+   can auto-populate template variable options (such as list of hubs).
 
 ## Deployment
 

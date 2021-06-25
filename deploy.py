@@ -130,6 +130,7 @@ def populate_template_variables(api, db):
             continue
         template_query = var['query']
 
+        # This requires our token to have owner permissions
         prom_id = api(f'/datasources/id/{var["datasource"]}')['id']
 
         var['options'] = [
