@@ -194,7 +194,7 @@ dashboard.new(
 ).addTemplates(
   templates
 ).addPanel(
-  row.new('Hub usage stats for $hub'), {}
+  row.new('Hub usage stats'), {}
 ).addPanel(
   currentRunningUsers, {}
 ).addPanel(
@@ -204,7 +204,7 @@ dashboard.new(
 ).addPanel(
   userMemoryDistribution, {}
 ).addPanel(
-  row.new('Hub Diagnostics for $hub'), {}
+  row.new('Hub Diagnostics'), {}
 ).addPanel(
   serverStartTimes, {}
 ).addPanel(
