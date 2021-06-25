@@ -31,9 +31,9 @@ via code. This can then be deployed on any Grafana instance!
 
 3. A recent version of Grafana, with a prometheus data source already added.
 
-4. An API key with 'owner' permissions. This is per-organization, and you can make a new one
+4. An API key with 'admin' permissions. This is per-organization, and you can make a new one
    by going to the configuration pane for your Grafana (the gear icon on the left bar), and
-   selecting 'API Keys'. The owner permission is needed to query list of data sources so we
+   selecting 'API Keys'. The admin permission is needed to query list of data sources so we
    can auto-populate template variable options (such as list of hubs).
 
 ## Deployment
