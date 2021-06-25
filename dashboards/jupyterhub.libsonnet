@@ -25,7 +25,7 @@ local prometheus = grafana.prometheus;
         cmp,
         component,
         if namespace != null then
-          ', namespace="%s"' % namespace
+          ', namespace=~"%s"' % namespace
         else
           '',
       ]
