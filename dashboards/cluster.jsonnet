@@ -39,7 +39,7 @@ local userPods = graphPanel.new(
         kube_pod_status_phase{phase="Running"}
         %s
       ) by (namespace)
-    ||| % jupyterhub.onComponentLabel('singleuser-server', namespace=null),
+    ||| % jupyterhub.onComponentLabel('singleuser-server', group_right='', namespace=null),
     legendFormat='{{namespace}}'
   ),
 ]);
