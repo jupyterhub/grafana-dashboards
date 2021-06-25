@@ -130,10 +130,7 @@ def populate_template_variables(api, db):
             continue
         template_query = var['query']
 
-        sources = api('/datasources')
-
-        # Use the first default default prometheus datasource
-        prom_id = [s['id'] for s in sources if s['type'] == 'prometheus' and s['isDefault']][0]
+        prom_id = api(f'/datasources/id/{var["datasource"]}')['id']
 
         var['options'] = [
             {"text": l, "value": l} for l in get_label_values(api, prom_id, template_query)
