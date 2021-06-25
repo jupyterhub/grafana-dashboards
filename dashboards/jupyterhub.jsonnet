@@ -211,7 +211,7 @@ local oldUserpods = tablePanel.new(
         time() - (kube_pod_created %s)
       )  > (8 * 60 * 60) # 8 hours is our threshold
     ||| % jupyterhub.onComponentLabel('singleuser-server'),
-    legendFormat='{{pod}}',
+    legendFormat='{{namespace}}/{{pod}}',
     instant=true
   ),
 ]).hideColumn('Time');
@@ -245,7 +245,7 @@ local highCPUUserPods = tablePanel.new(
         %s
       ) by (pod) > 0.5
     ||| % jupyterhub.onComponentLabel('singleuser-server', group_left=''),
-    legendFormat='{{pod}}',
+    legendFormat='{{namespace}}/{{pod}}',
     instant=true
   ),
 ]).hideColumn('Time');
@@ -286,7 +286,7 @@ local highMemoryUsagePods = tablePanel.new(
     ||| % {
       selector: jupyterhub.onComponentLabel('singleuser-server', group_left=''),
     },
-    legendFormat='{{pod}}',
+    legendFormat='{{namespace}}/{{pod}}',
     instant=true
   ),
 ]).hideColumn('Time');
