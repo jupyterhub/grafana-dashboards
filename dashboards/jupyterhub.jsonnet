@@ -7,6 +7,7 @@ local singlestat = grafana.singlestat;
 local graphPanel = grafana.graphPanel;
 local prometheus = grafana.prometheus;
 local template = grafana.template;
+local tablePanel = grafana.tablePanel;
 local row = grafana.row;
 local heatmapPanel = grafana.heatmapPanel;
 
@@ -182,6 +183,114 @@ local nonRunningPods = graphPanel.new(
   ),
 ]);
 
+// Anomalous tables
+local oldUserpods = tablePanel.new(
+  'Very old user pods',
+  description=|||
+    User pods that have been running for a long time (>8h).
+
+    This often indicates problems with the idle culler
+  |||,
+  transform='timeseries_to_rows',
+  styles=[
+    {
+      pattern: 'Value',
+      type: 'number',
+      unit: 's',
+      alias: 'Age',
+    },
+  ],
+  sort={
+    col: 2,
+    desc: true,
+  },
+).addTargets([
+  prometheus.target(
+    |||
+      (
+        time() - (kube_pod_created %s)
+      )  > (8 * 60 * 60) # 8 hours is our threshold
+    ||| % jupyterhub.onComponentLabel('singleuser-server'),
+    legendFormat='{{pod}}',
+    instant=true
+  ),
+]).hideColumn('Time');
+
+local highCPUUserPods = tablePanel.new(
+  'User Pods with high CPU usage (>0.5)',
+  description=|||
+    User pods using a lot of CPU
+
+    This could indicate a runaway process consuming resources
+    unnecessarily.
+  |||,
+  transform='timeseries_to_rows',
+  styles=[
+    {
+      pattern: 'Value',
+      type: 'number',
+      unit: 'percentunit',
+      alias: 'CPU usage',
+    },
+  ],
+  sort={
+    col: 2,
+    desc: true,
+  },
+).addTargets([
+  prometheus.target(
+    |||
+      max( # Ideally we just want 'current' value, so max will do
+        irate(container_cpu_usage_seconds_total[5m])
+        %s
+      ) by (pod) > 0.5
+    ||| % jupyterhub.onComponentLabel('singleuser-server', group_left=''),
+    legendFormat='{{pod}}',
+    instant=true
+  ),
+]).hideColumn('Time');
+
+local highMemoryUsagePods = tablePanel.new(
+  'User pods with high memory usage (>80% of limit)',
+  description=|||
+    User pods getting close to their memory limit
+
+    Once they hit their memory limit, user kernels will start dying.
+  |||,
+  transform='timeseries_to_rows',
+  styles=[
+    {
+      pattern: 'Value',
+      type: 'number',
+      unit: 'percentunit',
+      alias: '% of mem limit consumed',
+    },
+  ],
+  sort={
+    col: 2,
+    desc: true,
+  },
+).addTargets([
+  prometheus.target(
+    |||
+      max( # Ideally we just want 'current', but max will do. This metric is a gauge, so sum is inappropriate
+        container_memory_rss
+        %(selector)s
+      ) by (pod)
+      /
+      sum(
+        kube_pod_container_resource_limits_memory_bytes
+        %(selector)s
+      ) by (pod)
+      > 0.8
+    ||| % {
+      selector: jupyterhub.onComponentLabel('singleuser-server', group_left=''),
+    },
+    legendFormat='{{pod}}',
+    instant=true
+  ),
+]).hideColumn('Time');
+
 
 dashboard.new(
   'JupyterHub Dashboard',
@@ -214,4 +323,12 @@ dashboard.new(
   nonRunningPods, {}
 ).addPanel(
   usersPerNode, {}
+).addPanel(
+  row.new('Anomalous user pods'), {},
+).addPanel(
+  oldUserpods, { h: standardDims.h * 1.5 },
+).addPanel(
+  highCPUUserPods, { h: standardDims.h * 1.5 },
+).addPanel(
+  highMemoryUsagePods, { h: standardDims.h * 1.5 },
 )
