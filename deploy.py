@@ -6,8 +6,10 @@ from glob import glob
 from functools import partial
 import subprocess
 from urllib.request import urlopen, Request
+from urllib.parse import urlencode
 from urllib.error import HTTPError
 from copy import deepcopy
+import re
 
 # UID for the folder under which our dashboards will be setup
 DEFAULT_FOLDER_UID = '70E5EE84-1217-4021-A89E-1E3DE0566D93'
@@ -79,13 +81,62 @@ def layout_dashboard(dashboard):
     return dashboard
 
 def deploy_dashboard(dashboard_path, folder_uid, api):
+    db = build_dashboard(dashboard_path)
+    db = layout_dashboard(db)
+    db = populate_template_variables(api, db)
+
     data = {
-        'dashboard': layout_dashboard(build_dashboard(dashboard_path)),
+        'dashboard': db,
         'folderId': folder_uid,
         'overwrite': True
     }
     api('/dashboards/db', data)
 
+
+def get_label_values(api, ds_id, template_query):
+    """
+    Return response to a `label_values` template query
+
+    `label_values` isn't actually a prometheus thing - it is an API call that
+    grafana makes. This function tries to mimic that. Useful for populating variables
+    in a dashboard
+    """
+    match = re.match(r'label_values\((?P<query>.*),\s*(?P<label>.*)\)', template_query)
+    query = match.group('query')
+    label = match.group('label')
+    query = {'match[]': query}
+    # Send a request to the backing prometheus datastore
+    proxy_url = f'/datasources/proxy/{ds_id}/api/v1/series?{urlencode(query)}'
+
+    metrics = api(proxy_url)['data']
+    return sorted(set(m[label] for m in metrics))
+
+
+def populate_template_variables(api, db):
+    """
+    Populate options for template variables.
+
+    For list of hubs and similar, users should be able to select a hub from
+    a dropdown list. This is not auto populated by grafana if you are
+    using the API (https://community.grafana.com/t/template-update-variable-api/1882/4)
+    so we do it here.
+    """
+    # We gonna make modifications to db, so let's make a copy
+    db = deepcopy(db)
+
+    for var in db.get('templating', {}).get('list', []):
+        if var['type'] != 'query':
+            # We don't support populating datasource templates
+            continue
+        template_query = var['query']
+
+        # This requires our token to have admin permissions
+        prom_id = api(f'/datasources/id/{var["datasource"]}')['id']
+
+        var['options'] = [
+            {"text": l, "value": l} for l in get_label_values(api, prom_id, template_query)
+        ]
+    return db
 
 def main():
     parser = argparse.ArgumentParser()

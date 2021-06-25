@@ -12,16 +12,6 @@ local heatmapPanel = grafana.heatmapPanel;
 
 local standardDims = { w: 12, h: 12 };
 
-local templates = [
-  template.datasource(
-    'PROMETHEUS_DS',
-    'prometheus',
-    'Prometheus',
-    hide='label',
-  ),
-];
-
-
 local monthlyActiveUsers = graphPanel.new(
   'Active users (over 30 days)',
   bars=true,
@@ -123,9 +113,6 @@ dashboard.new(
   tags=['jupyterhub'],
   editable=true,
   time_from='now-30d'
-).addTemplates(
-  templates
-
 ).addPanel(
   monthlyActiveUsers, {},
 ).addPanel(

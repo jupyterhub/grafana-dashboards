@@ -31,13 +31,14 @@ via code. This can then be deployed on any Grafana instance!
 
 3. A recent version of Grafana, with a prometheus data source already added.
 
-4. An API key with 'editor' permissions. This is per-organization, and you can make a new one
+4. An API key with 'admin' permissions. This is per-organization, and you can make a new one
    by going to the configuration pane for your Grafana (the gear icon on the left bar), and
-   selecting 'API Keys'.
+   selecting 'API Keys'. The admin permission is needed to query list of data sources so we
+   can auto-populate template variable options (such as list of hubs).
 
 ## Deployment
 
-There's a helper `deploy.bash` script that can deploy the dashboard to any grafana installation.
+There's a helper `deploy.py` script that can deploy the dashboard to any grafana installation.
 
 ```bash
 export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
@@ -46,17 +47,6 @@ export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
 
 This creates a folder called 'JupyterHub Default Dashboards' in your grafana, and adds
 a couple of dashboards to it.
-
-On clusters with multiple hubs, it is important to show per-hub dashboards. Unfortunately,
-Grafana doesn't populate the 'hub' variable properly by default. You'll need to:
-
-1. Go to the dashboard that needs per-hub usage
-2. Go to settings (gear icon in top right)
-3. Select the 'hub' variable
-4. Click the 'Update' button
-
-This will show you the hubs on your cluster, and then you can select them from the dropdown.
-Unfortunately, right now there seem to be no easy way to [automatically update these](https://community.grafana.com/t/template-update-variable-api/1882/4).
 
 **NOTE: ANY CHANGES YOU MAKE VIA THE GRAFANA UI WILL BE OVERWRITTEN NEXT TIME YOU RUN deploy.bash.
 TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN**
