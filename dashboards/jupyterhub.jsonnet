@@ -19,6 +19,9 @@ local templates = [
     'hub',
     datasource='prometheus',
     query='label_values(kube_service_labels{service="hub"}, namespace)',
+    // Allow viewing dashboard for multiple combined hubs
+    includeAll=true,
+    multi=true
   ),
 ];
 
@@ -110,11 +113,11 @@ local hubResponseLatency = graphPanel.new(
   min=0,
 ).addTargets([
   prometheus.target(
-    'histogram_quantile(0.99, sum(rate(jupyterhub_request_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace="$hub"}[5m])) by (le))',
+    'histogram_quantile(0.99, sum(rate(jupyterhub_request_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace=~"$hub"}[5m])) by (le))',
     legendFormat='99th percentile'
   ),
   prometheus.target(
-    'histogram_quantile(0.50, sum(rate(jupyterhub_request_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace="$hub"}[5m])) by (le))',
+    'histogram_quantile(0.50, sum(rate(jupyterhub_request_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace=~"$hub"}[5m])) by (le))',
     legendFormat='50th percentile'
   ),
 ]);
@@ -134,11 +137,11 @@ local serverStartTimes = graphPanel.new(
 ).addTargets([
   prometheus.target(
     // Metrics from hub seems to have `kubernetes_namespace` rather than just `namespace`
-    'histogram_quantile(0.99, sum(rate(jupyterhub_server_spawn_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace="$hub"}[5m])) by (le))',
+    'histogram_quantile(0.99, sum(rate(jupyterhub_server_spawn_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace=~"$hub"}[5m])) by (le))',
     legendFormat='99th percentile'
   ),
   prometheus.target(
-    'histogram_quantile(0.5, sum(rate(jupyterhub_server_spawn_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace="$hub"}[5m])) by (le))',
+    'histogram_quantile(0.5, sum(rate(jupyterhub_server_spawn_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace=~"$hub"}[5m])) by (le))',
     legendFormat='50th percentile'
   ),
 ]);
@@ -176,7 +179,7 @@ local nonRunningPods = graphPanel.new(
   prometheus.target(
     |||
       sum(
-        kube_pod_status_phase{phase!="Running", namespace="$hub"}
+        kube_pod_status_phase{phase!="Running", namespace=~"$hub"}
       ) by (phase)
     |||,
     legendFormat='{{phase}}'
@@ -300,7 +303,7 @@ dashboard.new(
 ).addTemplates(
   templates
 ).addPanel(
-  row.new('Hub usage stats for $hub'), {}
+  row.new('Hub usage stats'), {}
 ).addPanel(
   currentRunningUsers, {}
 ).addPanel(
@@ -310,7 +313,7 @@ dashboard.new(
 ).addPanel(
   userMemoryDistribution, {}
 ).addPanel(
-  row.new('Hub Diagnostics for $hub'), {}
+  row.new('Hub Diagnostics'), {}
 ).addPanel(
   serverStartTimes, {}
 ).addPanel(
