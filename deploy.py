@@ -142,7 +142,7 @@ def populate_template_variables(api, db):
             var["current"] = {
                 "selected": True,
                 "tags": [],
-                "text": labels[:1],
+                "text": labels[0],
                 "value": labels[:1],
             }
             var["options"][0]["selected"] = True
