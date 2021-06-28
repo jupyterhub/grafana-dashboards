@@ -246,7 +246,7 @@ local highCPUUserPods = tablePanel.new(
       max( # Ideally we just want 'current' value, so max will do
         irate(container_cpu_usage_seconds_total[5m])
         %s
-      ) by (pod) > 0.5
+      ) by (namespace, pod) > 0.5
     ||| % jupyterhub.onComponentLabel('singleuser-server', group_left=''),
     legendFormat='{{namespace}}/{{pod}}',
     instant=true
@@ -279,12 +279,12 @@ local highMemoryUsagePods = tablePanel.new(
       max( # Ideally we just want 'current', but max will do. This metric is a gauge, so sum is inappropriate
         container_memory_working_set_bytes
         %(selector)s
-      ) by (pod)
+      ) by (namespace, pod)
       /
       sum(
         kube_pod_container_resource_limits_memory_bytes
         %(selector)s
-      ) by (pod)
+      ) by (namespace, pod)
       > 0.8
     ||| % {
       selector: jupyterhub.onComponentLabel('singleuser-server', group_left=''),
