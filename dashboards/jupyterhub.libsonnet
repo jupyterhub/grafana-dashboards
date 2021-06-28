@@ -122,7 +122,7 @@ local prometheus = grafana.prometheus;
       # exclude name="" because the same container can be reported
       # with both no name and `name=k8s_...`,
       # in which case sum() reports double the actual metric
-      container_memory_working_set_bytes{name!=""}'
+      container_memory_working_set_bytes{name!=""}
     |||,
     formatY1='bytes',
     multi=multi,
