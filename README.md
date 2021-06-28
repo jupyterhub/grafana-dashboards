@@ -70,3 +70,36 @@ metrics, `container_memory_working_set_bytes` tracks this (see [this blog post](
 and [this issue](https://github.com/jupyterhub/grafana-dashboards/issues/13)).
 So prefer using that metric as the default for 'memory usage' unless specific reasons
 exist for using a different metric.
+
+### Available metrics
+
+The most common prometheus on kubernetes setup in the JupyterHub community seems
+to be the [prometheus helm chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus).
+
+
+1. [kube-state-metrics](https://github.com/kubernetes/kube-state-metrics)
+   ([metrics documentation](https://github.com/kubernetes/kube-state-metrics/tree/master/docs))
+   collects information about various kubernetes objects (pods, services, etc)
+   by scraping the kubernetes API. Anything you can get via `kubectl` commands,
+   you can probably get via a metric here. Very helpful as a way to query other
+   metrics based on the kubernetes object they represent (like pod, node, etc).
+
+2. [node-exporter](https://github.com/prometheus/node_exporter)
+   ([metrics documentation](https://github.com/prometheus/node_exporter#enabled-by-default))
+   collects information about each node - CPU usage, memory, disk space, etc. Since hostnames
+   are usually random, you usually join these metrics with `kube-state-metrics` node
+   metrics to get useful information out. If you are running a manual NFS server,
+   it is recommended to run a node-exporter instance there as well to collect server
+   metrics.
+
+3. [cadvisor](https://github.com/google/cadvisor)
+   ([metrics documentation](https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md))
+   collects information about each *container*. Join these with pod metrics from
+   `kube-state-metrics` for useful queries.
+
+4. [jupyterhub](https://jupyterhub.readthedocs.io/en/latest/)
+   ([metrics documentation](https://jupyterhub.readthedocs.io/en/latest/reference/metrics.html))
+   collects information directly from the JupyterHubs.
+
+5. Other components you have installed on your cluster - like prometheus,
+   nginx-ingress, etc - will also emit their own metrics.
