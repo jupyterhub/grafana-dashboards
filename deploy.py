@@ -101,7 +101,8 @@ def get_label_values(api, ds_id, template_query):
     grafana makes. This function tries to mimic that. Useful for populating variables
     in a dashboard
     """
-    match = re.match(r'label_values\((?P<query>.*),\s*(?P<label>.*)\)', template_query)
+    # re.DOTALL allows the query to be multi-line
+    match = re.match(r'label_values\((?P<query>.*),\s*(?P<label>.*)\)', template_query, re.DOTALL)
     query = match.group('query')
     label = match.group('label')
     query = {'match[]': query}
