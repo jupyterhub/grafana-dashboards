@@ -277,7 +277,7 @@ local highMemoryUsagePods = tablePanel.new(
   prometheus.target(
     |||
       max( # Ideally we just want 'current', but max will do. This metric is a gauge, so sum is inappropriate
-        container_memory_rss
+        container_memory_working_set_bytes
         %(selector)s
       ) by (pod)
       /

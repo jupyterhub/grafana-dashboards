@@ -56,3 +56,17 @@ TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN**
 The grafonnet jsonnet library is bundled here with [jsonnet-bundler](https://github.com/jsonnet-bundler/jsonnet-bundler).
 Just running `jb update` in the git repo root dir after installing jsonnet-bunder should bring
 you up to speed.
+
+## Metrics guidelines
+
+Interpreting prometheus metrics and writing PromQL queries that serve a particular
+purpose can be difficult. Here are some guidelines to help.
+
+### Container memory usage metric
+
+"When will the OOM killer start killing processes in this container?" is the most useful
+thing for us to know when measuring container memory usage. Of the many container memory
+metrics, `container_memory_working_set_bytes` tracks this (see [this blog post](https://faun.pub/how-much-is-too-much-the-linux-oomkiller-and-used-memory-d32186f29c9d)
+and [this issue](https://github.com/jupyterhub/grafana-dashboards/issues/13)).
+So prefer using that metric as the default for 'memory usage' unless specific reasons
+exist for using a different metric.

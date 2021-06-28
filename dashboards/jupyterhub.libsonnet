@@ -106,7 +106,7 @@ local prometheus = grafana.prometheus;
   ],),
 
   /**
-   * Creates a memory (RSS) graph panel for one (or more) JupyterHub component(s).
+   * Creates a memory (working set) graph panel for one (or more) JupyterHub component(s).
    *
    * @name jupyterhub.memoryPanel
    *
@@ -116,9 +116,9 @@ local prometheus = grafana.prometheus;
    *     The chart will have a legend table for each component.
    */
   memoryPanel(name, component, multi=false):: self.componentResourcePanel(
-    std.format('%s Memory (RSS)', [name]),
+    std.format('%s Memory (Working Set)', [name]),
     component=component,
-    metric='container_memory_rss{name!=""}',
+    metric='container_memory_working_set_bytes{name!=""}',
     formatY1='bytes',
     multi=multi,
   ),
