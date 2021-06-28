@@ -103,3 +103,19 @@ to be the [prometheus helm chart](https://github.com/prometheus-community/helm-c
 
 5. Other components you have installed on your cluster - like prometheus,
    nginx-ingress, etc - will also emit their own metrics.
+
+### Avoid double-counting container metrics
+
+It seems that one container's resource metrics can be reported multiple times,
+with an empty `name` label and a `name=k8s_...` label.
+Because of this, if we do `sum(container_resource_metric) by (pod)`,
+we will often get twice the actual resource consumption of a given pod.
+Since `name=""` is always redundant, make sure to exclude this in any query
+that includes a sum across container metrics.
+For example:
+
+```promql
+sum(
+    irate(container_cpu_usage_seconds_total{name!=""}[5m])
+) by (namespace, pod)
+```

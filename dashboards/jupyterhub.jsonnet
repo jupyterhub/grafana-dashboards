@@ -54,7 +54,10 @@ local userMemoryDistribution = heatmapPanel.new(
   prometheus.target(
     |||
       sum(
-        container_memory_working_set_bytes
+        # exclude name="" because the same container can be reported
+        # with both no name and `name=k8s_...`,
+        # in which case sum() by (pod) reports double the actual metric
+        container_memory_working_set_bytes{name!=""}
         %s
       ) by (pod)
     ||| % jupyterhub.onComponentLabel('singleuser-server', group_left='container'),
@@ -74,7 +77,10 @@ local userCPUDistribution = heatmapPanel.new(
   prometheus.target(
     |||
       sum(
-        irate(container_cpu_usage_seconds_total[5m])
+        # exclude name="" because the same container can be reported
+        # with both no name and `name=k8s_...`,
+        # in which case sum() by (pod) reports double the actual metric
+        irate(container_cpu_usage_seconds_total{name!=""}[5m])
         %s
       ) by (pod)
     ||| % jupyterhub.onComponentLabel('singleuser-server', group_left='container'),
