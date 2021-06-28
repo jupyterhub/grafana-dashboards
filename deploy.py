@@ -133,9 +133,18 @@ def populate_template_variables(api, db):
         # This requires our token to have admin permissions
         prom_id = api(f'/datasources/id/{var["datasource"]}')['id']
 
-        var['options'] = [
-            {"text": l, "value": l} for l in get_label_values(api, prom_id, template_query)
-        ]
+        labels = get_label_values(api, prom_id, template_query)
+        var["options"] = [{"text": l, "value": l} for l in labels]
+        if labels and not var.get("current"):
+            # default selection: all current values
+            # logical alternative: pick just the first
+            var["current"] = {
+                "selected": True,
+                "tags": [],
+                "text": ', '.join(labels),
+                "value": labels,
+            }
+
     return db
 
 def main():
