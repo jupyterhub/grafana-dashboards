@@ -346,12 +346,12 @@ local nfsServerReadLatency = graphPanel.new(
 
 // Support Metrics
 local prometheusMemory = graphPanel.new(
-  'Prometheus Memory (RSS)',
+  'Prometheus Memory (Working Set)',
   formatY1='bytes',
   min=0,
 ).addTargets([
   prometheus.target(
-    'sum(container_memory_rss{pod=~"support-prometheus-server-.*", namespace="support"})'
+    'sum(container_memory_working_set_bytes{pod=~"support-prometheus-server-.*", namespace="support"})'
   ),
 ]);
 
