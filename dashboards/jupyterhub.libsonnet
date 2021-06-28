@@ -118,7 +118,12 @@ local prometheus = grafana.prometheus;
   memoryPanel(name, component, multi=false):: self.componentResourcePanel(
     std.format('%s Memory (Working Set)', [name]),
     component=component,
-    metric='container_memory_working_set_bytes{name!=""}',
+    metric=|||
+      # exclude name="" because the same container can be reported
+      # with both no name and `name=k8s_...`,
+      # in which case sum() reports double the actual metric
+      container_memory_working_set_bytes{name!=""}'
+    |||,
     formatY1='bytes',
     multi=multi,
   ),
@@ -136,7 +141,12 @@ local prometheus = grafana.prometheus;
   cpuPanel(name, component, multi=false):: self.componentResourcePanel(
     std.format('%s CPU', [name]),
     component=component,
-    metric='irate(container_cpu_usage_seconds_total{name!=""}[5m])',
+    metric=|||
+      # exclude name="" because the same container can be reported
+      # with both no name and `name=k8s_...`,
+      # in which case sum() reports double the actual metric
+      irate(container_cpu_usage_seconds_total{name!=""}[5m])
+    |||,
     // decimals=1 with percentunit means round to nearest 10%
     decimalsY1=1,
     formatY1='percentunit',
