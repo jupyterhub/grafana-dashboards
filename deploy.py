@@ -151,8 +151,8 @@ def populate_template_variables(api, db):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('dashboards_dir', help='Directory of jsonnet dashboards to deploy')
     parser.add_argument('grafana_url', help='Grafana endpoint to deploy dashboards to')
+    parser.add_argument('--dashboards-dir', default="dashboards", help='Directory of jsonnet dashboards to deploy')
     parser.add_argument('--folder-name', default='JupyterHub Default Dashboards', help='Name of Folder to deploy to')
     parser.add_argument('--folder-uid', default=DEFAULT_FOLDER_UID, help='UID of grafana folder to deploy to')
 

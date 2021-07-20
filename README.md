@@ -42,7 +42,7 @@ There's a helper `deploy.py` script that can deploy the dashboard to any grafana
 
 ```bash
 export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
-./deploy.py dashboards <your-grafana-url>
+./deploy.py <your-grafana-url>
 ```
 
 This creates a folder called 'JupyterHub Default Dashboards' in your grafana, and adds
