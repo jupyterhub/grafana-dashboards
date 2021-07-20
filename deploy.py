@@ -165,6 +165,7 @@ def main():
 
     for dashboard in glob(f'{args.dashboards_dir}/*.jsonnet'):
         deploy_dashboard(dashboard, folder['id'], api)
+        print(f'Deployed {dashboard}')
 
 if __name__ == '__main__':
     main()
