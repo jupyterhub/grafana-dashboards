@@ -35,7 +35,9 @@ local currentRunningUsers = graphPanel.new(
   prometheus.target(
     |||
       sum(
-        kube_pod_status_phase{phase="Running"}
+        group(
+          kube_pod_status_phase{phase="Running"}
+        ) by (pod,namespace)
         %s
       ) by (phase)
     ||| % jupyterhub.onComponentLabel('singleuser-server', group_right='phase'),

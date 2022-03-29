@@ -20,7 +20,7 @@ local prometheus = grafana.prometheus;
    */
   componentLabel(component, cmp='=', namespace='$hub')::
     std.format(
-      'kube_pod_labels{label_app="jupyterhub", label_component%s"%s" %s}',
+      'group(kube_pod_labels{label_app="jupyterhub", label_component%s"%s" %s}) by (label_component,pod,namespace)',
       [
         cmp,
         component,
