@@ -30,6 +30,7 @@ local templates = [
 local currentRunningUsers = graphPanel.new(
   'Current running users',
   decimals=0,
+  stack=true,
   min=0,
 ).addTargets([
   prometheus.target(
@@ -37,11 +38,11 @@ local currentRunningUsers = graphPanel.new(
       sum(
         group(
           kube_pod_status_phase{phase="Running"}
-        ) by (pod,namespace)
+        ) by (label_component, pod, namespace)
         %s
-      ) by (phase)
-    ||| % jupyterhub.onComponentLabel('singleuser-server', group_right='phase'),
-    legendFormat='{{phase}}',
+      ) by (namespace)
+    ||| % jupyterhub.onComponentLabel('singleuser-server', group_right=''),
+    legendFormat='{{namespace}}',
   ),
 ]);
 
@@ -167,7 +168,7 @@ local usersPerNode = graphPanel.new(
           kube_pod_info{node!=""}
           %s
       ) by (node)
-    ||| % jupyterhub.onComponentLabel('singleuser-server', group_right='node'),
+    ||| % jupyterhub.onComponentLabel('singleuser-server', group_left=''),
     legendFormat='{{ node }}'
   ),
 ]);

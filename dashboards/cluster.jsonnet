@@ -19,7 +19,7 @@ local userNodes = graphPanel.new(
   min=0,
 ).addTarget(
   prometheus.target(
-    expr='sum(kube_node_labels) by (label_cloud_google_com_gke_nodepool)',
+    expr='sum(group(kube_node_labels) by (node, label_cloud_google_com_gke_nodepool)) by (label_cloud_google_com_gke_nodepool)',
     legendFormat='{{label_cloud_google_com_gke_nodepool}}'
   ),
 );
@@ -38,10 +38,10 @@ local userPods = graphPanel.new(
       sum(
         group(
           kube_pod_status_phase{phase="Running"}
-        ) by (pod,namespace)
+        ) by (label_component, pod, namespace)
         %s
       ) by (namespace)
-    ||| % jupyterhub.onComponentLabel('singleuser-server', group_right='', namespace=null),
+    ||| % jupyterhub.onComponentLabel('singleuser-server', group_right='', namespace='.*'),
     legendFormat='{{namespace}}'
   ),
 ]);
@@ -69,8 +69,8 @@ local clusterMemoryCommitment = graphPanel.new(
           # Add node pool name as label
           * on(node) group_left(label_cloud_google_com_gke_nodepool) 
           group(
-            kube_node_labels
-          ) by (node,label_cloud_google_com_gke_nodepool)
+            kube_node_labels{}
+          ) by (node, label_cloud_google_com_gke_nodepool)
         )
         # Ignore containers from pods that aren't currently running or scheduled
         # FIXME: This isn't the best metric here, evaluate what is.
@@ -85,7 +85,7 @@ local clusterMemoryCommitment = graphPanel.new(
         # Add nodepool name as label
         * on(node) group_left(label_cloud_google_com_gke_nodepool) 
         group(
-          kube_node_labels
+          kube_node_labels{}
         ) by (node,label_cloud_google_com_gke_nodepool)
       ) by (label_cloud_google_com_gke_nodepool)
     |||,
@@ -117,7 +117,7 @@ local clusterCPUCommitment = graphPanel.new(
           * on(node) group_left(label_cloud_google_com_gke_nodepool)
           group(
             kube_node_labels
-          ) by (node,label_cloud_google_com_gke_nodepool)
+          ) by (node, label_cloud_google_com_gke_nodepool)
         )
         # Ignore containers from pods that aren't currently running or scheduled
         # FIXME: This isn't the best metric here, evaluate what is.
@@ -133,7 +133,7 @@ local clusterCPUCommitment = graphPanel.new(
         * on(node) group_left(label_cloud_google_com_gke_nodepool)
         group(
           kube_node_labels
-        ) by (node,label_cloud_google_com_gke_nodepool)
+        ) by (node, label_cloud_google_com_gke_nodepool)
       ) by (label_cloud_google_com_gke_nodepool)
     |||,
     legendFormat='{{label_cloud_google_com_gke_nodepool}}'
@@ -358,6 +358,18 @@ local nfsServerReadLatency = graphPanel.new(
   ),
 ]);
 
+local nfsServerDiskUsedSpace = graphPanel.new(
+  'NFS Disk Used Space %',
+  min=0,
+  formatY1='percentunit',
+  decimals=1,
+).addTargets([
+  prometheus.target(
+    '1 - node_filesystem_avail_bytes{job="prometheus-nfsd-server"} / node_filesystem_size_bytes{job="prometheus-nfsd-server"}',
+    legendFormat='{{mountpoint}}'
+  ),
+]);
+
 // Support Metrics
 local prometheusMemory = graphPanel.new(
   'Prometheus Memory (Working Set)',
@@ -448,6 +460,8 @@ dashboard.new(
   nfsServerWriteLatency, {},
 ).addPanel(
   nfsServerReadLatency, {},
+).addPanel(
+  nfsServerDiskUsedSpace, {},
 
 ).addPanel(
   row.new('Support system diagnostics'), {},
