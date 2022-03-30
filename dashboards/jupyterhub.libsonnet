@@ -19,7 +19,11 @@ local prometheus = grafana.prometheus;
    * @return prometheus query string selecting pods for a certain component
    */
   componentLabel(component, cmp='=', namespace='$hub')::
-    std.format('group(kube_pod_labels{label_app="jupyterhub", label_component%s"%s"%s}) by (label_component, pod%s)',
+    std.format(
+    '
+  group(
+    kube_pod_labels{label_app="jupyterhub", label_component %s "%s" %s}
+  ) by (label_component, pod%s)',
       [
         cmp,
         component,
