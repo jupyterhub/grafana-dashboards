@@ -86,7 +86,7 @@ local clusterMemoryCommitment = graphPanel.new(
         * on(node) group_left(label_cloud_google_com_gke_nodepool) 
         group(
           kube_node_labels{}
-        ) by (node,label_cloud_google_com_gke_nodepool)
+        ) by (node, label_cloud_google_com_gke_nodepool)
       ) by (label_cloud_google_com_gke_nodepool)
     |||,
     legendFormat='{{label_cloud_google_com_gke_nodepool}}'
