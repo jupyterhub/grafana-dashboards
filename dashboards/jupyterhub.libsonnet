@@ -22,7 +22,7 @@ local prometheus = grafana.prometheus;
     std.format(
     '
   group(
-    kube_pod_labels{label_app="jupyterhub", label_component %s "%s" %s}
+    kube_pod_labels{label_app="jupyterhub", label_component%s"%s"%s}
   ) by (label_component, pod%s)',
       [
         cmp,
