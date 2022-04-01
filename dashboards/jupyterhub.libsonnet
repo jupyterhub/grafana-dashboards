@@ -20,7 +20,8 @@ local prometheus = grafana.prometheus;
    */
   componentLabel(component, cmp='=', namespace='$hub')::
     std.format(
-      '\n  group(\n    kube_pod_labels{label_app="jupyterhub", label_component%s"%s"%s}\n  ) by (label_component, pod%s)',
+      // group aggregator is used to ensure named pods are unique per namespace
+      '\n  group(\n    kube_pod_labels{label_app="jupyterhub", label_component%s"%s"%s}\n  ) by (pod%s)',
       [
         cmp,
         component,
@@ -49,7 +50,6 @@ local prometheus = grafana.prometheus;
    * @return prometheus query string starting with `* on(namespace, pod)` to apply any metric only to pods of a given hub component
    */
   onComponentLabel(component, cmp='=', group_left=false, group_right=false, namespace='$hub')::
-
     std.format(
       '* on (namespace, pod) %s %s', [
         if group_left != false then

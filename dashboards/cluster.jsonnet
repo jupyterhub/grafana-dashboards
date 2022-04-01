@@ -19,7 +19,20 @@ local userNodes = graphPanel.new(
   min=0,
 ).addTarget(
   prometheus.target(
-    expr='sum(group(kube_node_labels) by (node, label_cloud_google_com_gke_nodepool)) by (label_cloud_google_com_gke_nodepool)',
+    |||
+      # sum up all nodes by nodepool
+      sum(
+        # Get a list of all the nodes and which pool they are in. Group 
+        # aggregator is used because we only expect each node to exist
+        # in a single pool. Unfortunately, if a node pool is rotated it may 
+        # appear in the logs that multiples of the same node are running 
+        # in the same pool.  This prevents that edge case from messing up 
+        # the graph.
+        group(
+          kube_node_labels
+        ) by (node, label_cloud_google_com_gke_nodepool)
+      ) by (label_cloud_google_com_gke_nodepool)
+    |||,
     legendFormat='{{label_cloud_google_com_gke_nodepool}}'
   ),
 );
@@ -35,13 +48,27 @@ local userPods = graphPanel.new(
 ).addTargets([
   prometheus.target(
     |||
+      # Sum up all running user pods by namespace
       sum(
+        # Grab a list of all running pods.
+        # The group aggregator always returns "1" for the number of times each
+        # unique label appears in the time series. This is desirable for this 
+        # use case because we're merely identifying running pods by name, 
+        # not how many times they might be running.
         group(
           kube_pod_status_phase{phase="Running"}
-        ) by (label_component, pod, namespace)
-        %s
+        ) by (pod) 
+        # Below we retrieve all user pods in each namespace.  Again, we're using 
+        # the group aggregator here because users should only be running
+        # one pod per namespace at a time.  Unfortunately, if a node
+        # pool is rotated it may appear in the logs that multiple pods 
+        # from the same user are running in the same namespace.  This
+        # prevents that edge case from messing up the graph.
+        * on (pod) group_right() group(
+          kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~".*"}
+        ) by (namespace, pod) 
       ) by (namespace)
-    ||| % jupyterhub.onComponentLabel('singleuser-server', group_right='', namespace='.*'),
+    |||,
     legendFormat='{{namespace}}'
   ),
 ]);
@@ -63,15 +90,15 @@ local clusterMemoryCommitment = graphPanel.new(
   prometheus.target(
     |||
       sum(
-        (
-          # Get individual container memory requests
-          kube_pod_container_resource_requests_memory_bytes
-          # Add node pool name as label
-          * on(node) group_left(label_cloud_google_com_gke_nodepool) 
-          group(
-            kube_node_labels{}
-          ) by (node, label_cloud_google_com_gke_nodepool)
-        )
+        # Get individual container memory requests
+        kube_pod_container_resource_requests_memory_bytes
+        # Add node pool name as label
+        * on(node) group_left(label_cloud_google_com_gke_nodepool) 
+        # group aggregator ensures that node names are unique per
+        # pool.
+        group(
+          kube_node_labels
+        ) by (node, label_cloud_google_com_gke_nodepool)
         # Ignore containers from pods that aren't currently running or scheduled
         # FIXME: This isn't the best metric here, evaluate what is.
         and on (pod) kube_pod_status_scheduled{condition='true'}
@@ -83,9 +110,11 @@ local clusterMemoryCommitment = graphPanel.new(
         # Total allocatable memory on a node
         kube_node_status_allocatable_memory_bytes
         # Add nodepool name as label
-        * on(node) group_left(label_cloud_google_com_gke_nodepool) 
+        * on(node) group_left(label_cloud_google_com_gke_nodepool)
+        # group aggregator ensures that node names are unique per
+        # pool. 
         group(
-          kube_node_labels{}
+          kube_node_labels
         ) by (node, label_cloud_google_com_gke_nodepool)
       ) by (label_cloud_google_com_gke_nodepool)
     |||,
@@ -110,15 +139,15 @@ local clusterCPUCommitment = graphPanel.new(
   prometheus.target(
     |||
       sum(
-        (
-          # Get individual container CPU requests
-          kube_pod_container_resource_requests_cpu_cores
-          # Add node pool name as label
-          * on(node) group_left(label_cloud_google_com_gke_nodepool)
-          group(
-            kube_node_labels
-          ) by (node, label_cloud_google_com_gke_nodepool)
-        )
+        # Get individual container CPU requests
+        kube_pod_container_resource_requests_cpu_cores
+        # Add node pool name as label
+        * on(node) group_left(label_cloud_google_com_gke_nodepool)
+        # group aggregator ensures that node names are unique per
+        # pool.        
+        group(
+          kube_node_labels
+        ) by (node, label_cloud_google_com_gke_nodepool)
         # Ignore containers from pods that aren't currently running or scheduled
         # FIXME: This isn't the best metric here, evaluate what is.
         and on (pod) kube_pod_status_scheduled{condition='true'}
@@ -131,6 +160,8 @@ local clusterCPUCommitment = graphPanel.new(
         kube_node_status_allocatable_cpu_cores
         # Add nodepool name as label
         * on(node) group_left(label_cloud_google_com_gke_nodepool)
+        # group aggregator ensures that node names are unique per
+        # pool.
         group(
           kube_node_labels
         ) by (node, label_cloud_google_com_gke_nodepool)
