@@ -11,12 +11,21 @@ local heatmapPanel = grafana.heatmapPanel;
 local jupyterhub = import './jupyterhub.libsonnet';
 local standardDims = jupyterhub.standardDims;
 
+local templates = [
+  template.datasource(
+    'PROMETHEUS_DS',
+    'prometheus',
+    'Prometheus',
+    hide='label',
+  ),
+];
 
 // Cluster-wide stats
 local userNodes = graphPanel.new(
   'Node Count',
   decimals=0,
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTarget(
   prometheus.target(
     expr='sum(kube_node_labels) by (label_cloud_google_com_gke_nodepool)',
@@ -32,6 +41,7 @@ local userPods = graphPanel.new(
   decimals=0,
   min=0,
   stack=true,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -57,6 +67,7 @@ local clusterMemoryCommitment = graphPanel.new(
   // but full is still full. This gets a better view of 'fullness' most of the time.
   // If the commitment is "off the chart" it doesn't super matter by how much.
   max=1,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -98,6 +109,7 @@ local clusterCPUCommitment = graphPanel.new(
   // but full is still full. This gets a better view of 'fullness' most of the time.
   // If the commitment is "off the chart" it doesn't super matter by how much.
   max=1,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -138,6 +150,7 @@ local nodeCPUCommit = graphPanel.new(
   // but full is still full. This gets a better view of 'fullness' most of the time.
   // If the commitment is "off the chart" it doesn't super matter by how much.
   max=1,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -171,6 +184,7 @@ local nodeMemoryCommit = graphPanel.new(
   // but full is still full. This gets a better view most of the time.
   // If the commitment is "off the chart" it doesn't super matter by how much.
   max=1,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -203,6 +217,7 @@ local nodeMemoryUtil = graphPanel.new(
   min=0,
   // since this is actual measured utilization, it should not be able to exceed max=1
   max=1,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -230,6 +245,7 @@ local nodeCPUUtil = graphPanel.new(
   min=0,
   // since this is actual measured utilization, it should not be able to exceed max=1
   max=1,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -256,11 +272,11 @@ local nonRunningPods = graphPanel.new(
   decimals=0,
   legend_hideZero=true,
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     'sum(kube_pod_status_phase{phase!="Running"}) by (phase)',
     legendFormat='{{phase}}',
-
   ),
 ]);
 
@@ -270,6 +286,7 @@ local userNodesNFSOps = graphPanel.new(
   'User Nodes NFS Ops',
   decimals=0,
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     'sum(rate(node_nfs_requests_total[5m])) by (kubernetes_node) > 0',
@@ -281,6 +298,7 @@ local userNodesIOWait = graphPanel.new(
   'iowait % on each node',
   decimals=0,
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     'sum(rate(node_nfs_requests_total[5m])) by (kubernetes_node)',
@@ -292,6 +310,7 @@ local userNodesHighNFSOps = graphPanel.new(
   'NFS Operation Types on user nodes',
   decimals=0,
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     'sum(rate(node_nfs_requests_total[5m])) by (method) > 0',
@@ -302,6 +321,7 @@ local userNodesHighNFSOps = graphPanel.new(
 local nfsServerCPU = graphPanel.new(
   'NFS Server CPU',
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     'avg(rate(node_cpu_seconds_total{job="prometheus-nfsd-server", mode!="idle"}[2m])) by (mode)',
@@ -313,6 +333,7 @@ local nfsServerIOPS = graphPanel.new(
   'NFS Server Disk ops',
   decimals=0,
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     'sum(rate(node_nfsd_disk_bytes_read_total[5m]))',
@@ -327,6 +348,7 @@ local nfsServerIOPS = graphPanel.new(
 local nfsServerWriteLatency = graphPanel.new(
   'NFS Server disk write latency',
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     'sum(rate(node_disk_write_time_seconds_total{job="prometheus-nfsd-server"}[5m])) by (device) / sum(rate(node_disk_writes_completed_total{job="prometheus-nfsd-server"}[5m])) by (device)',
@@ -337,6 +359,7 @@ local nfsServerWriteLatency = graphPanel.new(
 local nfsServerReadLatency = graphPanel.new(
   'NFS Server disk read latency',
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     'sum(rate(node_disk_read_time_seconds_total{job="prometheus-nfsd-server"}[5m])) by (device) / sum(rate(node_disk_reads_completed_total{job="prometheus-nfsd-server"}[5m])) by (device)',
@@ -349,6 +372,7 @@ local prometheusMemory = graphPanel.new(
   'Prometheus Memory (Working Set)',
   formatY1='bytes',
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     'sum(container_memory_working_set_bytes{pod=~"support-prometheus-server-.*", namespace="support"})'
@@ -358,6 +382,7 @@ local prometheusMemory = graphPanel.new(
 local prometheusCPU = graphPanel.new(
   'Prometheus CPU',
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     'sum(rate(container_cpu_usage_seconds_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))'
@@ -368,6 +393,7 @@ local prometheusDiskSpace = graphPanel.new(
   'Prometheus Free Disk space',
   formatY1='bytes',
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     'sum(kubelet_volume_stats_available_bytes{namespace="support",persistentvolumeclaim="support-prometheus-server"})'
@@ -379,6 +405,7 @@ local prometheusNetwork = graphPanel.new(
   formatY1='bytes',
   decimals=0,
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     'sum(rate(container_network_receive_bytes_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))',
@@ -394,6 +421,8 @@ dashboard.new(
   'Cluster Information',
   tags=['jupyterhub', 'kubernetes'],
   editable=true
+).addTemplates(
+  templates
 ).addPanel(
   row.new('Cluster Stats'), {},
 ).addPanel(
