@@ -23,7 +23,7 @@ local templates = [
   ),
   template.new(
     'hub',
-    datasource= '$PROMETHEUS_DS',
+    datasource='$PROMETHEUS_DS',
     query='label_values(kube_service_labels{service="hub"}, namespace)',
     // Allow viewing dashboard for multiple combined hubs
     includeAll=true,
