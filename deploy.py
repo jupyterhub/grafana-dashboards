@@ -83,7 +83,7 @@ def layout_dashboard(dashboard):
 def deploy_dashboard(dashboard_path, folder_uid, api):
     db = build_dashboard(dashboard_path)
     db = layout_dashboard(db)
-    db = populate_template_variables(api, db)
+    # db = populate_template_variables(api, db)
 
     data = {
         'dashboard': db,
