@@ -83,7 +83,7 @@ def layout_dashboard(dashboard):
 def deploy_dashboard(dashboard_path, folder_uid, api):
     db = build_dashboard(dashboard_path)
     db = layout_dashboard(db)
-    # db = populate_template_variables(api, db)
+    db = populate_template_variables(api, db)
 
     data = {
         'dashboard': db,
@@ -126,26 +126,38 @@ def populate_template_variables(api, db):
     db = deepcopy(db)
 
     for var in db.get('templating', {}).get('list', []):
-        if var['type'] != 'query':
-            # We don't support populating datasource templates
-            continue
-        template_query = var['query']
+        datasources = api("/datasources")
+        if var["type"] == "datasource":
+            var["options"] = [{"text": ds["name"], "value": ds["name"]} for ds in datasources]
 
-        # This requires our token to have admin permissions
-        prom_id = api(f'/datasources/id/{var["datasource"]}')['id']
+            # default selection: first datasource in list
+            if datasources and not var.get("current"):
+                var["current"] = {
+                    "selected": True,
+                    "tags": [],
+                    "text": datasources[0]["name"],
+                    "value": datasources[0]["name"],
+                }
+                var["options"][0]["selected"] = True
+        elif var['type'] == 'query':
+            template_query = var['query']
 
-        labels = get_label_values(api, prom_id, template_query)
-        var["options"] = [{"text": l, "value": l} for l in labels]
-        if len(labels) == 1 and not var.get("current"):
-            # default selection: all current values
-            # logical alternative: pick just the first
-            var["current"] = {
-                "selected": True,
-                "tags": [],
-                "text": labels[0],
-                "value": labels[:1],
-            }
-            var["options"][0]["selected"] = True
+            # This requires our token to have admin permissions
+            # Default to the first datasource
+            prom_id = datasources[0]["id"]
+
+            labels = get_label_values(api, prom_id, template_query)
+            var["options"] = [{"text": l, "value": l} for l in labels]
+            if labels and not var.get("current"):
+                # default selection: all current values
+                # logical alternative: pick just the first
+                var["current"] = {
+                    "selected": True,
+                    "tags": [],
+                    "text": labels[0],
+                    "value": labels[0],
+                }
+                var["options"][0]["selected"] = True
 
     return db
 

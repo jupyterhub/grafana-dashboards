@@ -16,14 +16,14 @@ local standardDims = jupyterhub.standardDims;
 
 local templates = [
   template.datasource(
-    'PROMETHEUS_DS',
-    'prometheus',
-    'Prometheus',
+    name='PROMETHEUS_DS',
+    query='prometheus',
+    current=null,
     hide='label',
   ),
   template.new(
     'hub',
-    datasource='$PROMETHEUS_DS',
+    datasource= '$PROMETHEUS_DS',
     query='label_values(kube_service_labels{service="hub"}, namespace)',
     // Allow viewing dashboard for multiple combined hubs
     includeAll=true,

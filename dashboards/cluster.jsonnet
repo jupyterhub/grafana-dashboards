@@ -13,9 +13,9 @@ local standardDims = jupyterhub.standardDims;
 
 local templates = [
   template.datasource(
-    'PROMETHEUS_DS',
-    'prometheus',
-    'Prometheus',
+    name='PROMETHEUS_DS',
+    query='prometheus',
+    current=null,
     hide='label',
   ),
 ];

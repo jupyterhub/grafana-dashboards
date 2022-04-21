@@ -14,9 +14,9 @@ local standardDims = { w: 12, h: 12 };
 
 local templates = [
   template.datasource(
-    'PROMETHEUS_DS',
-    'prometheus',
-    'Prometheus',
+    name='PROMETHEUS_DS',
+    query='prometheus',
+    current={},
     hide='label',
   ),
 ];
