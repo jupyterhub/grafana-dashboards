@@ -1,12 +1,10 @@
 // Deploys a dashboard showing cluster-wide information
 local grafana = import '../vendor/grafonnet/grafana.libsonnet';
 local dashboard = grafana.dashboard;
-local singlestat = grafana.singlestat;
 local graphPanel = grafana.graphPanel;
 local prometheus = grafana.prometheus;
 local template = grafana.template;
 local row = grafana.row;
-local heatmapPanel = grafana.heatmapPanel;
 
 local jupyterhub = import './jupyterhub.libsonnet';
 local standardDims = jupyterhub.standardDims;
@@ -281,142 +279,6 @@ local nonRunningPods = graphPanel.new(
 ]);
 
 
-// NFS Stats
-local userNodesNFSOps = graphPanel.new(
-  'User Nodes NFS Ops',
-  decimals=0,
-  min=0,
-  datasource='$PROMETHEUS_DS'
-).addTargets([
-  prometheus.target(
-    'sum(rate(node_nfs_requests_total[5m])) by (kubernetes_node) > 0',
-    legendFormat='{{kubernetes_node}}'
-  ),
-]);
-
-local userNodesIOWait = graphPanel.new(
-  'iowait % on each node',
-  decimals=0,
-  min=0,
-  datasource='$PROMETHEUS_DS'
-).addTargets([
-  prometheus.target(
-    'sum(rate(node_nfs_requests_total[5m])) by (kubernetes_node)',
-    legendFormat='{{kubernetes_node}}'
-  ),
-]);
-
-local userNodesHighNFSOps = graphPanel.new(
-  'NFS Operation Types on user nodes',
-  decimals=0,
-  min=0,
-  datasource='$PROMETHEUS_DS'
-).addTargets([
-  prometheus.target(
-    'sum(rate(node_nfs_requests_total[5m])) by (method) > 0',
-    legendFormat='{{method}}'
-  ),
-]);
-
-local nfsServerCPU = graphPanel.new(
-  'NFS Server CPU',
-  min=0,
-  datasource='$PROMETHEUS_DS'
-).addTargets([
-  prometheus.target(
-    'avg(rate(node_cpu_seconds_total{job="prometheus-nfsd-server", mode!="idle"}[2m])) by (mode)',
-    legendFormat='{{mode}}'
-  ),
-]);
-
-local nfsServerIOPS = graphPanel.new(
-  'NFS Server Disk ops',
-  decimals=0,
-  min=0,
-  datasource='$PROMETHEUS_DS'
-).addTargets([
-  prometheus.target(
-    'sum(rate(node_nfsd_disk_bytes_read_total[5m]))',
-    legendFormat='Read'
-  ),
-  prometheus.target(
-    'sum(rate(node_nfsd_disk_bytes_written_total[5m]))',
-    legendFormat='Write'
-  ),
-]);
-
-local nfsServerWriteLatency = graphPanel.new(
-  'NFS Server disk write latency',
-  min=0,
-  datasource='$PROMETHEUS_DS'
-).addTargets([
-  prometheus.target(
-    'sum(rate(node_disk_write_time_seconds_total{job="prometheus-nfsd-server"}[5m])) by (device) / sum(rate(node_disk_writes_completed_total{job="prometheus-nfsd-server"}[5m])) by (device)',
-    legendFormat='{{device}}'
-  ),
-]);
-
-local nfsServerReadLatency = graphPanel.new(
-  'NFS Server disk read latency',
-  min=0,
-  datasource='$PROMETHEUS_DS'
-).addTargets([
-  prometheus.target(
-    'sum(rate(node_disk_read_time_seconds_total{job="prometheus-nfsd-server"}[5m])) by (device) / sum(rate(node_disk_reads_completed_total{job="prometheus-nfsd-server"}[5m])) by (device)',
-    legendFormat='{{device}}'
-  ),
-]);
-
-// Support Metrics
-local prometheusMemory = graphPanel.new(
-  'Prometheus Memory (Working Set)',
-  formatY1='bytes',
-  min=0,
-  datasource='$PROMETHEUS_DS'
-).addTargets([
-  prometheus.target(
-    'sum(container_memory_working_set_bytes{pod=~"support-prometheus-server-.*", namespace="support"})'
-  ),
-]);
-
-local prometheusCPU = graphPanel.new(
-  'Prometheus CPU',
-  min=0,
-  datasource='$PROMETHEUS_DS'
-).addTargets([
-  prometheus.target(
-    'sum(rate(container_cpu_usage_seconds_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))'
-  ),
-]);
-
-local prometheusDiskSpace = graphPanel.new(
-  'Prometheus Free Disk space',
-  formatY1='bytes',
-  min=0,
-  datasource='$PROMETHEUS_DS'
-).addTargets([
-  prometheus.target(
-    'sum(kubelet_volume_stats_available_bytes{namespace="support",persistentvolumeclaim="support-prometheus-server"})'
-  ),
-]);
-
-local prometheusNetwork = graphPanel.new(
-  'Prometheus Network Usage',
-  formatY1='bytes',
-  decimals=0,
-  min=0,
-  datasource='$PROMETHEUS_DS'
-).addTargets([
-  prometheus.target(
-    'sum(rate(container_network_receive_bytes_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))',
-    legendFormat='receive'
-  ),
-  prometheus.target(
-    'sum(rate(container_network_send_bytes_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))',
-    legendFormat='send'
-  ),
-]);
-
 dashboard.new(
   'Cluster Information',
   tags=['jupyterhub', 'kubernetes'],
@@ -446,32 +308,4 @@ dashboard.new(
   nodeCPUCommit, {},
 ).addPanel(
   nodeMemoryCommit, {},
-
-).addPanel(
-  row.new('NFS diagnostics'), {},
-).addPanel(
-  userNodesNFSOps, {},
-).addPanel(
-  userNodesIOWait, {},
-).addPanel(
-  userNodesHighNFSOps, {},
-).addPanel(
-  nfsServerCPU, {},
-).addPanel(
-  nfsServerIOPS, {},
-).addPanel(
-  nfsServerWriteLatency, {},
-).addPanel(
-  nfsServerReadLatency, {},
-
-).addPanel(
-  row.new('Support system diagnostics'), {},
-).addPanel(
-  prometheusCPU, {},
-).addPanel(
-  prometheusMemory, {},
-).addPanel(
-  prometheusDiskSpace, {},
-).addPanel(
-  prometheusNetwork, {},
 )
