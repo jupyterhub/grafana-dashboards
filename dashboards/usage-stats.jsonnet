@@ -151,25 +151,25 @@ local pvcStats = tablePanel.new(
   'PVCs Stats',
   datasource='$PROMETHEUS_DS',
   styles=[
-      {
-        alias: 'Used',
-        pattern: 'Value #A',
-        unit: 'bytes',
-        type: 'number',
-      },
-      {
-        alias: 'Capacity',
-        pattern: 'Value #B',
-        unit: 'bytes',
-        type: 'number',
-      },
-      {
-        alias: 'Free',
-        pattern: 'Value #C',
-        type: 'number',
-        unit: 'bytes',
-      },
-    ],
+    {
+      alias: 'Used',
+      pattern: 'Value #A',
+      unit: 'bytes',
+      type: 'number',
+    },
+    {
+      alias: 'Capacity',
+      pattern: 'Value #B',
+      unit: 'bytes',
+      type: 'number',
+    },
+    {
+      alias: 'Free',
+      pattern: 'Value #C',
+      type: 'number',
+      unit: 'bytes',
+    },
+  ],
 ).addTargets([
   prometheus.target(
     'max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_used_bytes)',
