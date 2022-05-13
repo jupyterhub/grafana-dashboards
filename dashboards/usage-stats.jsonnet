@@ -143,7 +143,7 @@ local pvcPercentageUsed = graphPanel.new(
       )
       * 100
     |||,
-    legendFormat='{{persistentvolumeclaim}}',
+    legendFormat='{{namespace}} ({{persistentvolumeclaim}})',
     instant=false,
   ),
 ]);
