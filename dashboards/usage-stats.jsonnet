@@ -1,5 +1,5 @@
 #!/usr/bin/env jsonnet -J vendor
-// Deploys one dashboard - "JupyterHub dashboard",
+// Deploys one dashboard - 'JupyterHub dashboard',
 // with useful stats about usage & diagnostics.
 local grafana = import 'grafonnet/grafana.libsonnet';
 local dashboard = grafana.dashboard;
@@ -36,9 +36,9 @@ local monthlyActiveUsers = graphPanel.new(
         sum(
           min_over_time(
             kube_pod_labels{
-              label_app="jupyterhub",
-              label_component="singleuser-server",
-              label_hub_jupyter_org_username!~"(service|perf|hubtraf)-",
+              label_app='jupyterhub',
+              label_component='singleuser-server',
+              label_hub_jupyter_org_username!~'(service|perf|hubtraf)-',
             }[30d]
           )
         ) by (pod)
@@ -64,9 +64,9 @@ local dailyActiveUsers = graphPanel.new(
         sum(
           min_over_time(
             kube_pod_labels{
-              label_app="jupyterhub",
-              label_component="singleuser-server",
-              label_hub_jupyter_org_username!~"(service|perf|hubtraf)-",
+              label_app='jupyterhub',
+              label_component='singleuser-server',
+              label_hub_jupyter_org_username!~'(service|perf|hubtraf)-',
             }[1d]
           )
         ) by (pod)
@@ -91,9 +91,9 @@ local userDistribution = graphPanel.new(
       sum(
         min_over_time(
           kube_pod_labels{
-            label_app="jupyterhub",
-            label_component="singleuser-server",
-            label_hub_jupyter_org_username!~"(service|perf|hubtraf)-",
+            label_app='jupyterhub',
+            label_component='singleuser-server',
+            label_hub_jupyter_org_username!~'(service|perf|hubtraf)-',
           }[90d]
         )
       ) by (pod)
@@ -113,8 +113,8 @@ local currentRunningUsers = graphPanel.new(
   prometheus.target(
     |||
       sum(
-        kube_pod_status_phase{phase="Running"}
-        * on(pod, namespace) kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server"}
+        kube_pod_status_phase{phase='Running'}
+        * on(pod, namespace) kube_pod_labels{label_app='jupyterhub', label_component='singleuser-server'}
       )
     |||,
     legendFormat='Users'
@@ -152,22 +152,22 @@ local pvcStats = tablePanel.new(
   datasource='$PROMETHEUS_DS',
   styles=[
       {
-        alias: "Used",
-        pattern: "Value #A",
-        unit: "bytes",
-        type: "number",
+        alias: 'Used',
+        pattern: 'Value #A',
+        unit: 'bytes',
+        type: 'number',
       },
       {
-        alias: "Capacity",
-        pattern: "Value #B",
-        unit: "bytes",
-        type: "number",
+        alias: 'Capacity',
+        pattern: 'Value #B',
+        unit: 'bytes',
+        type: 'number',
       },
       {
-        alias: "Free",
-        pattern: "Value #C",
-        type: "number",
-        unit: "bytes",
+        alias: 'Free',
+        pattern: 'Value #C',
+        type: 'number',
+        unit: 'bytes',
       },
     ],
 ).addTargets([
@@ -183,7 +183,7 @@ local pvcStats = tablePanel.new(
     instant=true,
   ),
   prometheus.target(
-    "max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_available_bytes)",
+    'max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_available_bytes)',
     format='table',
     instant=true,
   ),
