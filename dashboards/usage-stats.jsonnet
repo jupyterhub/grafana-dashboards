@@ -5,6 +5,7 @@ local grafana = import 'grafonnet/grafana.libsonnet';
 local dashboard = grafana.dashboard;
 local singlestat = grafana.singlestat;
 local graphPanel = grafana.graphPanel;
+local tablePanel = grafana.tablePanel;
 local prometheus = grafana.prometheus;
 local template = grafana.template;
 local row = grafana.row;
@@ -120,6 +121,86 @@ local currentRunningUsers = graphPanel.new(
   ),
 ]);
 
+// Disk Usage stats
+local pvcPercentageUsed = graphPanel.new(
+  'Running PVCs Percentage Used',
+  bars=false,
+  lines=true,
+  min=0,
+  time_from='now-30d',
+  datasource='$PROMETHEUS_DS'
+).addTargets([
+  prometheus.target(
+    |||
+      (
+        max by (persistentvolumeclaim,namespace)
+          (kubelet_volume_stats_used_bytes)
+        )
+      /
+      (
+        max by (persistentvolumeclaim,namespace)
+          (kubelet_volume_stats_capacity_bytes)
+      )
+      * 100
+    |||,
+    legendFormat='{{persistentvolumeclaim}}',
+    instant=false,
+  ),
+]);
+
+local pvcStats = tablePanel.new(
+  'PVCs Stats',
+  datasource='$PROMETHEUS_DS',
+  styles=[
+      {
+        "alias": "Used",
+        "pattern": "Value #A",
+        "unit": "bytes",
+        "type": "number",
+      },
+      {
+        "alias": "Capacity",
+        "pattern": "Value #B",
+        "unit": "bytes",
+        "type": "number",
+      },
+      {
+        "alias": "Free",
+        "color": "green",
+        "pattern": "Value #C",
+        "type": "number",
+        "unit": "bytes",
+      },
+    ],
+).addTargets([
+  prometheus.target(
+    "max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_used_bytes)",
+    format="table",
+    instant=true,
+    intervalFactor=1,
+  ),
+  prometheus.target(
+    "max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_capacity_bytes)",
+    format="table",
+    instant=true,
+  ),
+  prometheus.target(
+    "max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_available_bytes)",
+    format="table",
+    instant=true,
+  ),
+]);
+
+local userRate = graphPanel.new(
+  'Daily Use Rate (over last 24h)',
+  datasource='$PROMETHEUS_DS'
+).addTargets([
+  prometheus.target(
+    'rate(kubelet_volume_stats_used_bytes[1d])',
+    legendFormat='{{namespace}} ({{persistentvolumeclaim}})',
+  ),
+]);
+
 dashboard.new(
   'Usage Dashboard',
   uid='usage-dashboard',
@@ -129,8 +210,9 @@ dashboard.new(
 ).addTemplates(
   templates
 )
-
 .addPanel(
+  row.new('User stats'), {},
+).addPanel(
   monthlyActiveUsers, {},
 ).addPanel(
   dailyActiveUsers, {},
@@ -138,4 +220,12 @@ dashboard.new(
   currentRunningUsers, {},
   // FIXME: This graph does not seem to make sense yet
   // ).addPanel(userDistribution, {}
+).addPanel(
+  row.new('Storage stats'), {},
+).addPanel(
+  pvcPercentageUsed, {}
+).addPanel(
+  userRate, {}
+).addPanel(
+  pvcStats, {}
 )
