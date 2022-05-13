@@ -127,7 +127,6 @@ local pvcPercentageUsed = graphPanel.new(
   bars=false,
   lines=true,
   min=0,
-  time_from='now-30d',
   datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
