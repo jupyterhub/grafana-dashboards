@@ -48,16 +48,16 @@ local memoryUsageUserPods = barGaugePanel.new(
         namespace=~"$hub"
       }
       * on (namespace, pod, hub_jupyter_org_username) group_left()
-      max(
+      sum(
         container_memory_working_set_bytes{
           namespace=~"$hub",
           container="notebook",
           hub_jupyter_org_node_purpose="user",
           name!="",
         }
-      ) by (namespace, pod, label_hub_jupyter_org_username)
+      ) by (namespace, pod)
     |||,
-    legendFormat='{{label_hub_jupyter_org_username}}',
+    legendFormat='{{namespace}}-{{label_hub_jupyter_org_username}}',
   ),
 ]);
 
