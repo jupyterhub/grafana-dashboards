@@ -29,6 +29,16 @@ local memoryUsageUserPods = barGaugePanel.new(
   'User pod memory usage',
   datasource='$PROMETHEUS_DS',
   unit='bytes',
+  thresholds=[
+    {
+      "value": 0,
+      "color": "green"
+    },
+    {
+      "value": 600,
+      "color": "yellow"
+    }
+  ]
 ).addTargets([
   prometheus.target(
     |||
