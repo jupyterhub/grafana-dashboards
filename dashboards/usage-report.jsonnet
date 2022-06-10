@@ -42,19 +42,18 @@ local memoryUsageUserPods = barGaugePanel.new(
 ).addTargets([
   prometheus.target(
     |||
+      kube_pod_labels{
+        label_app="jupyterhub",
+        label_component="singleuser-server",
+        namespace=~"$hub"
+      }
+      * on (namespace, pod, hub_jupyter_org_username) group_left()
       max(
-        kube_pod_labels{
-          label_app="jupyterhub",
-          label_component="singleuser-server",
-          namespace=~"$hub"
-        }
-        * on (namespace, pod, hub_jupyter_org_username) group_left()
         container_memory_working_set_bytes{
           namespace=~"$hub",
           container="notebook",
           hub_jupyter_org_node_purpose="user",
           name!="",
-          container!="",
         }
       ) by (namespace, pod, label_hub_jupyter_org_username)
     |||,
