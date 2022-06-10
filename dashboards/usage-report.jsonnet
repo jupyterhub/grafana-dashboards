@@ -32,11 +32,11 @@ local memoryUsageUserPods = barGaugePanel.new(
   thresholds=[
     {
       value: 0,
-      color: 'green'
+      color: 'green',
     },
     {
       value: 600,
-      color: 'yellow'
+      color: 'yellow',
     },
   ]
 ).addTargets([
@@ -52,7 +52,8 @@ local memoryUsageUserPods = barGaugePanel.new(
         container_memory_working_set_bytes{
           namespace=~"$hub",
           container="notebook",
-          hub_jupyter_org_node_purpose="user"
+          hub_jupyter_org_node_purpose="user",
+          name!=""
         }
       ) by (namespace, pod, label_hub_jupyter_org_username)
     |||,
