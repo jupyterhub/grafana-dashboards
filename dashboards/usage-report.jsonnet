@@ -31,13 +31,13 @@ local memoryUsageUserPods = barGaugePanel.new(
   unit='bytes',
   thresholds=[
     {
-      "value": 0,
-      "color": "green"
+      value: 0,
+      color: 'green'
     },
     {
-      "value": 600,
-      "color": "yellow"
-    }
+      value: 600,
+      color: 'yellow'
+    },
   ]
 ).addTargets([
   prometheus.target(
