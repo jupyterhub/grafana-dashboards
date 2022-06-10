@@ -53,7 +53,8 @@ local memoryUsageUserPods = barGaugePanel.new(
           namespace=~"$hub",
           container="notebook",
           hub_jupyter_org_node_purpose="user",
-          name!=""
+          name!="",
+          container!="",
         }
       ) by (namespace, pod, label_hub_jupyter_org_username)
     |||,
@@ -68,8 +69,12 @@ dashboard.new(
   editable=true,
 ).addTemplates(
   templates
-)
-
-.addPanel(
-  memoryUsageUserPods, {},
+).addPanel(
+  memoryUsageUserPods,
+  gridPos={
+    x: 0,
+    y: 0,
+    w: 25,
+    h: 10,
+  },
 )
