@@ -47,7 +47,7 @@ local memoryUsageUserPods = barGaugePanel.new(
         label_component="singleuser-server",
         namespace=~"$hub"
       }
-      * on (namespace, pod, hub_jupyter_org_username) group_left()
+      * on (namespace, pod) group_left()
       sum(
         container_memory_working_set_bytes{
           namespace=~"$hub",
