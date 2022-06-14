@@ -36,6 +36,7 @@ local memoryUsageUserPods = barGaugePanel.new(
     },
   ]
 ).addTargets([
+  // Computes sum of pod memory requests, grouped by username, for notebook pods
   prometheus.target(
     |||
       kube_pod_labels{
@@ -74,6 +75,8 @@ local memoryUsageDaskWorkerPods = barGaugePanel.new(
     },
   ]
 ).addTargets([
+  // Computes sum of pod memory requests, grouped by username, and dask-gateway cluster
+  // for dask-gateway worker pods
   prometheus.target(
     |||
       sum(
@@ -112,6 +115,8 @@ local memoryUsageDaskSchedulerPods = barGaugePanel.new(
     },
   ]
 ).addTargets([
+  // Computes sum of pod memory requests, grouped by username, and dask-gateway cluster
+  // for dask-gateway scheduler pods
   prometheus.target(
     |||
       sum(
