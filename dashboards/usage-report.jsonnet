@@ -58,8 +58,8 @@ local memoryUsageUserPods = barGaugePanel.new(
   ),
 ]);
 
-# Dask-related
-# dask-worker
+// Dask-gateway related dashboards
+// dask-worker
 local memoryUsageDaskWorkerPods = barGaugePanel.new(
   'Dask-gateway worker pod memory usage',
   datasource='$PROMETHEUS_DS',
@@ -99,7 +99,7 @@ local memoryUsageDaskWorkerPods = barGaugePanel.new(
   ),
 ]);
 
-# dask-scheduler
+// dask-scheduler
 local memoryUsageDaskSchedulerPods = barGaugePanel.new(
   'Dask-gateway scheduler pod memory usage',
   datasource='$PROMETHEUS_DS',
