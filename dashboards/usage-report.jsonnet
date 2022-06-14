@@ -4,10 +4,6 @@ local prometheus = grafana.prometheus;
 local template = grafana.template;
 local barGaugePanel = grafana.barGaugePanel;
 
-local jupyterhub = import 'jupyterhub.libsonnet';
-
-local standardDims = { w: 30, h: 30 };
-
 local templates = [
   template.datasource(
     name='PROMETHEUS_DS',
@@ -57,7 +53,45 @@ local memoryUsageUserPods = barGaugePanel.new(
         }
       ) by (namespace, pod)
     |||,
-    legendFormat='{{namespace}}-{{label_hub_jupyter_org_username}}',
+    legendFormat='{{label_hub_jupyter_org_username}} ({{namespace}})',
+  ),
+]);
+
+# Dask-related
+local memoryUsageDaskWorkerPods = barGaugePanel.new(
+  'Dask-gateway worker pod memory usage',
+  datasource='$PROMETHEUS_DS',
+  unit='bytes',
+  thresholds=[
+    {
+      value: 0,
+      color: 'green',
+    },
+    {
+      value: 600,
+      color: 'yellow',
+    },
+  ]
+).addTargets([
+  prometheus.target(
+    |||
+      sum(
+        kube_pod_labels{
+          namespace=~"$hub",
+          label_app_kubernetes_io_component="dask-worker",
+        }
+        * on (namespace, pod) group_left()
+        sum(
+          container_memory_working_set_bytes{
+            namespace=~"$hub",
+            container="dask-worker",
+            k8s_dask_org_node_purpose="worker",
+            name!="",
+          }
+        ) by (namespace, pod)
+      ) by (label_hub_jupyter_org_username, label_gateway_dask_org_cluster)
+    |||,
+    legendFormat='{{label_hub_jupyter_org_username}}-{{label_gateway_dask_org_cluster}}',
   ),
 ]);
 
@@ -73,6 +107,14 @@ dashboard.new(
   gridPos={
     x: 0,
     y: 0,
+    w: 25,
+    h: 10,
+  },
+).addPanel(
+  memoryUsageDaskWorkerPods,
+  gridPos={
+    x: 0,
+    y: 10,
     w: 25,
     h: 10,
   },
