@@ -58,6 +58,7 @@ local memoryUsageUserPods = barGaugePanel.new(
 ]);
 
 # Dask-related
+# dask-worker
 local memoryUsageDaskWorkerPods = barGaugePanel.new(
   'Dask-gateway worker pod memory usage',
   datasource='$PROMETHEUS_DS',
@@ -95,10 +96,48 @@ local memoryUsageDaskWorkerPods = barGaugePanel.new(
   ),
 ]);
 
+# dask-scheduler
+local memoryUsageDaskSchedulerPods = barGaugePanel.new(
+  'Dask-gateway scheduler pod memory usage',
+  datasource='$PROMETHEUS_DS',
+  unit='bytes',
+  thresholds=[
+    {
+      value: 0,
+      color: 'green',
+    },
+    {
+      value: 600,
+      color: 'yellow',
+    },
+  ]
+).addTargets([
+  prometheus.target(
+    |||
+      sum(
+        kube_pod_labels{
+          namespace=~"$hub",
+          label_app_kubernetes_io_component="dask-scheduler",
+        }
+        * on (namespace, pod) group_left()
+        sum(
+          container_memory_working_set_bytes{
+            namespace=~"$hub",
+            container="dask-scheduler",
+            k8s_dask_org_node_purpose="scheduler",
+            name!="",
+          }
+        ) by (namespace, pod)
+      ) by (label_hub_jupyter_org_username, label_gateway_dask_org_cluster)
+    |||,
+    legendFormat='{{label_hub_jupyter_org_username}}-{{label_gateway_dask_org_cluster}}',
+  ),
+]);
+
 dashboard.new(
   'Usage Report',
   uid='usage-report',
-  tags=['jupyterhub'],
+  tags=['jupyterhub', 'dask'],
   editable=true,
 ).addTemplates(
   templates
@@ -115,6 +154,14 @@ dashboard.new(
   gridPos={
     x: 0,
     y: 10,
+    w: 25,
+    h: 10,
+  },
+).addPanel(
+  memoryUsageDaskSchedulerPods,
+  gridPos={
+    x: 0,
+    y: 20,
     w: 25,
     h: 10,
   },
