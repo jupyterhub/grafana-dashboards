@@ -127,6 +127,42 @@ local memoryUsageDaskSchedulerPods = barGaugePanel.new(
   ),
 ]);
 
+// GPU memory usage dashboard
+local memoryUsageGPUPods = barGaugePanel.new(
+  'GPU pod memory usage',
+  datasource='$PROMETHEUS_DS',
+  unit='bytes',
+  thresholds=[
+    {
+      value: 0,
+      color: 'green',
+    },
+  ]
+).addTargets([
+  // Computes sum of pod memory requests, grouped by username for notebook gpu pods
+  prometheus.target(
+    |||
+      kube_pod_labels{
+        label_app="jupyterhub",
+        label_component="singleuser-server",
+        namespace=~"$hub"
+      }
+      * on (namespace, pod) group_left()
+      sum(
+        container_memory_working_set_bytes{
+          namespace=~"$hub",
+          container="notebook",
+          hub_jupyter_org_node_purpose="user",
+          cloud_google_com_gke_nodepool="nb-gpu-k80",
+          cloud_google_com_gke_accelerator="nvidia-tesla-k80",
+          name!="",
+        }
+      ) by (namespace, pod)
+    |||,
+    legendFormat='{{label_hub_jupyter_org_username}}-{{label_gateway_dask_org_cluster}}',
+  ),
+]);
+
 dashboard.new(
   'Usage Report',
   uid='usage-report',
@@ -155,6 +191,14 @@ dashboard.new(
   gridPos={
     x: 0,
     y: 20,
+    w: 25,
+    h: 10,
+  },
+).addPanel(
+  memoryUsageGPUPods,
+  gridPos={
+    x: 0,
+    y: 30,
     w: 25,
     h: 10,
   },
