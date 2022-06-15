@@ -30,10 +30,6 @@ local memoryUsageUserPods = barGaugePanel.new(
       value: 0,
       color: 'green',
     },
-    {
-      value: 600,
-      color: 'yellow',
-    },
   ]
 ).addTargets([
   // Computes sum of pod memory requests, grouped by username, for notebook pods
@@ -68,10 +64,6 @@ local memoryUsageDaskWorkerPods = barGaugePanel.new(
     {
       value: 0,
       color: 'green',
-    },
-    {
-      value: 600,
-      color: 'yellow',
     },
   ]
 ).addTargets([
@@ -108,10 +100,6 @@ local memoryUsageDaskSchedulerPods = barGaugePanel.new(
     {
       value: 0,
       color: 'green',
-    },
-    {
-      value: 600,
-      color: 'yellow',
     },
   ]
 ).addTargets([
