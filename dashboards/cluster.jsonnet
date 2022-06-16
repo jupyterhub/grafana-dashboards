@@ -225,12 +225,12 @@ local nodeMemoryUtil = graphPanel.new(
           node_memory_MemFree_bytes + # Unused bytes
           node_memory_Cached_bytes + # Shared memory + temporary disk cache
           node_memory_Buffers_bytes # Very temporary buffer memory cache for disk i/o
-        ) by (kubernetes_node)
+        ) by (node)
         /
-        sum(node_memory_MemTotal_bytes) by (kubernetes_node)
+        sum(node_memory_MemTotal_bytes) by (node)
       )
     |||,
-    legendFormat='{{kubernetes_node}}'
+    legendFormat='{{node}}'
   ),
 ]);
 
@@ -247,15 +247,15 @@ local nodeCPUUtil = graphPanel.new(
 ).addTargets([
   prometheus.target(
     |||
-      sum(rate(node_cpu_seconds_total{mode!="idle"}[5m])) by (kubernetes_node)
+      sum(rate(node_cpu_seconds_total{mode!="idle"}[5m])) by (node)
       /
       sum(
-        # Rename 'node' label to 'kubernetes_node', since kube-state-metrics to match metric from
+        # Rename 'node' label to 'node', since kube-state-metrics to match metric from
         # kube-state-metrics to prometheus node exporter
-        label_replace(kube_node_status_capacity_cpu_cores, "kubernetes_node", "$1", "node", "(.*)")
-      ) by (kubernetes_node)
+        label_replace(kube_node_status_capacity_cpu_cores, "node", "$1", "node", "(.*)")
+      ) by (node)
     |||,
-    legendFormat='{{kubernetes_node}}'
+    legendFormat='{{node}}'
   ),
 ]);
 
