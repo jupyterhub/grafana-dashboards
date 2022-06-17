@@ -72,7 +72,7 @@ local clusterMemoryCommitment = graphPanel.new(
       sum(
         (
           # Get individual container memory requests
-          kube_pod_container_resource_requests_memory_bytes
+          kube_pod_container_resource_requests{resource="memory"}
           # Add node pool name as label
           * on(node) group_left(label_cloud_google_com_gke_nodepool) kube_node_labels{}
         )
@@ -85,7 +85,7 @@ local clusterMemoryCommitment = graphPanel.new(
       /
       sum(
         # Total allocatable memory on a node
-        kube_node_status_allocatable_memory_bytes
+        kube_node_status_allocatable{resource="memory"}
         # Add nodepool name as label
         * on(node) group_left(label_cloud_google_com_gke_nodepool) kube_node_labels{}
       ) by (label_cloud_google_com_gke_nodepool)
@@ -114,7 +114,7 @@ local clusterCPUCommitment = graphPanel.new(
       sum(
         (
           # Get individual container memory requests
-          kube_pod_container_resource_requests_cpu_cores
+          kube_pod_container_resource_requests{resource="cpu"}
           # Add node pool name as label
           * on(node) group_left(label_cloud_google_com_gke_nodepool) kube_node_labels{}
         )
@@ -127,7 +127,7 @@ local clusterCPUCommitment = graphPanel.new(
       /
       sum(
         # Total allocatable memory on a node
-        kube_node_status_allocatable_cpu_cores
+        kube_node_status_allocatable{resource="cpu"}
         # Add nodepool name as label
         * on(node) group_left(label_cloud_google_com_gke_nodepool) kube_node_labels{}
       ) by (label_cloud_google_com_gke_nodepool)
@@ -154,7 +154,7 @@ local nodeCPUCommit = graphPanel.new(
     |||
       sum(
         # Get individual container memory limits
-        kube_pod_container_resource_requests_cpu_cores
+        kube_pod_container_resource_requests{resource="cpu"}
         # Ignore containers from pods that aren't currently running or scheduled
         # FIXME: This isn't the best metric here, evaluate what is.
         and on (pod) kube_pod_status_scheduled{condition='true'}
@@ -164,7 +164,7 @@ local nodeCPUCommit = graphPanel.new(
       /
       sum(
         # Get individual container memory requests
-        kube_node_status_allocatable_cpu_cores
+        kube_node_status_allocatable{resource="cpu"}
       ) by (node)
     |||,
     legendFormat='{{node}}'
@@ -188,7 +188,7 @@ local nodeMemoryCommit = graphPanel.new(
     |||
       sum(
         # Get individual container memory limits
-        kube_pod_container_resource_requests_memory_bytes
+        kube_pod_container_resource_requests{resource="memory"}
         # Ignore containers from pods that aren't currently running or scheduled
         # FIXME: This isn't the best metric here, evaluate what is.
         and on (pod) kube_pod_status_scheduled{condition='true'}
@@ -198,7 +198,7 @@ local nodeMemoryCommit = graphPanel.new(
       /
       sum(
         # Get individual container memory requests
-        kube_node_status_allocatable_memory_bytes
+        kube_node_status_allocatable{resource="memory"}
       ) by (node)
     |||,
     legendFormat='{{node}}'
@@ -249,13 +249,9 @@ local nodeCPUUtil = graphPanel.new(
     |||
       sum(rate(node_cpu_seconds_total{mode!="idle"}[5m])) by (node)
       /
-      sum(
-        # Rename 'node' label to 'node', since kube-state-metrics to match metric from
-        # kube-state-metrics to prometheus node exporter
-        label_replace(kube_node_status_capacity_cpu_cores, "node", "$1", "node", "(.*)")
-      ) by (node)
+      sum(kube_node_status_capacity{resource="cpu"}) by (node)
     |||,
-    legendFormat='{{node}}'
+    legendFormat='{{ node }}'
   ),
 ]);
 
