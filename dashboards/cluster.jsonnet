@@ -29,12 +29,15 @@ local userNodes = graphPanel.new(
     |||
       # sum up all nodes by nodepool
       sum(
-        # Get a list of all the nodes and which pool they are in. Group
-        # aggregator is used because we only expect each node to exist
-        # in a single pool. Unfortunately, if a node pool is rotated it may
-        # appear in the logs that multiples of the same node are running
-        # in the same pool.  This prevents that edge case from messing up
-        # the graph.
+        # kube_pod_labels comes from
+        # https://github.com/kubernetes/kube-state-metrics, and there is a particular
+        # label (kubernetes_node) that lists the node on which the kube-state-metrics pod
+        # s running! So that's totally irrelevant to these queries, but when a nodepool
+        # is rotated it caused there to exist two metrics with the same node value (which
+        # we care about) but different kubernetes_node values (because kube-state-metrics
+        # was running in a different node, even though we don't care about that). This
+        # group really just drops all labels except the two we care about to
+        # avoid messing things up.
         group(
           kube_node_labels
         ) by (node, label_cloud_google_com_gke_nodepool)
@@ -66,12 +69,6 @@ local userPods = graphPanel.new(
         group(
           kube_pod_status_phase{phase="Running"}
         ) by (pod)
-        # Below we retrieve all user pods in each namespace.  Again, we're using
-        # the group aggregator here because users should only be running
-        # one pod per namespace at a time.  Unfortunately, if a node
-        # pool is rotated it may appear in the logs that multiple pods
-        # from the same user are running in the same namespace.  This
-        # prevents that edge case from messing up the graph.
         * on (pod) group_right() group(
           kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~".*"}
         ) by (namespace, pod)
