@@ -15,9 +15,15 @@ local jupyterhub = import 'jupyterhub.libsonnet';
 local standardDims = jupyterhub.standardDims;
 
 local templates = [
+  template.datasource(
+    name='PROMETHEUS_DS',
+    query='prometheus',
+    current=null,
+    hide='label',
+  ),
   template.new(
     'hub',
-    datasource='prometheus',
+    datasource='$PROMETHEUS_DS',
     query='label_values(kube_service_labels{service="hub"}, namespace)',
     // Allow viewing dashboard for multiple combined hubs
     includeAll=true,
@@ -32,6 +38,7 @@ local currentRunningUsers = graphPanel.new(
   decimals=0,
   stack=true,
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -53,6 +60,7 @@ local userMemoryDistribution = heatmapPanel.new(
   yAxis_format='bytes',
   yAxis_min=0,
   color_colorScheme='interpolateViridis',
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -76,6 +84,7 @@ local userCPUDistribution = heatmapPanel.new(
   yAxis_format='percentunit',
   yAxis_min=0,
   color_colorScheme='interpolateViridis',
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -99,6 +108,7 @@ local userAgeDistribution = heatmapPanel.new(
   yAxis_format='s',
   yAxis_min=0,
   color_colorScheme='interpolateViridis',
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -120,6 +130,7 @@ local hubResponseLatency = graphPanel.new(
   'Hub response latency',
   formatY1='s',
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     'histogram_quantile(0.99, sum(rate(jupyterhub_request_duration_seconds_bucket{app="jupyterhub", kubernetes_namespace=~"$hub"}[5m])) by (le))',
@@ -143,6 +154,7 @@ local serverStartTimes = graphPanel.new(
   min=0,
   points=true,
   pointradius=2,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     // Metrics from hub seems to have `kubernetes_namespace` rather than just `namespace`
@@ -159,6 +171,7 @@ local usersPerNode = graphPanel.new(
   'Users per node',
   decimals=0,
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -184,6 +197,7 @@ local nonRunningPods = graphPanel.new(
   decimalsY1=0,
   min=0,
   stack=true,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -216,6 +230,7 @@ local oldUserpods = tablePanel.new(
     col: 2,
     desc: true,
   },
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -249,6 +264,7 @@ local highCPUUserPods = tablePanel.new(
     col: 2,
     desc: true,
   },
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -282,6 +298,7 @@ local highMemoryUsagePods = tablePanel.new(
     col: 2,
     desc: true,
   },
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||

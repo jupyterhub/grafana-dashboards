@@ -12,11 +12,21 @@ local heatmapPanel = grafana.heatmapPanel;
 
 local standardDims = { w: 12, h: 12 };
 
+local templates = [
+  template.datasource(
+    name='PROMETHEUS_DS',
+    query='prometheus',
+    current={},
+    hide='label',
+  ),
+];
+
 local monthlyActiveUsers = graphPanel.new(
   'Active users (over 30 days)',
   bars=true,
   lines=false,
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     // Removes any pods caused by stress testing
@@ -44,6 +54,7 @@ local dailyActiveUsers = graphPanel.new(
   bars=true,
   lines=false,
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     // count singleuser-server pods
@@ -71,6 +82,7 @@ local userDistribution = graphPanel.new(
   lines=false,
   min=0,
   x_axis_mode='histogram',
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     // count singleuser-server pods
@@ -95,6 +107,7 @@ local currentRunningUsers = graphPanel.new(
   legend_max=true,
   legend_current=true,
   min=0,
+  datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
     |||
@@ -112,8 +125,12 @@ dashboard.new(
   uid='usage-dashboard',
   tags=['jupyterhub'],
   editable=true,
-  time_from='now-30d'
-).addPanel(
+  time_from='now-30d',
+).addTemplates(
+  templates
+)
+
+.addPanel(
   monthlyActiveUsers, {},
 ).addPanel(
   dailyActiveUsers, {},
