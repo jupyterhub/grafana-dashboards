@@ -163,7 +163,7 @@ local clusterCPUCommitment = graphPanel.new(
       ) by (label_cloud_google_com_gke_nodepool)
       /
       sum(
-        # Total allocatable memory on a node
+        # Total allocatable CPU on a node
         kube_node_status_allocatable{resource="cpu"}
         # Add nodepool name as label
         * on(node) group_left(label_cloud_google_com_gke_nodepool)
@@ -195,7 +195,7 @@ local nodeCPUCommit = graphPanel.new(
   prometheus.target(
     |||
       sum(
-        # Get individual container memory limits
+        # Get individual container CPU limits
         kube_pod_container_resource_requests{resource="cpu"}
         # Ignore containers from pods that aren't currently running or scheduled
         # FIXME: This isn't the best metric here, evaluate what is.
@@ -205,7 +205,7 @@ local nodeCPUCommit = graphPanel.new(
       ) by (node)
       /
       sum(
-        # Get individual container memory requests
+        # Get individual container CPU requests
         kube_node_status_allocatable{resource="cpu"}
       ) by (node)
     |||,
