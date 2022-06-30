@@ -40,7 +40,7 @@ via code. This can then be deployed on any Grafana instance!
       kube-state-metrics:
          metricLabelsAllowlist:
             # to select jupyterhub component pods and get the hub usernames
-            - pods=[app,component,hub_jupyter_org_username]
+            - pods=[app,component,hub.jupyter.org/username]
             # allowing all labels is probably fine for nodes, since they don't churn much, unlike pods
             - nodes[*]
    ```
