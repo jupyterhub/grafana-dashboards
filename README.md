@@ -39,7 +39,8 @@ via code. This can then be deployed on any Grafana instance!
    prometheus:
       kube-state-metrics:
          metricLabelsAllowlist:
-            - pods=[app,component,hub_jupyter_org_username] # to select jupyterhub component pods and get usernames
+            # to select jupyterhub component pods and get the hub usernames
+            - pods=[app,component,hub_jupyter_org_username]
             # allowing all labels is probably fine for nodes, since they don't churn much, unlike pods
             - nodes[*]
    ```
