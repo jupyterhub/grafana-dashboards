@@ -97,7 +97,7 @@ local clusterMemoryCommitment = graphPanel.new(
     |||
       sum(
         # Get individual container memory requests
-        kube_pod_container_resource_requests_memory_bytes
+        kube_pod_container_resource_requests{resource="memory"}
         # Add node pool name as label
         * on(node) group_left(label_cloud_google_com_gke_nodepool)
         # group aggregator ensures that node names are unique per
@@ -114,7 +114,7 @@ local clusterMemoryCommitment = graphPanel.new(
       /
       sum(
         # Total allocatable memory on a node
-        kube_node_status_allocatable_memory_bytes
+        kube_node_status_allocatable{resource="memory"}
         # Add nodepool name as label
         * on(node) group_left(label_cloud_google_com_gke_nodepool)
         # group aggregator ensures that node names are unique per
@@ -146,8 +146,8 @@ local clusterCPUCommitment = graphPanel.new(
   prometheus.target(
     |||
       sum(
-        # Get individual container CPU requests
-        kube_pod_container_resource_requests_cpu_cores
+        # Get individual container memory requests
+        kube_pod_container_resource_requests{resource="cpu"}
         # Add node pool name as label
         * on(node) group_left(label_cloud_google_com_gke_nodepool)
         # group aggregator ensures that node names are unique per
@@ -163,8 +163,8 @@ local clusterCPUCommitment = graphPanel.new(
       ) by (label_cloud_google_com_gke_nodepool)
       /
       sum(
-        # Total allocatable CPUs on a node
-        kube_node_status_allocatable_cpu_cores
+        # Total allocatable CPU on a node
+        kube_node_status_allocatable{resource="cpu"}
         # Add nodepool name as label
         * on(node) group_left(label_cloud_google_com_gke_nodepool)
         # group aggregator ensures that node names are unique per
@@ -195,8 +195,8 @@ local nodeCPUCommit = graphPanel.new(
   prometheus.target(
     |||
       sum(
-        # Get individual container memory limits
-        kube_pod_container_resource_requests_cpu_cores
+        # Get individual container CPU limits
+        kube_pod_container_resource_requests{resource="cpu"}
         # Ignore containers from pods that aren't currently running or scheduled
         # FIXME: This isn't the best metric here, evaluate what is.
         and on (pod) kube_pod_status_scheduled{condition='true'}
@@ -205,8 +205,8 @@ local nodeCPUCommit = graphPanel.new(
       ) by (node)
       /
       sum(
-        # Get individual container memory requests
-        kube_node_status_allocatable_cpu_cores
+        # Get individual container CPU requests
+        kube_node_status_allocatable{resource="cpu"}
       ) by (node)
     |||,
     legendFormat='{{node}}'
@@ -230,7 +230,7 @@ local nodeMemoryCommit = graphPanel.new(
     |||
       sum(
         # Get individual container memory limits
-        kube_pod_container_resource_requests_memory_bytes
+        kube_pod_container_resource_requests{resource="memory"}
         # Ignore containers from pods that aren't currently running or scheduled
         # FIXME: This isn't the best metric here, evaluate what is.
         and on (pod) kube_pod_status_scheduled{condition='true'}
@@ -240,7 +240,7 @@ local nodeMemoryCommit = graphPanel.new(
       /
       sum(
         # Get individual container memory requests
-        kube_node_status_allocatable_memory_bytes
+        kube_node_status_allocatable{resource="memory"}
       ) by (node)
     |||,
     legendFormat='{{node}}'
@@ -267,12 +267,12 @@ local nodeMemoryUtil = graphPanel.new(
           node_memory_MemFree_bytes + # Unused bytes
           node_memory_Cached_bytes + # Shared memory + temporary disk cache
           node_memory_Buffers_bytes # Very temporary buffer memory cache for disk i/o
-        ) by (kubernetes_node)
+        ) by (node)
         /
-        sum(node_memory_MemTotal_bytes) by (kubernetes_node)
+        sum(node_memory_MemTotal_bytes) by (node)
       )
     |||,
-    legendFormat='{{kubernetes_node}}'
+    legendFormat='{{node}}'
   ),
 ]);
 
@@ -289,15 +289,11 @@ local nodeCPUUtil = graphPanel.new(
 ).addTargets([
   prometheus.target(
     |||
-      sum(rate(node_cpu_seconds_total{mode!="idle"}[5m])) by (kubernetes_node)
+      sum(rate(node_cpu_seconds_total{mode!="idle"}[5m])) by (node)
       /
-      sum(
-        # Rename 'node' label to 'kubernetes_node', since kube-state-metrics to match metric from
-        # kube-state-metrics to prometheus node exporter
-        label_replace(kube_node_status_capacity_cpu_cores, "kubernetes_node", "$1", "node", "(.*)")
-      ) by (kubernetes_node)
+      sum(kube_node_status_capacity{resource="cpu"}) by (node)
     |||,
-    legendFormat='{{kubernetes_node}}'
+    legendFormat='{{ node }}'
   ),
 ]);
 

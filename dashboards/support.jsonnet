@@ -23,8 +23,8 @@ local userNodesNFSOps = graphPanel.new(
   datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
-    'sum(rate(node_nfs_requests_total[5m])) by (kubernetes_node) > 0',
-    legendFormat='{{kubernetes_node}}'
+    'sum(rate(node_nfs_requests_total[5m])) by (node) > 0',
+    legendFormat='{{ node }}'
   ),
 ]);
 
@@ -35,8 +35,8 @@ local userNodesIOWait = graphPanel.new(
   datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
-    'sum(rate(node_nfs_requests_total[5m])) by (kubernetes_node)',
-    legendFormat='{{kubernetes_node}}'
+    'sum(rate(node_nfs_requests_total[5m])) by (node)',
+    legendFormat='{{ node }}'
   ),
 ]);
 
