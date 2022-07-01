@@ -29,22 +29,6 @@ via code. This can then be deployed on any Grafana instance!
    [node-exporter](https://github.com/prometheus/node_exporter) and [cadvisor](https://github.com/google/cadvisor)
    enabled. In addition, you should scrape metrics from the hub instance as well.
 
-   **Note:**
-
-   If you are using a prometheus chart of a version later than `13.*`, then additional configuration for `kube-state-metrics` needs to be provided because [`v2.0` of the`kube-state-metrics` chart](https://kubernetes.io/blog/2021/04/13/kube-state-metrics-v-2-0/) doesn't add any labels by default.
-
-   Since these dashboards assume the existence of such labels for pods or nodes, we need to explicitly configure prometheus to track them by populating the list at [prometheus.kubeStateMetrics.metricLabelsAllowlist](https://github.com/prometheus-community/helm-charts/blob/47d3b08e980cd0862e28f7d7f49c07dd7b9b7091/charts/kube-state-metrics/values.yaml#L152).
-
-   ```yaml
-   prometheus:
-      kube-state-metrics:
-         metricLabelsAllowlist:
-            # to select jupyterhub component pods and get the hub usernames
-            - pods=[app,component,hub.jupyter.org/username]
-            # allowing all labels is probably fine for nodes, since they don't churn much, unlike pods
-            - nodes[*]
-   ```
-
 3. A recent version of Grafana, with a prometheus data source already added.
 
 4. An API key with 'admin' permissions. This is per-organization, and you can make a new one
@@ -66,6 +50,28 @@ a couple of dashboards to it.
 
 **NOTE: ANY CHANGES YOU MAKE VIA THE GRAFANA UI WILL BE OVERWRITTEN NEXT TIME YOU RUN deploy.bash.
 TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN**
+
+
+### Prometheus chart version 14.* or newer
+
+If you are using a [prometheus chart](https://github.com/prometheus-community/helm-charts) of a version later than `13.*`, then additional configuration for `kube-state-metrics` needs to be provided because [`v2.0` of the`kube-state-metrics` chart](https://kubernetes.io/blog/2021/04/13/kube-state-metrics-v-2-0/) that comes with latest prometheus doesn't add any labels by default.
+
+Since these dashboards assume the existence of such labels for pods or nodes, we need to explicitly configure prometheus to track them by populating the list at [prometheus.kubeStateMetrics.metricLabelsAllowlist](https://github.com/prometheus-community/helm-charts/blob/47d3b08e980cd0862e28f7d7f49c07dd7b9b7091/charts/kube-state-metrics/values.yaml#L152).
+
+```yaml
+prometheus:
+   kube-state-metrics:
+      metricLabelsAllowlist:
+         # to select jupyterhub component pods and get the hub usernames
+         - pods=[app,component,hub.jupyter.org/username]
+         # allowing all labels is probably fine for nodes, since they don't churn much, unlike pods
+         - nodes[*]
+```
+
+### Prometheus older than 14.*
+
+If you're using a prometheus chart older than version `14.*`, then you can deploy the dashboards available prior to the upgrade, in the [`1.0 tag`](https://github.com/jupyterhub/grafana-dashboards/releases/tag/1.0).
+
 
 ## Upgrading grafonnet version
 
