@@ -12,10 +12,6 @@ function(datasources)
     thresholds=[
       {
         value: 0,
-        color: 'yellow',
-      },
-      {
-        value: 50,
         color: 'green',
       },
     ],
@@ -50,5 +46,11 @@ function(datasources)
     editable=true,
     time_from='now-7d',
   ).addPanel(
-    weeklyActiveUsers, {},
+    weeklyActiveUsers,
+    gridPos={
+      x: 0,
+      y: 0,
+      w: 25,
+      h: 10,
+    },
   )
