@@ -50,7 +50,10 @@ def build_dashboard(dashboard_path, api, global_dash=False):
     # pass the list of datasources to be used in the queries
     if global_dash:
         datasources = api("/datasources")
+        # If there is only one datasource, global dashboards don't make sense
+        # so don't bluid and deploy them
         if len(datasources) <= 1:
+            print("Only one datasource found. Global dashboards will not be deployed.")
             return
 
         datasources_names = [ds["name"] for ds in datasources]
