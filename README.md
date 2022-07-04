@@ -11,10 +11,13 @@ issues on Kubernetes clusters running JupyterHub. However, everyone has to build
 own dashboards - there isn't an easy way to standardize them across many clusters run
 by many entities.
 
+### The dashboards directory
 This project provides some standard [Grafana Dashboards as Code](https://grafana.com/blog/2020/02/26/how-to-configure-grafana-as-code/)
 to help with this. It uses [jsonnet](https://jsonnet.org/) and
 [grafonnet](https://github.com/grafana/grafonnet-lib) to generate dashboards completely
 via code. This can then be deployed on any Grafana instance!
+
+If your Grafana deployment supports more than one datasource, then the dashboards in [`dashboards/global-dashboards` directory](https://github.com/jupyterhub/grafana-dashboards/tree/main/dashboards/global-dashboards) will also be deployed. The dashboards in this directory will be provided with the list of available dashboards in your Grafana and will build dashboards across all of them.
 
 ## Pre-requisites
 
@@ -38,7 +41,7 @@ via code. This can then be deployed on any Grafana instance!
 
 ## Deployment
 
-There's a helper `deploy.py` script that can deploy the dashboard to any grafana installation.
+There's a helper `deploy.py` script that can deploy the dashboards to any grafana installation.
 
 ```bash
 export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
