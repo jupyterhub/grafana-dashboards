@@ -43,12 +43,12 @@ def ensure_folder(name, uid, api):
 
 
 
-def build_dashboard(dashboard_path, api):
+def build_dashboard(dashboard_path, api, global_dash=False):
     cmd = ["jsonnet", "-J", "vendor", dashboard_path]
 
     # If we need to build a global dashboard across more datasource
     # pass the list of datasources to be used in the queries
-    if "global" in dashboard_path:
+    if global_dash:
         datasources = api("/datasources")
         if len(datasources) <= 1:
             return
@@ -94,8 +94,8 @@ def layout_dashboard(dashboard):
 
     return dashboard
 
-def deploy_dashboard(dashboard_path, folder_uid, api):
-    db = build_dashboard(dashboard_path, api)
+def deploy_dashboard(dashboard_path, folder_uid, api, global_dash=False):
+    db = build_dashboard(dashboard_path, api, global_dash)
 
     if not db:
         return
@@ -193,9 +193,18 @@ def main():
     api = partial(grafana_request, args.grafana_url, grafana_token)
     folder = ensure_folder(args.folder_name, args.folder_uid, api)
 
-    for dashboard in glob(f'{args.dashboards_dir}/*.jsonnet'):
-        deploy_dashboard(dashboard, folder['id'], api)
-        print(f'Deployed {dashboard}')
+    dashboards_dir = args.dashboards_dir
+    def iterate_and_deploy(directory_name, global_dash=False):
+        # Small function to iterate a directory and deploy all jsonnet files in it
+        for dashboard in glob(f'{directory_name}/*.jsonnet'):
+            deploy_dashboard(dashboard, folder['id'], api, global_dash)
+            print(f'Deployed {dashboard}')
+
+    if args.dashboards_dir == "dashboards":
+        # Deploy also the global dashboards in default directory
+        iterate_and_deploy(f"{dashboards_dir}/global-dashboards", global_dash=True)
+
+    iterate_and_deploy(dashboards_dir)
 
 if __name__ == '__main__':
     main()
