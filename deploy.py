@@ -43,11 +43,19 @@ def ensure_folder(name, uid, api):
 
 
 
-def build_dashboard(dashboard_path):
-    return json.loads(subprocess.check_output([
-        'jsonnet', '-J', 'vendor',
-        dashboard_path
-    ]).decode())
+def build_dashboard(dashboard_path, api, global_dash=False):
+
+    datasources = api("/datasources")
+    datasources_names = [ds["name"] for ds in datasources]
+
+    # We pass the list of all datasources because the global dashboards
+    # use this information to show info about all datasources in the same panel
+    return json.loads(subprocess.check_output(
+        [
+            "jsonnet", "-J", "vendor", dashboard_path,
+            "--tla-code", f"datasources={datasources_names}"
+        ]
+    ).decode())
 
 
 def layout_dashboard(dashboard):
@@ -80,8 +88,12 @@ def layout_dashboard(dashboard):
 
     return dashboard
 
-def deploy_dashboard(dashboard_path, folder_uid, api):
-    db = build_dashboard(dashboard_path)
+def deploy_dashboard(dashboard_path, folder_uid, api, global_dash=False):
+    db = build_dashboard(dashboard_path, api, global_dash)
+
+    if not db:
+        return
+
     db = layout_dashboard(db)
     db = populate_template_variables(api, db)
 

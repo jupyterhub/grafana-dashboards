@@ -38,7 +38,7 @@ via code. This can then be deployed on any Grafana instance!
 
 ## Deployment
 
-There's a helper `deploy.py` script that can deploy the dashboard to any grafana installation.
+There's a helper `deploy.py` script that can deploy the dashboards to any grafana installation.
 
 ```bash
 export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
@@ -47,6 +47,15 @@ export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
 
 This creates a folder called 'JupyterHub Default Dashboards' in your grafana, and adds
 a couple of dashboards to it.
+
+If your Grafana deployment supports more than one datasource, then apart from the default dashboards in the [`dashboards` directory](https://github.com/jupyterhub/grafana-dashboards/tree/main/dashboards), you should also consider deploying apart the dashboards in [`global-dashboards` directory](https://github.com/jupyterhub/grafana-dashboards/tree/main/global-dashboards).
+
+```bash
+export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
+./deploy.py <your-grafana-url> --dashboards-dir global-dashboards
+```
+
+The gloabal dashboards will use the list of available dashboards in your Grafana provided to them and will build dashboards across all of them.
 
 **NOTE: ANY CHANGES YOU MAKE VIA THE GRAFANA UI WILL BE OVERWRITTEN NEXT TIME YOU RUN deploy.bash.
 TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN**
