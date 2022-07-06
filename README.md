@@ -11,13 +11,10 @@ issues on Kubernetes clusters running JupyterHub. However, everyone has to build
 own dashboards - there isn't an easy way to standardize them across many clusters run
 by many entities.
 
-### The dashboards directory
 This project provides some standard [Grafana Dashboards as Code](https://grafana.com/blog/2020/02/26/how-to-configure-grafana-as-code/)
 to help with this. It uses [jsonnet](https://jsonnet.org/) and
 [grafonnet](https://github.com/grafana/grafonnet-lib) to generate dashboards completely
 via code. This can then be deployed on any Grafana instance!
-
-If your Grafana deployment supports more than one datasource, then the dashboards in [`dashboards/global-dashboards` directory](https://github.com/jupyterhub/grafana-dashboards/tree/main/dashboards/global-dashboards) will also be deployed. The dashboards in this directory will be provided with the list of available dashboards in your Grafana and will build dashboards across all of them.
 
 ## Pre-requisites
 
@@ -50,6 +47,15 @@ export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
 
 This creates a folder called 'JupyterHub Default Dashboards' in your grafana, and adds
 a couple of dashboards to it.
+
+If your Grafana deployment supports more than one datasource, then apart from the default dashboards in the [`dashboards` directory](https://github.com/jupyterhub/grafana-dashboards/tree/main/dashboards), you should also consider deploying apart the dashboards in [`global-dashboards` directory](https://github.com/jupyterhub/grafana-dashboards/tree/main/global-dashboards).
+
+```bash
+export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
+./deploy.py <your-grafana-url> --dashboards-dir global-dashboards
+```
+
+The gloabal dashboards will use the list of available dashboards in your Grafana provided to them and will build dashboards across all of them.
 
 **NOTE: ANY CHANGES YOU MAKE VIA THE GRAFANA UI WILL BE OVERWRITTEN NEXT TIME YOU RUN deploy.bash.
 TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN**
