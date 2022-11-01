@@ -148,7 +148,7 @@ local allComponentsMemory = jupyterhub.memoryPanel('All JupyterHub Components', 
 local allComponentsCPU = jupyterhub.cpuPanel('All JupyterHub Components', component='singleuser-server', multi=true);
 
 local hubDBUsage = graphPanel.new(
-  'Hub DB Disk Use %',
+  'Hub DB Disk Space Availability %',
   description=|||
     % of disk space left in the disk storing the JupyterHub sqlite database. If goes to 0, the hub will fail.
   |||,
