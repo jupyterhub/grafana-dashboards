@@ -147,6 +147,29 @@ local hubResponseLatency = graphPanel.new(
 local allComponentsMemory = jupyterhub.memoryPanel('All JupyterHub Components', component='singleuser-server', multi=true);
 local allComponentsCPU = jupyterhub.cpuPanel('All JupyterHub Components', component='singleuser-server', multi=true);
 
+local hubDBUsage = graphPanel.new(
+  'Hub DB Disk Space Availability %',
+  description=|||
+    % of disk space left in the disk storing the JupyterHub sqlite database. If goes to 0, the hub will fail.
+  |||,
+  decimals=0,
+  min=0,
+  max=1,
+  formatY1='percentunit',
+  datasource='$PROMETHEUS_DS'
+).addTarget(
+  prometheus.target(
+    |||
+      # Free bytes available on the hub db PVC
+      sum(kubelet_volume_stats_available_bytes{persistentvolumeclaim="hub-db-dir", namespace=~"$hub"}) by (namespace) /
+      # Total number of bytes available on the hub db PVC
+      sum(kubelet_volume_stats_capacity_bytes{persistentvolumeclaim="hub-db-dir", namespace=~"$hub"}) by (namespace)
+    |||,
+    legendFormat='{{ $hub }}'
+  ),
+);
+
+
 local serverStartTimes = graphPanel.new(
   'Server Start Times',
   formatY1='s',
@@ -348,6 +371,8 @@ dashboard.new(
   allComponentsCPU, { h: standardDims.h * 1.5 },
 ).addPanel(
   allComponentsMemory, { h: standardDims.h * 1.5 },
+).addPanel(
+  hubDBUsage, {},
 ).addPanel(
   nonRunningPods, {}
 ).addPanel(
