@@ -70,7 +70,7 @@ local userPods = graphPanel.new(
           kube_pod_status_phase{phase="Running"}
         ) by (pod)
         * on (pod) group_right() group(
-          kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~".*"}
+          kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server"}
         ) by (namespace, pod)
       ) by (namespace)
     |||,
