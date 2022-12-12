@@ -150,3 +150,79 @@ sum(
     irate(container_cpu_usage_seconds_total{name!=""}[5m])
 ) by (namespace, pod)
 ```
+
+## Additional collectors
+
+Some very useful metrics (such as home directory free space) require
+additional collectors to be installed in your cluster, customized to your
+needs. 
+
+### Home Directory Space Left
+
+In many common z2jh configurations, home directories are setup via a shared
+filesystem (like NFS, AzureFile, etc). You can grab additional metrics by
+a deployment of [prometheus node_exporter](https://prometheus.io/docs/guides/node-exporter/),
+collecting just the filesystem metrics. Here is an example deployment YAML:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: jupyterhub
+    component: home-metrics
+  name: home-metrics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jupyterhub
+      component: home-metrics
+  template:
+    metadata:
+      annotations:
+        # This enables prometheus to actually scrape metrics from here
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+      labels:
+        app: jupyterhub
+        # This component label is used in our dashboard, so do not remove
+        component: home-metrics
+    spec:
+      containers:
+      - args:
+        # We only want filesystem stats
+        - --collector.disable-defaults
+        - --collector.filesystem
+        - --web.listen-address=:9100
+        image: quay.io/prometheus/node-exporter:v1.3.1
+        name: home-directory-exporter
+        ports:
+        - containerPort: 9100
+          name: metrics
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+        volumeMounts:
+          - name: home
+            # Mounting under /home is also important here, as we use
+            # it in our dashboard.
+            mountPath: /home
+            # Mount it readonly to prevent accidental writes
+            readOnly: true
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+      volumes:
+        - name: home
+          # This mounts an persistentvolume claim named home-nfs
+          # You should have whatever volume you are mounting in user pods
+          # be here.
+          persistentVolumeClaim:
+            claimName: home-nfs
+```
+
+You only need to modify the `volume` in the specification to be whatever
+you are using for volumes.
