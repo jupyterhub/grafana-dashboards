@@ -250,9 +250,9 @@ local homeSpaceLeft = graphPanel.new(
   prometheus.target(
     |||
       min(
-	node_filesystem_avail_bytes{mountpoint="/home", component="home-metrics", namespace=~"$hub"}
-	/
-	node_filesystem_size_bytes{mountpoint="/home", component="home-metrics", namespace=~"$hub"}
+        node_filesystem_avail_bytes{mountpoint="/home", component="home-metrics", namespace=~"$hub"}
+        /
+        node_filesystem_size_bytes{mountpoint="/home", component="home-metrics", namespace=~"$hub"}
       ) by (namespace)
     |||,
     legendFormat='{{namespace}}'
