@@ -195,7 +195,7 @@ spec:
         - --collector.disable-defaults
         - --collector.filesystem
         - --web.listen-address=:9100
-        image: quay.io/prometheus/node-exporter:v1.3.1
+        image: quay.io/prometheus/node-exporter:v1.5.0
         name: shared-volume-exporter
         ports:
         - containerPort: 9100
