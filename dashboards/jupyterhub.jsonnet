@@ -232,10 +232,11 @@ local nonRunningPods = graphPanel.new(
   ),
 ]);
 
-local homeSpaceLeft = graphPanel.new(
-  'Home Directory Free Space %',
+local sharedVolumeFreeSpace = graphPanel.new(
+  'Free space (%) in shared volume (Home directories, etc.)',
   description=|||
-    % of disk space left in home directory (if using shared home directory).
+    % of disk space left in a shared storage volume, typically used for users'
+    home directories.
 
     Requires an additional node_exporter deployment to work. If this graph
     is empty, look at the README for jupyterhub/grafana-dashboards to see
@@ -250,9 +251,9 @@ local homeSpaceLeft = graphPanel.new(
   prometheus.target(
     |||
       min(
-        node_filesystem_avail_bytes{mountpoint="/home", component="home-metrics", namespace=~"$hub"}
+        node_filesystem_avail_bytes{mountpoint="/shared-volume", component="shared-volume-metrics", namespace=~"$hub"}
         /
-        node_filesystem_size_bytes{mountpoint="/home", component="home-metrics", namespace=~"$hub"}
+        node_filesystem_size_bytes{mountpoint="/shared-volume", component="shared-volume-metrics", namespace=~"$hub"}
       ) by (namespace)
     |||,
     legendFormat='{{namespace}}'
@@ -405,7 +406,7 @@ dashboard.new(
 ).addPanel(
   usersPerNode, {}
 ).addPanel(
-  homeSpaceLeft, {}
+  sharedVolumeFreeSpace, {}
 ).addPanel(
   row.new('Anomalous user pods'), {},
 ).addPanel(
