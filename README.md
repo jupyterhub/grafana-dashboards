@@ -203,6 +203,9 @@ spec:
           protocol: TCP
         securityContext:
           allowPrivilegeEscalation: false
+          runAsGroup: 65534
+          runAsNonRoot: true
+          runAsUser: 65534
         volumeMounts:
           - name: shared-volume
             # Mounting under /shared-volume is important as we reference this
@@ -212,9 +215,6 @@ spec:
             readOnly: true
       securityContext:
         fsGroup: 65534
-        runAsGroup: 65534
-        runAsNonRoot: true
-        runAsUser: 65534
       volumes:
         # This is the volume that we will mount and monitor. You should reference
         # a shared volume containing home directories etc. This is often a PVC
