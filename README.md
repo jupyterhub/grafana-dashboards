@@ -190,17 +190,17 @@ spec:
         component: shared-volume-metrics
     spec:
       containers:
-      - args:
-        # We only want filesystem stats
-        - --collector.disable-defaults
-        - --collector.filesystem
-        - --web.listen-address=:9100
+      - name: shared-volume-exporter
         image: quay.io/prometheus/node-exporter:v1.5.0
-        name: shared-volume-exporter
+        args:
+          # We only want filesystem stats
+          - --collector.disable-defaults
+          - --collector.filesystem
+          - --web.listen-address=:9100
         ports:
-        - containerPort: 9100
-          name: metrics
-          protocol: TCP
+          - containerPort: 9100
+            name: metrics
+            protocol: TCP
         securityContext:
           allowPrivilegeEscalation: false
           runAsGroup: 65534
