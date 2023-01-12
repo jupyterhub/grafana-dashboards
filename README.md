@@ -224,5 +224,4 @@ spec:
             claimName: home-nfs
 ```
 
-You only need to modify the `volume` in the specification to be whatever
-you are using for volumes.
+You will likely only need to adjust the `claimName` above to use this example.
