@@ -150,3 +150,78 @@ sum(
     irate(container_cpu_usage_seconds_total{name!=""}[5m])
 ) by (namespace, pod)
 ```
+
+## Additional collectors
+
+Some very useful metrics (such as home directory free space) require
+additional collectors to be installed in your cluster, customized to your
+needs. 
+
+### Free space (%) in shared volume (Home directories, etc.)
+
+In many common z2jh configurations, home directories are setup via a shared
+filesystem (like NFS, AzureFile, etc). You can grab additional metrics by
+a deployment of [prometheus node_exporter](https://prometheus.io/docs/guides/node-exporter/),
+collecting just the filesystem metrics. Here is an example deployment YAML:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: jupyterhub
+    component: shared-volume-metrics
+  name: shared-volume-metrics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jupyterhub
+      component: shared-volume-metrics
+  template:
+    metadata:
+      annotations:
+        # This enables prometheus to actually scrape metrics from here
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+      labels:
+        app: jupyterhub
+        # This component label is used in our dashboard, so do not remove
+        component: shared-volume-metrics
+    spec:
+      containers:
+      - name: shared-volume-exporter
+        image: quay.io/prometheus/node-exporter:v1.5.0
+        args:
+          # We only want filesystem stats
+          - --collector.disable-defaults
+          - --collector.filesystem
+          - --web.listen-address=:9100
+        ports:
+          - containerPort: 9100
+            name: metrics
+            protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsGroup: 65534
+          runAsNonRoot: true
+          runAsUser: 65534
+        volumeMounts:
+          - name: shared-volume
+            # Mounting under /shared-volume is important as we reference this
+            # path in our dashboard definition.
+            mountPath: /shared-volume
+            # Mount it readonly to prevent accidental writes
+            readOnly: true
+      securityContext:
+        fsGroup: 65534
+      volumes:
+        # This is the volume that we will mount and monitor. You should reference
+        # a shared volume containing home directories etc. This is often a PVC
+        # bound to a PV referencing a NFS server.
+        - name: shared-volume
+          persistentVolumeClaim:
+            claimName: home-nfs
+```
+
+You will likely only need to adjust the `claimName` above to use this example.
