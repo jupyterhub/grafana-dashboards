@@ -157,7 +157,7 @@ Some very useful metrics (such as home directory free space) require
 additional collectors to be installed in your cluster, customized to your
 needs. 
 
-### Home Directory Space Left
+### Free space (%) in shared volume (Home directories, etc.)
 
 In many common z2jh configurations, home directories are setup via a shared
 filesystem (like NFS, AzureFile, etc). You can grab additional metrics by
@@ -170,14 +170,14 @@ kind: Deployment
 metadata:
   labels:
     app: jupyterhub
-    component: home-metrics
-  name: home-metrics
+    component: shared-volume-metrics
+  name: shared-volume-metrics
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: jupyterhub
-      component: home-metrics
+      component: shared-volume-metrics
   template:
     metadata:
       annotations:
@@ -187,42 +187,41 @@ spec:
       labels:
         app: jupyterhub
         # This component label is used in our dashboard, so do not remove
-        component: home-metrics
+        component: shared-volume-metrics
     spec:
       containers:
-      - args:
-        # We only want filesystem stats
-        - --collector.disable-defaults
-        - --collector.filesystem
-        - --web.listen-address=:9100
-        image: quay.io/prometheus/node-exporter:v1.3.1
-        name: home-directory-exporter
+      - name: shared-volume-exporter
+        image: quay.io/prometheus/node-exporter:v1.5.0
+        args:
+          # We only want filesystem stats
+          - --collector.disable-defaults
+          - --collector.filesystem
+          - --web.listen-address=:9100
         ports:
-        - containerPort: 9100
-          name: metrics
-          protocol: TCP
+          - containerPort: 9100
+            name: metrics
+            protocol: TCP
         securityContext:
           allowPrivilegeEscalation: false
+          runAsGroup: 65534
+          runAsNonRoot: true
+          runAsUser: 65534
         volumeMounts:
-          - name: home
-            # Mounting under /home is also important here, as we use
-            # it in our dashboard.
-            mountPath: /home
+          - name: shared-volume
+            # Mounting under /shared-volume is important as we reference this
+            # path in our dashboard definition.
+            mountPath: /shared-volume
             # Mount it readonly to prevent accidental writes
             readOnly: true
       securityContext:
         fsGroup: 65534
-        runAsGroup: 65534
-        runAsNonRoot: true
-        runAsUser: 65534
       volumes:
-        - name: home
-          # This mounts an persistentvolume claim named home-nfs
-          # You should have whatever volume you are mounting in user pods
-          # be here.
+        # This is the volume that we will mount and monitor. You should reference
+        # a shared volume containing home directories etc. This is often a PVC
+        # bound to a PV referencing a NFS server.
+        - name: shared-volume
           persistentVolumeClaim:
             claimName: home-nfs
 ```
 
-You only need to modify the `volume` in the specification to be whatever
-you are using for volumes.
+You will likely only need to adjust the `claimName` above to use this example.
