@@ -308,7 +308,7 @@ local nodeOOMKills = graphPanel.new(
     infact caused by an OOM
   |||,
   min=0,
-  legend_hideZero=true, # Declutter graph by hiding 0s, which we don't care about
+  legend_hideZero=true, // Declutter graph by hiding 0s, which we don't care about
   decimals=0,
   datasource='$PROMETHEUS_DS'
 ).addTargets([
