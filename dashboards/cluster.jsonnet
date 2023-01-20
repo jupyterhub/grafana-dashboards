@@ -297,6 +297,31 @@ local nodeCPUUtil = graphPanel.new(
   ),
 ]);
 
+local nodeOOMKills = graphPanel.new(
+  'Out of Memory kill count',
+  description=|||
+    Number of Out of Memory (OOM) kills in a given node.
+
+    When users use up more memory than they are allowed, the notebook kernel they
+    were running usually gets killed and restarted. This graph shows the number of times
+    that happens on any given node, and helps validate that a notebook kernel restart was
+    infact caused by an OOM
+  |||,
+  min=0,
+  legend_hideZero=true,  // Declutter graph by hiding 0s, which we don't care about
+  decimals=0,
+  datasource='$PROMETHEUS_DS'
+).addTargets([
+  prometheus.target(
+    |||
+      # We use [2m] here, as node_exporter usually scrapes things at 1min intervals
+      # And oom kills are distinct events, so we want to see 'how many have just happened',
+      # rather than average over time.
+      increase(node_vmstat_oom_kill[2m])
+    |||,
+    legendFormat='{{ node }}'
+  ),
+]);
 
 local nonRunningPods = graphPanel.new(
   'Non Running Pods',
@@ -346,4 +371,6 @@ dashboard.new(
   nodeCPUCommit, {},
 ).addPanel(
   nodeMemoryCommit, {},
+).addPanel(
+  nodeOOMKills, {},
 )
