@@ -165,6 +165,13 @@ a deployment of [prometheus node_exporter](https://prometheus.io/docs/guides/nod
 collecting just the filesystem metrics. Here is an example deployment YAML:
 
 ```yaml
+# To provide data for the jupyterhub/grafana-dashboards dashboard about free
+# space in the shared volume, which contains users home folders etc, we deploy
+# prometheus node-exporter to collect this data for prometheus server to scrape.
+#
+# This is based on the Deployment manifest in jupyterhub/grafana-dashboards'
+# readme: https://github.com/jupyterhub/grafana-dashboards#additional-collectors
+#
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -186,7 +193,8 @@ spec:
         prometheus.io/port: "9100"
       labels:
         app: jupyterhub
-        # This component label is used in our dashboard, so do not remove
+        # The component label below should match a grafana dashboard definition
+        # in jupyterhub/grafana-dashboards, do not change it!
         component: shared-volume-metrics
     spec:
       containers:
