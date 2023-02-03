@@ -33,8 +33,8 @@ local templates = [
 
 
 // Hub usage stats
-local currentRunningUsers = graphPanel.new(
-  'Current running users',
+local currentActiveUsers = graphPanel.new(
+  'Currently Active Users',
   decimals=0,
   stack=true,
   min=0,
@@ -49,6 +49,75 @@ local currentRunningUsers = graphPanel.new(
         %s
       ) by (namespace)
     ||| % jupyterhub.onComponentLabel('singleuser-server', group_right=''),
+    legendFormat='{{namespace}}',
+  ),
+]);
+
+local dailyActiveUsers = graphPanel.new(
+  'Daily Active Users',
+  description=|||
+    Number of unique users who were active within the preceeding 24h period.
+
+    Requires JupyterHub 3.1.
+  |||,
+  legend_hideZero=true,
+  decimals=0,
+  stack=true,
+  min=0,
+  datasource='$PROMETHEUS_DS'
+).addTargets([
+  prometheus.target(
+    |||
+      max(
+        jupyterhub_active_users{period="24h", namespace=~"$hub"}
+      ) by (namespace)
+    |||,
+    legendFormat='{{namespace}}',
+  ),
+]);
+
+local weeklyActiveUsers = graphPanel.new(
+  'Weekly Active Users',
+  description=|||
+    Number of unique users who were active within the preceeding 7d period.
+
+    Requires JupyterHub 3.1.
+  |||,
+  legend_hideZero=true,
+  decimals=0,
+  stack=true,
+  min=0,
+  datasource='$PROMETHEUS_DS'
+).addTargets([
+  prometheus.target(
+    |||
+      max(
+        jupyterhub_active_users{period="7d", namespace=~"$hub"}
+      ) by (namespace)
+    |||,
+    legendFormat='{{namespace}}',
+  ),
+]);
+
+local monthlyActiveUsers = graphPanel.new(
+  'Monthly Active Users',
+  description=|||
+    Number of unique users who were active within the preceeding 7d period.
+
+    Requires JupyterHub 3.1.
+  |||,
+  legend_hideZero=true,
+  decimals=0,
+  stack=true,
+  min=0,
+  datasource='$PROMETHEUS_DS'
+).addTargets([
+  prometheus.target(
+    |||
+      max(
+        jupyterhub_active_users{period="30d", namespace=~"$hub"}
+      ) by (namespace)
+    |||,
     legendFormat='{{namespace}}',
   ),
 ]);
@@ -382,7 +451,15 @@ dashboard.new(
 ).addPanel(
   row.new('Hub usage stats'), {}
 ).addPanel(
-  currentRunningUsers, {}
+  currentActiveUsers, {}
+).addPanel(
+  dailyActiveUsers, {}
+).addPanel(
+  weeklyActiveUsers, {}
+).addPanel(
+  monthlyActiveUsers, {}
+).addPanel(
+  row.new('User Resource Utilization stats'), {}
 ).addPanel(
   userAgeDistribution, {}
 ).addPanel(
