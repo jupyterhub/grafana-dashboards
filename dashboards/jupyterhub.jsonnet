@@ -202,11 +202,39 @@ local hubResponseLatency = graphPanel.new(
   datasource='$PROMETHEUS_DS'
 ).addTargets([
   prometheus.target(
-    'histogram_quantile(0.99, sum(rate(jupyterhub_request_duration_seconds_bucket{app="jupyterhub", namespace=~"$hub"}[5m])) by (le))',
+    |||
+      histogram_quantile(
+        0.99,
+        sum(
+          rate(
+            jupyterhub_request_duration_seconds_bucket{
+              app="jupyterhub",
+              namespace=~"$hub",
+              # Ignore SpawnProgressAPIHandler, as it is a EventSource stream
+              # and keeps long lived connections open
+              handler!="jupyterhub.apihandlers.users.SpawnProgressAPIHandler"
+            }[5m]
+          )
+        ) by (le))
+    |||,
     legendFormat='99th percentile'
   ),
   prometheus.target(
-    'histogram_quantile(0.50, sum(rate(jupyterhub_request_duration_seconds_bucket{app="jupyterhub", namespace=~"$hub"}[5m])) by (le))',
+    |||
+      histogram_quantile(
+        0.50,
+        sum(
+          rate(
+            jupyterhub_request_duration_seconds_bucket{
+              app="jupyterhub",
+              namespace=~"$hub",
+              # Ignore SpawnProgressAPIHandler, as it is a EventSource stream
+              # and keeps long lived connections open
+              handler!="jupyterhub.apihandlers.users.SpawnProgressAPIHandler"
+            }[5m]
+          )
+        ) by (le))
+    |||,
     legendFormat='50th percentile'
   ),
 ]);
