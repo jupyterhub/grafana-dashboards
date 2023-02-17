@@ -287,6 +287,25 @@ local serverStartTimes = graphPanel.new(
   ),
 ]);
 
+local serverSpawnFailures = graphPanel.new(
+  'Server Start Failures',
+  description=|||
+    Attempts by users to start servers that failed.
+  |||,
+  lines=false,
+  min=0,
+  points=false,
+  legend_hideZero=true,
+  bars=true,
+  pointradius=2,
+  datasource='$PROMETHEUS_DS'
+).addTargets([
+  prometheus.target(
+    'sum(increase(jupyterhub_server_spawn_duration_seconds_count{status!="success"}[2m])) by (status)',
+    legendFormat='{{status}}'
+  ),
+]);
+
 local usersPerNode = graphPanel.new(
   'Users per node',
   decimals=0,
@@ -498,6 +517,8 @@ dashboard.new(
   row.new('Hub Diagnostics'), {}
 ).addPanel(
   serverStartTimes, {}
+).addPanel(
+  serverSpawnFailures, {}
 ).addPanel(
   hubResponseLatency, {}
 ).addPanel(
