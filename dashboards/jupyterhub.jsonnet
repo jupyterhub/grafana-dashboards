@@ -60,7 +60,7 @@ local dailyActiveUsers = graphPanel.new(
 
     Requires JupyterHub 3.1.
   |||,
-  legend_hideZero=true,
+  legend_hideZero=false,
   decimals=0,
   stack=true,
   min=0,
@@ -83,7 +83,7 @@ local weeklyActiveUsers = graphPanel.new(
 
     Requires JupyterHub 3.1.
   |||,
-  legend_hideZero=true,
+  legend_hideZero=false,
   decimals=0,
   stack=true,
   min=0,
@@ -106,7 +106,7 @@ local monthlyActiveUsers = graphPanel.new(
 
     Requires JupyterHub 3.1.
   |||,
-  legend_hideZero=true,
+  legend_hideZero=false,
   decimals=0,
   stack=true,
   min=0,
