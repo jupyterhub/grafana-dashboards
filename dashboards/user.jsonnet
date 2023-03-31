@@ -36,11 +36,11 @@ local templates = [
     multi=true
   ),
   template.new(
-    # Queries should use the 'instance' label when querying metrics that
-    # come from collectors present on each node - such as node_exporter or
-    # container_ metrics, and use the 'node' label when querying metrics
-    # that come from collectors that are present once per cluster, like
-    # kube_state_metrics.
+    // Queries should use the 'instance' label when querying metrics that
+    // come from collectors present on each node - such as node_exporter or
+    // container_ metrics, and use the 'node' label when querying metrics
+    // that come from collectors that are present once per cluster, like
+    // kube_state_metrics.
     'instance',
     datasource='$PROMETHEUS_DS',
     query='label_values(kube_node_info, node)',
