@@ -101,10 +101,10 @@ local cpuUsage = graphPanel.new(
   ),
 );
 
-local memoryGuarantee = graphPanel.new(
-  'Memory Guarante',
+local memoryRequests = graphPanel.new(
+  'Memory Requests',
   description=|||
-    Per-user per-server memory guarantee
+    Per-user per-server memory Requests
   |||,
   formatY1='bytes',
   datasource='$PROMETHEUS_DS'
@@ -119,10 +119,10 @@ local memoryGuarantee = graphPanel.new(
   ),
 );
 
-local cpuGuarantee = graphPanel.new(
-  'CPU Guarantee',
+local cpuRequests = graphPanel.new(
+  'CPU Requests',
   description=|||
-    Per-user per-server CPU Guarantee
+    Per-user per-server CPU Requests
   |||,
   formatY1='percentunit',
   datasource='$PROMETHEUS_DS'
@@ -148,7 +148,7 @@ dashboard.new(
 ).addPanel(
   cpuUsage, { h: standardDims.h * 1.5, w: standardDims.w * 2 }
 ).addPanel(
-  memoryGuarantee, { h: standardDims.h * 1.5, w: standardDims.w * 2 }
+  memoryRequests, { h: standardDims.h * 1.5, w: standardDims.w * 2 }
 ).addPanel(
-  cpuGuarantee, { h: standardDims.h * 1.5, w: standardDims.w * 2 }
+  cpuRequests, { h: standardDims.h * 1.5, w: standardDims.w * 2 }
 )
