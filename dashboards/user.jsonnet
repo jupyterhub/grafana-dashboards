@@ -35,6 +35,14 @@ local templates = [
     includeAll=true,
     multi=true
   ),
+  template.new(
+    'instance',
+    datasource='$PROMETHEUS_DS',
+    query='label_values(kube_node_info, node)',
+    // Allow viewing dashboard for multiple nodes
+    includeAll=true,
+    multi=true
+  ),
 ];
 
 
@@ -52,7 +60,7 @@ local memoryUsage = graphPanel.new(
         # exclude name="" because the same container can be reported
         # with both no name and `name=k8s_...`,
         # in which case sum() by (pod) reports double the actual metric
-        container_memory_working_set_bytes{name!=""}
+        container_memory_working_set_bytes{name!="", instance=~"$instance"}
         * on (namespace, pod) group_left(container) 
         group(
             kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub", pod=~"$user_pod"}
@@ -77,7 +85,7 @@ local cpuUsage = graphPanel.new(
         # exclude name="" because the same container can be reported
         # with both no name and `name=k8s_...`,
         # in which case sum() by (pod) reports double the actual metric
-        irate(container_cpu_usage_seconds_total{name!=""}[5m])
+        irate(container_cpu_usage_seconds_total{name!="", instance=~"$instance"}[5m])
         * on (namespace, pod) group_left(container) 
         group(
             kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub", pod=~"$user_pod"}
