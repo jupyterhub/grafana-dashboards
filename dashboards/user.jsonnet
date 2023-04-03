@@ -35,6 +35,19 @@ local templates = [
     includeAll=true,
     multi=true
   ),
+  template.new(
+    // Queries should use the 'instance' label when querying metrics that
+    // come from collectors present on each node - such as node_exporter or
+    // container_ metrics, and use the 'node' label when querying metrics
+    // that come from collectors that are present once per cluster, like
+    // kube_state_metrics.
+    'instance',
+    datasource='$PROMETHEUS_DS',
+    query='label_values(kube_node_info, node)',
+    // Allow viewing dashboard for multiple nodes
+    includeAll=true,
+    multi=true
+  ),
 ];
 
 
@@ -52,7 +65,7 @@ local memoryUsage = graphPanel.new(
         # exclude name="" because the same container can be reported
         # with both no name and `name=k8s_...`,
         # in which case sum() by (pod) reports double the actual metric
-        container_memory_working_set_bytes{name!=""}
+        container_memory_working_set_bytes{name!="", instance=~"$instance"}
         * on (namespace, pod) group_left(container) 
         group(
             kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub", pod=~"$user_pod"}
@@ -77,7 +90,7 @@ local cpuUsage = graphPanel.new(
         # exclude name="" because the same container can be reported
         # with both no name and `name=k8s_...`,
         # in which case sum() by (pod) reports double the actual metric
-        irate(container_cpu_usage_seconds_total{name!=""}[5m])
+        irate(container_cpu_usage_seconds_total{name!="", instance=~"$instance"}[5m])
         * on (namespace, pod) group_left(container) 
         group(
             kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub", pod=~"$user_pod"}
@@ -88,7 +101,41 @@ local cpuUsage = graphPanel.new(
   ),
 );
 
+local memoryRequests = graphPanel.new(
+  'Memory Requests',
+  description=|||
+    Per-user per-server memory Requests
+  |||,
+  formatY1='bytes',
+  datasource='$PROMETHEUS_DS'
+).addTarget(
+  prometheus.target(
+    |||
+      sum(
+        kube_pod_container_resource_requests{resource="memory", namespace=~"$hub", node=~"$instance"}
+      ) by (pod, namespace)
+    |||,
+    legendFormat='{{ pod }} - ({{ namespace }})'
+  ),
+);
 
+local cpuRequests = graphPanel.new(
+  'CPU Requests',
+  description=|||
+    Per-user per-server CPU Requests
+  |||,
+  formatY1='percentunit',
+  datasource='$PROMETHEUS_DS'
+).addTarget(
+  prometheus.target(
+    |||
+      sum(
+        kube_pod_container_resource_requests{resource="cpu", namespace=~"$hub", node=~"$instance"}
+      ) by (pod, namespace)
+    |||,
+    legendFormat='{{ pod }} - ({{ namespace }})'
+  ),
+);
 dashboard.new(
   'User Pod Diagnostics Dashboard',
   tags=['jupyterhub'],
@@ -100,4 +147,8 @@ dashboard.new(
   memoryUsage, { h: standardDims.h * 1.5, w: standardDims.w * 2 }
 ).addPanel(
   cpuUsage, { h: standardDims.h * 1.5, w: standardDims.w * 2 }
+).addPanel(
+  memoryRequests, { h: standardDims.h * 1.5, w: standardDims.w * 2 }
+).addPanel(
+  cpuRequests, { h: standardDims.h * 1.5, w: standardDims.w * 2 }
 )
