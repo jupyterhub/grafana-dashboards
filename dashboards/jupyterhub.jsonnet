@@ -237,6 +237,24 @@ local hubResponseLatency = graphPanel.new(
     |||,
     legendFormat='50th percentile'
   ),
+  prometheus.target(
+    |||
+      histogram_quantile(
+        0.25,
+        sum(
+          rate(
+            jupyterhub_request_duration_seconds_bucket{
+              app="jupyterhub",
+              namespace=~"$hub",
+              # Ignore SpawnProgressAPIHandler, as it is a EventSource stream
+              # and keeps long lived connections open
+              handler!="jupyterhub.apihandlers.users.SpawnProgressAPIHandler"
+            }[5m]
+          )
+        ) by (le))
+    |||,
+    legendFormat='25th percentile'
+  ),
 ]);
 
 
