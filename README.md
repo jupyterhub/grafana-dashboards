@@ -55,7 +55,13 @@ export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
 ./deploy.py <your-grafana-url> --dashboards-dir global-dashboards
 ```
 
-The gloabal dashboards will use the list of available dashboards in your Grafana provided to them and will build dashboards across all of them.
+The global dashboards will use the list of available dashboards in your Grafana provided to them and will build dashboards across all of them.
+
+If your Grafana instance uses a self-signed certificate, use the `--no-tls-verify` flag when executing the `deploy.py` script. For example:
+
+```bash
+./deploy.py <your-grafana-url> --no-tls-verify
+```
 
 **NOTE: ANY CHANGES YOU MAKE VIA THE GRAFANA UI WILL BE OVERWRITTEN NEXT TIME YOU RUN deploy.bash.
 TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN**
@@ -155,7 +161,7 @@ sum(
 
 Some very useful metrics (such as home directory free space) require
 additional collectors to be installed in your cluster, customized to your
-needs. 
+needs.
 
 ### Free space (%) in shared volume (Home directories, etc.)
 
