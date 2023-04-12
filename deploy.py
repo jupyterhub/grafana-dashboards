@@ -27,16 +27,15 @@ def grafana_request(endpoint, token, path, data=None, no_tls_verify=False):
     if not isinstance(data, bytes):
         data = json.dumps(data).encode()
 
+    ctx = None
+
     if no_tls_verify:
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
 
-        with urlopen(req, data, context=ctx) as resp:
-            return json.load(resp)
-    else:
-        with urlopen(req, data) as resp:
-            return json.load(resp)
+    with urlopen(req, data, context=ctx) as resp:
+        return json.load(resp)
 
 
 def ensure_folder(name, uid, api):
