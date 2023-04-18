@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/google/go-jsonnet
-  rev: v0.19.2-pre2
+  rev: v0.20.0
   hooks:
     - id: jsonnet-format
     # jsonnet-lint hook doesn't work
