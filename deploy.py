@@ -10,20 +10,31 @@ from urllib.parse import urlencode
 from urllib.error import HTTPError
 from copy import deepcopy
 import re
+import ssl
 
 # UID for the folder under which our dashboards will be setup
 DEFAULT_FOLDER_UID = '70E5EE84-1217-4021-A89E-1E3DE0566D93'
 
-def grafana_request(endpoint, token, path, data=None):
+
+def grafana_request(endpoint, token, path, data=None, no_tls_verify=False):
     headers = {
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json'
     }
     method = 'GET' if data is None else 'POST'
     req = Request(f'{endpoint}/api{path}', headers=headers, method=method)
+
     if not isinstance(data, bytes):
         data = json.dumps(data).encode()
-    with urlopen(req, data) as resp:
+
+    ctx = None
+
+    if no_tls_verify:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+    with urlopen(req, data, context=ctx) as resp:
         return json.load(resp)
 
 
@@ -40,7 +51,6 @@ def ensure_folder(name, uid, api):
             return api('/folders', folder)
         else:
             raise
-
 
 
 def build_dashboard(dashboard_path, api, global_dash=False):
@@ -66,8 +76,8 @@ def layout_dashboard(dashboard):
     - Reset x axes when we encounter a row
     - Assume 24 unit width
 
-    Grafana's autolayout is not available in the API, so we
-    have to do thos.
+    Grafana autolayout is not available in the API, so we
+    have to do those.
     """
     # Make a copy, since we're going to modify this dict
     dashboard = deepcopy(dashboard)
@@ -87,6 +97,7 @@ def layout_dashboard(dashboard):
             cur_x = (cur_x + pos['w']) % 24
 
     return dashboard
+
 
 def deploy_dashboard(dashboard_path, folder_uid, api, global_dash=False):
     db = build_dashboard(dashboard_path, api, global_dash)
@@ -130,11 +141,11 @@ def populate_template_variables(api, db):
     Populate options for template variables.
 
     For list of hubs and similar, users should be able to select a hub from
-    a dropdown list. This is not auto populated by grafana if you are
+    a dropdown list. This is not automatically populated by grafana if you are
     using the API (https://community.grafana.com/t/template-update-variable-api/1882/4)
     so we do it here.
     """
-    # We gonna make modifications to db, so let's make a copy
+    # We're going to make modifications to db, so let's make a copy
     db = deepcopy(db)
 
     for var in db.get('templating', {}).get('list', []):
@@ -159,7 +170,7 @@ def populate_template_variables(api, db):
             prom_id = datasources[0]["id"]
 
             labels = get_label_values(api, prom_id, template_query)
-            var["options"] = [{"text": l, "value": l} for l in labels]
+            var["options"] = [{"text": label, "value": label} for label in labels]
             if labels and not var.get("current"):
                 # default selection: all current values
                 # logical alternative: pick just the first
@@ -173,23 +184,27 @@ def populate_template_variables(api, db):
 
     return db
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('grafana_url', help='Grafana endpoint to deploy dashboards to')
     parser.add_argument('--dashboards-dir', default="dashboards", help='Directory of jsonnet dashboards to deploy')
     parser.add_argument('--folder-name', default='JupyterHub Default Dashboards', help='Name of Folder to deploy to')
     parser.add_argument('--folder-uid', default=DEFAULT_FOLDER_UID, help='UID of grafana folder to deploy to')
+    parser.add_argument('--no-tls-verify', action='store_true', default=False,
+                        help='Whether or not to skip TLS certificate validation')
 
     args = parser.parse_args()
 
     grafana_token = os.environ['GRAFANA_TOKEN']
 
-    api = partial(grafana_request, args.grafana_url, grafana_token)
+    api = partial(grafana_request, args.grafana_url, grafana_token, no_tls_verify=args.no_tls_verify)
     folder = ensure_folder(args.folder_name, args.folder_uid, api)
 
     for dashboard in glob(f'{args.dashboards_dir}/*.jsonnet'):
         deploy_dashboard(dashboard, folder['id'], api)
         print(f'Deployed {dashboard}')
+
 
 if __name__ == '__main__':
     main()
