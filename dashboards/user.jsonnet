@@ -66,7 +66,7 @@ local memoryUsage = graphPanel.new(
         # with both no name and `name=k8s_...`,
         # in which case sum() by (pod) reports double the actual metric
         container_memory_working_set_bytes{name!="", instance=~"$instance"}
-        * on (namespace, pod) group_left(container) 
+        * on (namespace, pod) group_left(container)
         group(
             kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub", pod=~"$user_pod"}
         ) by (pod, namespace)
@@ -91,13 +91,34 @@ local cpuUsage = graphPanel.new(
         # with both no name and `name=k8s_...`,
         # in which case sum() by (pod) reports double the actual metric
         irate(container_cpu_usage_seconds_total{name!="", instance=~"$instance"}[5m])
-        * on (namespace, pod) group_left(container) 
+        * on (namespace, pod) group_left(container)
         group(
             kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub", pod=~"$user_pod"}
         ) by (pod, namespace)
       ) by (pod)
     |||,
     legendFormat='{{ pod }} - ({{ namespace }})'
+  ),
+);
+
+local homedirSharedUsage = graphPanel.new(
+  'Home Directory Usage (on shared home directories)',
+  description=|||
+    Per user home directory size, when using a shared home directory.
+
+    Requires https://github.com/yuvipanda/prometheus-dirsize-exporter to
+    be set up.
+  |||,
+  formatY1='bytes',
+  datasource='$PROMETHEUS_DS'
+).addTarget(
+  prometheus.target(
+    |||
+      max(
+        dirsize_total_size_bytes{namespace="$hub"}
+      ) by (directory, namespace)
+    |||,
+    legendFormat='{{ directory }} - ({{ namespace }})'
   ),
 );
 
@@ -136,6 +157,7 @@ local cpuRequests = graphPanel.new(
     legendFormat='{{ pod }} - ({{ namespace }})'
   ),
 );
+
 dashboard.new(
   'User Pod Diagnostics Dashboard',
   tags=['jupyterhub'],
@@ -147,6 +169,8 @@ dashboard.new(
   memoryUsage, { h: standardDims.h * 1.5, w: standardDims.w * 2 }
 ).addPanel(
   cpuUsage, { h: standardDims.h * 1.5, w: standardDims.w * 2 }
+).addPanel(
+  homedirSharedUsage, { h: standardDims.h * 1.5, w: standardDims.w * 2 }
 ).addPanel(
   memoryRequests, { h: standardDims.h * 1.5, w: standardDims.w * 2 }
 ).addPanel(
