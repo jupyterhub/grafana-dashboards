@@ -278,7 +278,6 @@ local hubResponseCodes = graphPanel.new(
 ]);
 
 
-
 // with multi=true, component='singleuser-server' means all components *except* singleuser-server
 local allComponentsMemory = jupyterhub.memoryPanel('All JupyterHub Components', component='singleuser-server', multi=true);
 local allComponentsCPU = jupyterhub.cpuPanel('All JupyterHub Components', component='singleuser-server', multi=true);
