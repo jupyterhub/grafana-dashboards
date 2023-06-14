@@ -70,7 +70,7 @@ local memoryUsage = graphPanel.new(
         group(
             kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub", pod=~"$user_pod"}
         ) by (pod, namespace)
-      ) by (pod)
+      ) by (pod, namespace)
     |||,
     legendFormat='{{ pod }} - ({{ namespace }})'
   ),
@@ -95,7 +95,7 @@ local cpuUsage = graphPanel.new(
         group(
             kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub", pod=~"$user_pod"}
         ) by (pod, namespace)
-      ) by (pod)
+      ) by (pod, namespace)
     |||,
     legendFormat='{{ pod }} - ({{ namespace }})'
   ),
