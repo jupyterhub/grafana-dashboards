@@ -21,7 +21,7 @@ local prometheus = grafana.prometheus;
   componentLabel(component, cmp='=', namespace='$hub')::
     std.format(
       // group aggregator is used to ensure named pods are unique per namespace
-      '\n  group(\n    kube_pod_labels{label_app="jupyterhub", label_component%s"%s"%s}\n  ) by (pod%s)',
+      '\n  group(\n    kube_pod_labels{label_app="jupyterhub", label_component%s"%s"%s}\n  ) by (label_component, pod%s)',
       [
         cmp,
         component,
