@@ -257,6 +257,27 @@ local hubResponseLatency = graphPanel.new(
   ),
 ]);
 
+local hubResponseCodes = graphPanel.new(
+  'Hub response status codes',
+  min=0,
+  datasource='$PROMETHEUS_DS'
+).addTargets([
+  prometheus.target(
+    |||
+      sum(
+        increase(
+          jupyterhub_request_duration_seconds_bucket{
+            app="jupyterhub",
+            namespace=~"$hub",
+          }[2m]
+        )
+      ) by (code)
+    |||,
+    legendFormat='{{ code }}'
+  ),
+]);
+
+
 
 // with multi=true, component='singleuser-server' means all components *except* singleuser-server
 local allComponentsMemory = jupyterhub.memoryPanel('All JupyterHub Components', component='singleuser-server', multi=true);
@@ -539,6 +560,8 @@ dashboard.new(
   serverSpawnFailures, {}
 ).addPanel(
   hubResponseLatency, {}
+).addPanel(
+  hubResponseCodes, {}
 ).addPanel(
   allComponentsCPU, { h: standardDims.h * 1.5 },
 ).addPanel(
