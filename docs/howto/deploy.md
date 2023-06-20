@@ -135,6 +135,7 @@ spec:
 You will likely only need to adjust the `claimName` above to use this example.
 
 
+(howto:deploy:per-user-home-dir)=
 ### Per-user home directory metrics (size, last modified, total entries, etc)
 
 When using a shared home directory for users, it is helpful to collect information

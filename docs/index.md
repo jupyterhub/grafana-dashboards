@@ -21,6 +21,7 @@ via code. This can then be deployed on any Grafana instance!
 ```{toctree}
 :maxdepth: 2
 howto/deploy.md
+howto/user-diagnostics.md
 ```
 
 ## Contributing
