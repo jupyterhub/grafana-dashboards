@@ -1,3 +1,2 @@
-sphinx
-myst-parser[sphinx,linkify]
+myst-parser[linkify]
 sphinx-book-theme
