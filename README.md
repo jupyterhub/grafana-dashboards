@@ -1,5 +1,7 @@
 # Grafana Dashboards for JupyterHub
 
+[![Documentation build status](https://img.shields.io/readthedocs/jupyterhub-grafana?logo=read-the-docs)](https://jupyterhub-grafana.readthedocs.org/en/latest/)
+
 Grafana Dashboards for use with [Zero to JupyterHub on Kubernetes](http://z2jh.jupyter.org/)
 
 ![Grafana Dasboard Screencast](demo.gif)
@@ -18,4 +20,4 @@ via code. This can then be deployed on any Grafana instance!
 
 ## Deployment
 
-Deployment instructions are available in the documentation.
+Deployment instructions are available in [the documentation site](https://jupyterhub-grafana.readthedocs.io/en/latest/howto/deploy.html).
