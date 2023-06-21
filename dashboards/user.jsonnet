@@ -159,7 +159,7 @@ local cpuRequests = graphPanel.new(
 );
 
 dashboard.new(
-  'User Pod Diagnostics Dashboard',
+  'User Diagnostics Dashboard',
   tags=['jupyterhub'],
   uid='user-pod-diagnostics-dashboard',
   editable=true
