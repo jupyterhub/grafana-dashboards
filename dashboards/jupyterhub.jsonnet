@@ -525,15 +525,15 @@ local highMemoryUsagePods = tablePanel.new(
   ),
 ]).hideColumn('Time');
 
-# Show images used by different users on the hub
+// Show images used by different users on the hub
 local notebookImagesUsed = graphPanel.new(
   'Images used by user pods',
   description=|||
-    Number of user servers using a container image
+    Number of user servers using a container image.
   |||,
   legend_hideZero=false,
   decimals=0,
-  stack=true,
+  stack=false,
   min=0,
   datasource='$PROMETHEUS_DS'
 ).addTargets([
