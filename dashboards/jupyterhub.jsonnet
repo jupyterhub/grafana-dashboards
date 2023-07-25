@@ -525,6 +525,28 @@ local highMemoryUsagePods = tablePanel.new(
   ),
 ]).hideColumn('Time');
 
+// Show images used by different users on the hub
+local notebookImagesUsed = graphPanel.new(
+  'Images used by user pods',
+  description=|||
+    Number of user servers using a container image.
+  |||,
+  legend_hideZero=false,
+  decimals=0,
+  stack=false,
+  min=0,
+  datasource='$PROMETHEUS_DS'
+).addTargets([
+  prometheus.target(
+    |||
+      sum (
+        # User pods are named "notebook" by kubespawner
+        kube_pod_container_info{container="notebook", namespace=~"$hub"}
+      ) by(image_spec, namespace)
+    |||,
+    legendFormat='{{image_spec}} (prod)',
+  ),
+]);
 
 dashboard.new(
   'JupyterHub Dashboard',
@@ -543,6 +565,10 @@ dashboard.new(
   weeklyActiveUsers, {}
 ).addPanel(
   monthlyActiveUsers, {}
+).addPanel(
+  row.new('Container Images'), {},
+).addPanel(
+  notebookImagesUsed, {}
 ).addPanel(
   row.new('User Resource Utilization stats'), {}
 ).addPanel(

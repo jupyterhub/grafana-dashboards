@@ -22,6 +22,7 @@ via code. This can then be deployed on any Grafana instance!
 :maxdepth: 2
 howto/deploy.md
 howto/user-diagnostics.md
+howto/images.md
 ```
 
 ## Contributing
