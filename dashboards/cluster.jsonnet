@@ -324,7 +324,7 @@ local nodeOOMKills = graphPanel.new(
 ]);
 
 local nonRunningPods = graphPanel.new(
-  'Non Running Pods',
+  'Pods not in Running state',
   description=|||
     Pods in states other than 'Running'.
 
