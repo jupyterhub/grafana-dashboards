@@ -46,36 +46,37 @@ local userNodes = ts.new(
     ) + prometheus.withLegendFormat('{{label_cloud_google_com_gke_nodepool}}')
 ]);
 
-// local userPods = graphPanel.new(
-//   'Running Users',
-//   description=|||
-//     Count of running users, grouped by namespace
-//   |||,
-//   decimals=0,
-//   min=0,
-//   stack=true,
-//   datasource='$PROMETHEUS_DS'
-// ).addTargets([
-//   prometheus.target(
-//     |||
-//       # Sum up all running user pods by namespace
-//       sum(
-//         # Grab a list of all running pods.
-//         # The group aggregator always returns "1" for the number of times each
-//         # unique label appears in the time series. This is desirable for this
-//         # use case because we're merely identifying running pods by name,
-//         # not how many times they might be running.
-//         group(
-//           kube_pod_status_phase{phase="Running"}
-//         ) by (pod)
-//         * on (pod) group_right() group(
-//           kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server"}
-//         ) by (namespace, pod)
-//       ) by (namespace)
-//     |||,
-//     legendFormat='{{namespace}}'
-//   ),
-// ]);
+local userPods = ts.new(
+  'Running Users',
+) + ts.panelOptions.withDescription(
+  |||
+    Count of running users, grouped by namespace
+  |||
+) + ts.standardOptions.withMin(
+  0
+) + ts.fieldConfig.defaults.custom.withStacking(
+  true
+) + ts.queryOptions.withTargets([
+  prometheus.new(
+    '$PROMETHEUS_DS',
+    |||
+      # Sum up all running user pods by namespace
+      sum(
+        # Grab a list of all running pods.
+        # The group aggregator always returns "1" for the number of times each
+        # unique label appears in the time series. This is desirable for this
+        # use case because we're merely identifying running pods by name,
+        # not how many times they might be running.
+        group(
+          kube_pod_status_phase{phase="Running"}
+        ) by (pod)
+        * on (pod) group_right() group(
+          kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server"}
+        ) by (namespace, pod)
+      ) by (namespace)
+    |||,
+  ) + prometheus.withLegendFormat('{{namespace}}'),
+]);
 
 // local clusterMemoryCommitment = graphPanel.new(
 //   'Memory commitment %',
@@ -354,7 +355,7 @@ dashboard.new(
     row.new(
       'Cluster Stats'
     ) + row.withPanels([
-      // userPods,
+      userPods,
       // clusterMemoryCommitment,
       // clusterCPUCommitment,
       userNodes
