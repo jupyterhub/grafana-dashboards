@@ -37,7 +37,7 @@ local userNodes = commonTSOptions + ts.new(
   'Node Count'
 ) + ts.panelOptions.withDescription(|||
   Number of nodes in each nodepool in this cluster
-|||) + ts.standardOptions.withMin(0) + ts.standardOptions.withDecimals(0) + ts.standardOptions.withMin(
+|||) + ts.standardOptions.withDecimals(
   0
 ) + ts.queryOptions.withTargets([
   prometheus.new(
@@ -72,7 +72,7 @@ local userPods = commonTSOptions + ts.new(
      visible here as a single spike, and may cause stability issues. Since
      they share the same cluster, such spikes happening on a *different* hub
      may still affect your hub.
-|||) + ts.standardOptions.withMin(0) + ts.queryOptions.withTargets([
+|||) + ts.queryOptions.withTargets([
   prometheus.new(
     '$PROMETHEUS_DS',
     |||
@@ -103,8 +103,8 @@ local nodepoolMemoryCommitment = commonTSOptions + ts.new(
   1. If this is consistently low (<50%), you are paying for cloud compute that you do not
      need. Consider reducing the size of your nodes, or increasing the amount of
      memory guaranteed to your users. Some variability based on time of day is to be expected.
-|||) + ts.standardOptions.withUnit('percentunit') + ts.standardOptions.withMin(
-  0
+|||) + ts.standardOptions.withUnit(
+  'percentunit'
 ) + ts.standardOptions.withMax(
   // max=1 may be exceeded in exceptional circumstances like evicted pods
   // but full is still full. This gets a better view of 'fullness' most of the time.
@@ -157,8 +157,8 @@ local nodepoolCPUCommitment = commonTSOptions + ts.new(
   Common shapes:
   1. If this is *consistently high* but shaped differently than your memory commitment
      graph, consider changing your CPU requirements.
-|||) + ts.standardOptions.withUnit('percentunit') + ts.standardOptions.withMin(
-  0
+|||) + ts.standardOptions.withUnit(
+  'percentunit'
 ) + ts.standardOptions.withMax(
   // max=1 may be exceeded in exceptional circumstances like evicted pods
   // but full is still full. This gets a better view of 'fullness' most of the time.
@@ -204,8 +204,8 @@ local nodeCPUCommit = commonTSOptions + ts.new(
   'Node CPU Commit %'
 ) + ts.panelOptions.withDescription(|||
   % of each node guaranteed to pods on it
-|||) + ts.standardOptions.withUnit('percentunit') + ts.standardOptions.withMin(
-  0
+|||) + ts.standardOptions.withUnit(
+  'percentunit'
 ) + ts.standardOptions.withMax(
   // max=1 may be exceeded in exceptional circumstances like evicted pods
   // but full is still full. This gets a better view of 'fullness' most of the time.
@@ -254,8 +254,8 @@ local nodeMemoryCommit = commonTSOptions + ts.new(
 
   When this hits 100%, the autoscaler will spawn a new node and the scheduler will stop
   putting pods on the old node.
-|||) + ts.standardOptions.withUnit('percentunit') + ts.standardOptions.withMin(
-  0
+|||) + ts.standardOptions.withUnit(
+  'percentunit'
 ) + ts.standardOptions.withMax(
   // max=1 may be exceeded in exceptional circumstances like evicted pods
   // but full is still full. This gets a better view of 'fullness' most of the time.
@@ -367,7 +367,7 @@ local nodeOOMKills = commonBarChartOptions + barChart.new(
     that happens on any given node, and helps validate that a notebook kernel restart was
     infact caused by an OOM
   |||
-) + barChart.standardOptions.withDecimals(0) + barChart.standardOptions.withMin(
+) + barChart.standardOptions.withDecimals(
   0
 ) + barChart.queryOptions.withTargets([
   prometheus.new(
@@ -393,7 +393,7 @@ local nonRunningPods = commonBarChartOptions + barChart.new(
 
     In a functional clusters, pods should not be in non-Running states for long.
   |||,
-) + barChart.standardOptions.withDecimals(0) + barChart.standardOptions.withMin(
+) + barChart.standardOptions.withDecimals(
   0
 ) + barChart.queryOptions.withTargets([
   prometheus.new(
