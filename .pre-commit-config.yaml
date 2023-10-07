@@ -3,5 +3,4 @@ repos:
   rev: v0.20.0
   hooks:
     - id: jsonnet-format
-    # jsonnet-lint hook doesn't work
-    # - id: jsonnet-lint
+      exclude: ^vendor/.*
