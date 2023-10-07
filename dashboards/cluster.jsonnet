@@ -50,7 +50,9 @@ local userPods = common.tsOptions + ts.new(
      visible here as a single spike, and may cause stability issues. Since
      they share the same cluster, such spikes happening on a *different* hub
      may still affect your hub.
-|||) + ts.queryOptions.withTargets([
+|||) + ts.standardOptions.withDecimals(
+  0
+) + ts.queryOptions.withTargets([
   prometheus.new(
     '$PROMETHEUS_DS',
     |||
