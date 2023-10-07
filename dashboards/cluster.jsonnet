@@ -66,7 +66,13 @@ local userNodes = commonTSOptions + ts.new(
 local userPods = commonTSOptions + ts.new(
   'Running Users',
 ) + ts.panelOptions.withDescription(|||
-  Count of running users, grouped by namespace
+  Number of currently running users per hub.
+
+  Common shapes this visualization may take:
+  1. A large number of users starting servers at exactly the same time will be
+     visible here as a single spike, and may cause stability issues. Since
+     they share the same cluster, such spikes happening on a *different* hub
+     may still affect your hub.
 |||) + ts.standardOptions.withMin(0) + ts.queryOptions.withTargets([
   prometheus.new(
     '$PROMETHEUS_DS',
@@ -89,12 +95,15 @@ local userPods = commonTSOptions + ts.new(
   ) + prometheus.withLegendFormat('{{namespace}}'),
 ]);
 
-local clusterMemoryCommitment = commonTSOptions + ts.new(
-  'Memory commitment %',
+local nodepoolMemoryCommitment = commonTSOptions + ts.new(
+  'Node Pool Memory commitment %',
 ) + ts.panelOptions.withDescription(|||
-  % of total memory in the cluster currently requested by to non-placeholder pods.
+  % of memory in each node pool guaranteed to user workloads.
 
-  If autoscaling is efficient, this should be a fairly constant, high number (>70%).
+  Common shapes:
+  1. If this is consistently low (<50%), you are paying for cloud compute that you do not
+     need. Consider reducing the size of your nodes, or increasing the amount of
+     memory guaranteed to your users. Some variability based on time of day is to be expected.
 |||) + ts.standardOptions.withUnit('percentunit') + ts.standardOptions.withMin(
   0
 ) + ts.standardOptions.withMax(
@@ -138,12 +147,17 @@ local clusterMemoryCommitment = commonTSOptions + ts.new(
   ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat),
 ]);
 
-local clusterCPUCommitment = commonTSOptions + ts.new(
-  'CPU commitment %',
+local nodepoolCPUCommitment = commonTSOptions + ts.new(
+  'Node Pool CPU commitment %',
 ) + ts.panelOptions.withDescription(|||
-  % of total CPU in the cluster currently requested by to non-placeholder pods.
+  % of CPU in each node pool guaranteed to user workloads.
 
-  JupyterHub users mostly are capped by memory, so this is not super useful.
+  Most commonly, JupyterHub workloads are *memory bound*, not CPU bound. So this is
+  not a particularly helpful graph.
+
+  Common shapes:
+  1. If this is *consistently high* but shaped differently than your memory commitment
+     graph, consider changing your CPU requirements.
 |||) + ts.standardOptions.withUnit('percentunit') + ts.standardOptions.withMin(
   0
 ) + ts.standardOptions.withMax(
@@ -284,56 +298,64 @@ local nodeMemoryCommit = commonTSOptions + ts.new(
   ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat + '/{{node}}'),
 ]);
 
-// // Cluster diagnostics
-// local nodeMemoryUtil = graphPanel.new(
-//   'Node Memory Utilization %',
-//   formatY1='percentunit',
-//   description=|||
-//     % of available Memory currently in use
-//   |||,
-//   min=0,
-//   // since this is actual measured utilization, it should not be able to exceed max=1
-//   max=1,
-//   datasource='$PROMETHEUS_DS'
-// ).addTargets([
-//   prometheus.target(
-//     |||
-//       1 - (
-//         sum (
-//           # Memory that can be allocated to processes when they need
-//           node_memory_MemFree_bytes + # Unused bytes
-//           node_memory_Cached_bytes + # Shared memory + temporary disk cache
-//           node_memory_Buffers_bytes # Very temporary buffer memory cache for disk i/o
-//         ) by (node)
-//         /
-//         sum(node_memory_MemTotal_bytes) by (node)
-//       )
-//     |||,
-//     legendFormat='{{node}}'
-//   ),
-// ]);
+local nodeMemoryUtil = commonTSOptions + ts.new(
+  'Node Memory Utilization %'
+) + ts.panelOptions.withDescription(|||
+  % of available Memory currently in use
+|||) + ts.standardOptions.withUnit(
+  'percentunit'
+) + ts.standardOptions.withMax(
+  // max=1 may be exceeded in exceptional circumstances like evicted pods
+  // but full is still full. This gets a better view of 'fullness' most of the time.
+  // If the commitment is "off the chart" it doesn't super matter by how much.
+  1
+) + ts.queryOptions.withTargets([
+  prometheus.new(
+    '$PROMETHEUS_DS',
+    |||
+      1 - (
+        sum (
+          # Memory that can be allocated to processes when they need
+          node_memory_MemFree_bytes + # Unused bytes
+          node_memory_Cached_bytes + # Shared memory + temporary disk cache
+          node_memory_Buffers_bytes # Very temporary buffer memory cache for disk i/o
+        ) by (node)
+        /
+        sum(node_memory_MemTotal_bytes) by (node)
+      ) * on(node) group_left(%s)
+      group(
+        kube_node_labels
+      ) by (node, %s)
+    ||| % std.repeat([jupyterhub.nodePoolLabels], 2),
+  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat + '/{{node}}'),
+]);
 
-// local nodeCPUUtil = graphPanel.new(
-//   'Node CPU Utilization %',
-//   formatY1='percentunit',
-//   description=|||
-//     % of available CPUs currently in use
-//   |||,
-//   min=0,
-//   // since this is actual measured utilization, it should not be able to exceed max=1
-//   max=1,
-//   datasource='$PROMETHEUS_DS'
-// ).addTargets([
-//   prometheus.target(
-//     |||
-//       sum(rate(node_cpu_seconds_total{mode!="idle"}[5m])) by (node)
-//       /
-//       sum(kube_node_status_capacity{resource="cpu"}) by (node)
-//     |||,
-//     legendFormat='{{ node }}'
-//   ),
-// ]);
-
+local nodeCPUUtil = commonTSOptions + ts.new(
+  'Node CPU Utilization %'
+) + ts.panelOptions.withDescription(|||
+  % of available CPU currently in use
+|||) + ts.standardOptions.withUnit(
+  'percentunit'
+) + ts.standardOptions.withMax(
+  // max=1 may be exceeded in exceptional circumstances like evicted pods
+  // but full is still full. This gets a better view of 'fullness' most of the time.
+  // If the commitment is "off the chart" it doesn't super matter by how much.
+  1
+) + ts.queryOptions.withTargets([
+  prometheus.new(
+    '$PROMETHEUS_DS',
+    |||
+      (
+        sum(rate(node_cpu_seconds_total{mode!="idle"}[5m])) by (node)
+        /
+        sum(kube_node_status_capacity{resource="cpu"}) by (node)
+      ) * on (node) group_left(%s)
+      group(
+        kube_node_labels
+      ) by (node, %s)
+    ||| % std.repeat([jupyterhub.nodePoolLabels], 2),
+  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat + '/{{node}}'),
+]);
 
 local nodeOOMKills = commonBarChartOptions + barChart.new(
   'Out of Memory Kill Count'
@@ -398,8 +420,8 @@ dashboard.new(
     ) + row.withPanels([
       userPods,
       userNodes,
-      clusterMemoryCommitment,
-      clusterCPUCommitment,
+      nodepoolMemoryCommitment,
+      nodepoolCPUCommitment,
     ]),
     row.new('Cluster Health') + row.withPanels([
       nonRunningPods,
@@ -408,8 +430,8 @@ dashboard.new(
     row.new('Node Stats') + row.withPanels([
       nodeCPUCommit,
       nodeMemoryCommit,
+      nodeCPUUtil,
+      nodeMemoryUtil,
     ]),
-    // nodeCPUUtil,
-    // nodeMemoryUtil,
   ], panelWidth=12, panelHeight=8)
 )
