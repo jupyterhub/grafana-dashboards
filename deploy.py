@@ -68,44 +68,12 @@ def build_dashboard(dashboard_path, api, global_dash=False):
     ).decode())
 
 
-def layout_dashboard(dashboard):
-    """
-    Automatically layout panels.
-
-    - Default to 12x10 panels
-    - Reset x axes when we encounter a row
-    - Assume 24 unit width
-
-    Grafana autolayout is not available in the API, so we
-    have to do those.
-    """
-    # Make a copy, since we're going to modify this dict
-    dashboard = deepcopy(dashboard)
-    cur_x = 0
-    cur_y = 0
-    for panel in dashboard['panels']:
-        pos = panel['gridPos']
-        pos['h'] = pos.get('h', 10)
-        pos['w'] = pos.get('w', 12)
-        pos['x'] = cur_x
-        pos['y'] = cur_y
-
-        cur_y += pos['h']
-        if panel['type'] == 'row':
-            cur_x = 0
-        else:
-            cur_x = (cur_x + pos['w']) % 24
-
-    return dashboard
-
-
 def deploy_dashboard(dashboard_path, folder_uid, api, global_dash=False):
     db = build_dashboard(dashboard_path, api, global_dash)
 
     if not db:
         return
 
-    db = layout_dashboard(db)
     db = populate_template_variables(api, db)
 
     data = {
@@ -119,7 +87,7 @@ def deploy_dashboard(dashboard_path, folder_uid, api, global_dash=False):
 def get_label_values(api, ds_id, template_query):
     """
     Return response to a `label_values` template query
-
+j
     `label_values` isn't actually a prometheus thing - it is an API call that
     grafana makes. This function tries to mimic that. Useful for populating variables
     in a dashboard
@@ -201,7 +169,7 @@ def main():
     api = partial(grafana_request, args.grafana_url, grafana_token, no_tls_verify=args.no_tls_verify)
     folder = ensure_folder(args.folder_name, args.folder_uid, api)
 
-    for dashboard in glob(f'{args.dashboards_dir}/*.jsonnet'):
+    for dashboard in glob(f'{args.dashboards_dir}/cluster.jsonnet'):
         deploy_dashboard(dashboard, folder['id'], api)
         print(f'Deployed {dashboard}')
 
