@@ -19,11 +19,27 @@ local variables = [
 // Cluster-wide stats
 local userNodes = ts.new(
   'Node Count'
-) + ts.panelOptions.withDescription(
-  'Number of nodes in each nodepool in this cluster'
-) + ts.standardOptions.withMin(
-  0
-) + ts.queryOptions.withTargets([
+) + {
+  description: 'Number of nodes in each nodepool in this cluster',
+  options: {
+    tooltip: {
+      mode: 'multi',
+    },
+  },
+  fieldConfig: {
+    min: 0,
+    defaults: {
+      // Only show whole numbers
+      decimals: 0,
+      custom: {
+        stacking: {
+          mode: 'normal',
+        },
+      },
+
+    },
+  },
+} + ts.queryOptions.withTargets([
   prometheus.new(
     '$PROMETHEUS_DS',
     |||
@@ -40,21 +56,19 @@ local userNodes = ts.new(
         # avoid messing things up.
         group(
           kube_node_labels
-        ) by (node, label_cloud_google_com_gke_nodepool)
-      ) by (label_cloud_google_com_gke_nodepool)
-    |||
-  ) + prometheus.withLegendFormat('{{label_cloud_google_com_gke_nodepool}}'),
+        ) by (node, %s)
+      ) by (%s)
+    ||| % std.repeat([jupyterhub.nodePoolLabels], 2)
+  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat),
 ]);
 
 local userPods = ts.new(
   'Running Users',
-) + ts.panelOptions.withDescription(
-  |||
+) + {
+  description: |||
     Count of running users, grouped by namespace
-  |||
-) + ts.standardOptions.withMin(
-  0
-) + ts.fieldConfig.defaults.custom.withStacking(
+  |||,
+} + ts.fieldConfig.defaults.custom.withStacking(
   true
 ) + ts.queryOptions.withTargets([
   prometheus.new(
@@ -78,55 +92,59 @@ local userPods = ts.new(
   ) + prometheus.withLegendFormat('{{namespace}}'),
 ]);
 
-// local clusterMemoryCommitment = graphPanel.new(
-//   'Memory commitment %',
-//   formatY1='percentunit',
-//   description=|||
-//     % of total memory in the cluster currently requested by to non-placeholder pods.
+local clusterMemoryCommitment = ts.new(
+  'Memory commitment %',
+) + {
+  description: |||
+    % of total memory in the cluster currently requested by to non-placeholder pods.
 
-//     If autoscaling is efficient, this should be a fairly constant, high number (>70%).
-//   |||,
-//   min=0,
-//   // max=1 may be exceeded in exceptional circumstances like evicted pods
-//   // but full is still full. This gets a better view of 'fullness' most of the time.
-//   // If the commitment is "off the chart" it doesn't super matter by how much.
-//   max=1,
-//   datasource='$PROMETHEUS_DS'
-// ).addTargets([
-//   prometheus.target(
-//     |||
-//       sum(
-//         # Get individual container memory requests
-//         kube_pod_container_resource_requests{resource="memory"}
-//         # Add node pool name as label
-//         * on(node) group_left(label_cloud_google_com_gke_nodepool)
-//         # group aggregator ensures that node names are unique per
-//         # pool.
-//         group(
-//           kube_node_labels
-//         ) by (node, label_cloud_google_com_gke_nodepool)
-//         # Ignore containers from pods that aren't currently running or scheduled
-//         # FIXME: This isn't the best metric here, evaluate what is.
-//         and on (pod) kube_pod_status_scheduled{condition='true'}
-//         # Ignore user and node placeholder pods
-//         and on (pod) kube_pod_labels{label_component!~'user-placeholder|node-placeholder'}
-//       ) by (label_cloud_google_com_gke_nodepool)
-//       /
-//       sum(
-//         # Total allocatable memory on a node
-//         kube_node_status_allocatable{resource="memory"}
-//         # Add nodepool name as label
-//         * on(node) group_left(label_cloud_google_com_gke_nodepool)
-//         # group aggregator ensures that node names are unique per
-//         # pool.
-//         group(
-//           kube_node_labels
-//         ) by (node, label_cloud_google_com_gke_nodepool)
-//       ) by (label_cloud_google_com_gke_nodepool)
-//     |||,
-//     legendFormat='{{label_cloud_google_com_gke_nodepool}}'
-//   ),
-// ]);
+    If autoscaling is efficient, this should be a fairly constant, high number (>70%).
+  |||,
+  fieldConfig: {
+    defaults: {
+      min: 0,
+      // max=1 may be exceeded in exceptional circumstances like evicted pods
+      // but full is still full. This gets a better view of 'fullness' most of the time.
+      // If the commitment is "off the chart" it doesn't super matter by how much.
+      max: 1,
+      unit: 'percentunit',
+    },
+  },
+} + ts.queryOptions.withTargets([
+  prometheus.new(
+    '$PROMETHEUS_DS',
+    |||
+      sum(
+        # Get individual container memory requests
+        kube_pod_container_resource_requests{resource="memory"}
+        # Add node pool name as label
+        * on(node) group_left(%s)
+        # group aggregator ensures that node names are unique per
+        # pool.
+        group(
+          kube_node_labels
+        ) by (node, %s)
+        # Ignore containers from pods that aren't currently running or scheduled
+        # FIXME: This isn't the best metric here, evaluate what is.
+        and on (pod) kube_pod_status_scheduled{condition='true'}
+        # Ignore user and node placeholder pods
+        and on (pod) kube_pod_labels{label_component!~'user-placeholder|node-placeholder'}
+      ) by (%s)
+      /
+      sum(
+        # Total allocatable memory on a node
+        kube_node_status_allocatable{resource="memory"}
+        # Add nodepool name as label
+        * on(node) group_left(%s)
+        # group aggregator ensures that node names are unique per
+        # pool.
+        group(
+          kube_node_labels
+        ) by (node, %s)
+      ) by (%s)
+    ||| % std.repeat([jupyterhub.nodePoolLabels], 6),
+  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat),
+]);
 
 // local clusterCPUCommitment = graphPanel.new(
 //   'CPU commitment %',
@@ -355,8 +373,8 @@ dashboard.new(
     row.new(
       'Cluster Stats'
     ) + row.withPanels([
-      userPods,
-      // clusterMemoryCommitment,
+      userPods + ts.gridPos.withW(24),
+      clusterMemoryCommitment,
       // clusterCPUCommitment,
       userNodes,
 
