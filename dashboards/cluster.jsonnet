@@ -8,8 +8,7 @@ local prometheus = grafonnet.query.prometheus;
 local var = grafonnet.dashboard.variable;
 local row = grafonnet.panel.row;
 
-local jupyterhub = import './jupyterhub.libsonnet';
-local standardDims = jupyterhub.standardDims;
+local common = import './common.libsonnet';
 
 local variables = [
   var.datasource.new(
@@ -17,24 +16,9 @@ local variables = [
   ),
 ];
 
-local commonTSOptions = ts.standardOptions.withMin(
-  // Y axes should *always* start from 0
-  0
-) + ts.options.withTooltip({
-  // Show all values in the legend tooltip
-  mode: 'multi',
-});
-
-local commonBarChartOptions = barChart.standardOptions.withMin(
-  // Y axes should *always* start from 0
-  0
-) + barChart.options.withTooltip({
-  // Show all values in the legend tooltip
-  mode: 'multi',
-});
 
 // Cluster-wide stats
-local userNodes = commonTSOptions + ts.new(
+local userNodes = common.tsOptions + ts.new(
   'Node Count'
 ) + ts.panelOptions.withDescription(|||
   Number of nodes in each nodepool in this cluster
@@ -59,11 +43,11 @@ local userNodes = commonTSOptions + ts.new(
           kube_node_labels
         ) by (node, %s)
       ) by (%s)
-    ||| % std.repeat([jupyterhub.nodePoolLabels], 2)
-  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat),
+    ||| % std.repeat([common.nodePoolLabels], 2)
+  ) + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat),
 ]);
 
-local userPods = commonTSOptions + ts.new(
+local userPods = common.tsOptions + ts.new(
   'Running Users',
 ) + ts.panelOptions.withDescription(|||
   Number of currently running users per hub.
@@ -95,7 +79,7 @@ local userPods = commonTSOptions + ts.new(
   ) + prometheus.withLegendFormat('{{namespace}}'),
 ]);
 
-local nodepoolMemoryCommitment = commonTSOptions + ts.new(
+local nodepoolMemoryCommitment = common.tsOptions + ts.new(
   'Node Pool Memory commitment %',
 ) + ts.panelOptions.withDescription(|||
   % of memory in each node pool guaranteed to user workloads.
@@ -143,11 +127,11 @@ local nodepoolMemoryCommitment = commonTSOptions + ts.new(
           kube_node_labels
         ) by (node, %s)
       ) by (%s)
-    ||| % std.repeat([jupyterhub.nodePoolLabels], 6),
-  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat),
+    ||| % std.repeat([common.nodePoolLabels], 6),
+  ) + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat),
 ]);
 
-local nodepoolCPUCommitment = commonTSOptions + ts.new(
+local nodepoolCPUCommitment = common.tsOptions + ts.new(
   'Node Pool CPU commitment %',
 ) + ts.panelOptions.withDescription(|||
   % of CPU in each node pool guaranteed to user workloads.
@@ -197,11 +181,11 @@ local nodepoolCPUCommitment = commonTSOptions + ts.new(
           kube_node_labels
         ) by (node, %s)
       ) by (%s)
-    ||| % std.repeat([jupyterhub.nodePoolLabels], 6),
-  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat),
+    ||| % std.repeat([common.nodePoolLabels], 6),
+  ) + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat),
 ]);
 
-local nodeCPUCommit = commonTSOptions + ts.new(
+local nodeCPUCommit = common.tsOptions + ts.new(
   'Node CPU Commit %'
 ) + ts.panelOptions.withDescription(|||
   % of each node guaranteed to pods on it
@@ -244,11 +228,11 @@ local nodeCPUCommit = commonTSOptions + ts.new(
           kube_node_labels
         ) by (node, %s)
       ) by (node, %s)
-    ||| % std.repeat([jupyterhub.nodePoolLabels], 6),
-  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat + '/{{node}}'),
+    ||| % std.repeat([common.nodePoolLabels], 6),
+  ) + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat + '/{{node}}'),
 ]);
 
-local nodeMemoryCommit = commonTSOptions + ts.new(
+local nodeMemoryCommit = common.tsOptions + ts.new(
   'Node Memory Commit %'
 ) + ts.panelOptions.withDescription(|||
   % of each node guaranteed to pods on it.
@@ -294,11 +278,11 @@ local nodeMemoryCommit = commonTSOptions + ts.new(
           kube_node_labels
         ) by (node, %s)
       ) by (node, %s)
-    ||| % std.repeat([jupyterhub.nodePoolLabels], 6),
-  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat + '/{{node}}'),
+    ||| % std.repeat([common.nodePoolLabels], 6),
+  ) + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat + '/{{node}}'),
 ]);
 
-local nodeMemoryUtil = commonTSOptions + ts.new(
+local nodeMemoryUtil = common.tsOptions + ts.new(
   'Node Memory Utilization %'
 ) + ts.panelOptions.withDescription(|||
   % of available Memory currently in use
@@ -326,11 +310,11 @@ local nodeMemoryUtil = commonTSOptions + ts.new(
       group(
         kube_node_labels
       ) by (node, %s)
-    ||| % std.repeat([jupyterhub.nodePoolLabels], 2),
-  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat + '/{{node}}'),
+    ||| % std.repeat([common.nodePoolLabels], 2),
+  ) + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat + '/{{node}}'),
 ]);
 
-local nodeCPUUtil = commonTSOptions + ts.new(
+local nodeCPUUtil = common.tsOptions + ts.new(
   'Node CPU Utilization %'
 ) + ts.panelOptions.withDescription(|||
   % of available CPU currently in use
@@ -353,11 +337,11 @@ local nodeCPUUtil = commonTSOptions + ts.new(
       group(
         kube_node_labels
       ) by (node, %s)
-    ||| % std.repeat([jupyterhub.nodePoolLabels], 2),
-  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat + '/{{node}}'),
+    ||| % std.repeat([common.nodePoolLabels], 2),
+  ) + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat + '/{{node}}'),
 ]);
 
-local nodeOOMKills = commonBarChartOptions + barChart.new(
+local nodeOOMKills = common.barChartOptions + barChart.new(
   'Out of Memory Kill Count'
 ) + barChart.panelOptions.withDescription(
   |||
@@ -382,11 +366,11 @@ local nodeOOMKills = commonBarChartOptions + barChart.new(
         kube_node_labels
       )
       by(node, %s)
-    ||| % std.repeat([jupyterhub.nodePoolLabels], 2)
-  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat + '/{{node}}'),
+    ||| % std.repeat([common.nodePoolLabels], 2)
+  ) + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat + '/{{node}}'),
 ]);
 
-local nonRunningPods = commonBarChartOptions + barChart.new(
+local nonRunningPods = common.barChartOptions + barChart.new(
   'Pods not in Running state'
 ) + barChart.panelOptions.withDescription(
   |||
