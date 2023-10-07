@@ -10,13 +10,6 @@ local row = grafonnet.panel.row;
 
 local common = import './common.libsonnet';
 
-local variables = [
-  var.datasource.new(
-    'PROMETHEUS_DS', 'prometheus'
-  ),
-];
-
-
 // Cluster-wide stats
 local userNodes = common.tsOptions + ts.new(
   'Node Count'
@@ -396,7 +389,7 @@ dashboard.new(
 ) + dashboard.withEditable(
   true
 ) + dashboard.withVariables(
-  variables
+  common.variables.prometheus
 ) + dashboard.withPanels(
   grafonnet.util.grid.makeGrid([
     row.new(
