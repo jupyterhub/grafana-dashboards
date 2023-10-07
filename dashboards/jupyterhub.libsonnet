@@ -156,4 +156,18 @@ local prometheus = grafonnet.prometheus;
     formatY1='percentunit',
     multi=multi,
   ),
+
+  /**
+   * List of labels applied onto nodes describing the nodegroup they belong to.
+   * This is different per cloud provider, so we list them all here. Prometheus will just ignore
+   * the labels that are not present.
+   */
+  nodePoolLabels: 'label_alpha_eksctl_io_nodegroup_name, label_cloud_google_com_gke_nodepool',
+
+  /**
+   * Legend used to display name of nodepool a timeseries belongs to, to be used in conjunction with
+   * nodePoolLabels. Grafana will ignore all the labels that don't exist, and we will get to see a
+   * human readable name of the nodepool in question.
+   */
+  nodePoolLabelsLegendFormat: '{{label_alpha_eksctl_io_nodegroup_name}}{{label_cloud_google_com_gke_nodepool}}',
 }
