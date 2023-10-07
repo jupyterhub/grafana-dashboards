@@ -1,6 +1,6 @@
 #!/usr/bin/env -S jsonnet -J ../vendor
 // Deploys a dashboard showing cluster-wide information
-local grafonnet = import "github.com/grafana/grafonnet/gen/grafonnet-v10.0.0/main.libsonnet";
+local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v10.0.0/main.libsonnet';
 local dashboard = grafonnet.dashboard;
 local ts = grafonnet.panel.timeSeries;
 local prometheus = grafonnet.query.prometheus;
@@ -20,30 +20,30 @@ local variables = [
 local userNodes = ts.new(
   'Node Count'
 ) + ts.panelOptions.withDescription(
-  "Number of nodes in each nodepool in this cluster"
+  'Number of nodes in each nodepool in this cluster'
 ) + ts.standardOptions.withMin(
   0
 ) + ts.queryOptions.withTargets([
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        # sum up all nodes by nodepool
-        sum(
-          # kube_pod_labels comes from
-          # https://github.com/kubernetes/kube-state-metrics, and there is a particular
-          # label (kubernetes_node) that lists the node on which the kube-state-metrics pod
-          # s running! So that's totally irrelevant to these queries, but when a nodepool
-          # is rotated it caused there to exist two metrics with the same node value (which
-          # we care about) but different kubernetes_node values (because kube-state-metrics
-          # was running in a different node, even though we don't care about that). This
-          # group really just drops all labels except the two we care about to
-          # avoid messing things up.
-          group(
-            kube_node_labels
-          ) by (node, label_cloud_google_com_gke_nodepool)
-        ) by (label_cloud_google_com_gke_nodepool)
-      |||
-    ) + prometheus.withLegendFormat('{{label_cloud_google_com_gke_nodepool}}')
+  prometheus.new(
+    '$PROMETHEUS_DS',
+    |||
+      # sum up all nodes by nodepool
+      sum(
+        # kube_pod_labels comes from
+        # https://github.com/kubernetes/kube-state-metrics, and there is a particular
+        # label (kubernetes_node) that lists the node on which the kube-state-metrics pod
+        # s running! So that's totally irrelevant to these queries, but when a nodepool
+        # is rotated it caused there to exist two metrics with the same node value (which
+        # we care about) but different kubernetes_node values (because kube-state-metrics
+        # was running in a different node, even though we don't care about that). This
+        # group really just drops all labels except the two we care about to
+        # avoid messing things up.
+        group(
+          kube_node_labels
+        ) by (node, label_cloud_google_com_gke_nodepool)
+      ) by (label_cloud_google_com_gke_nodepool)
+    |||
+  ) + prometheus.withLegendFormat('{{label_cloud_google_com_gke_nodepool}}'),
 ]);
 
 local userPods = ts.new(
@@ -358,9 +358,9 @@ dashboard.new(
       userPods,
       // clusterMemoryCommitment,
       // clusterCPUCommitment,
-      userNodes
+      userNodes,
 
-    ])
+    ]),
     // nonRunningPods,
     // row.new('Node Stats'),
     // nodeCPUUtil,
