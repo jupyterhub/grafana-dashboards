@@ -17,30 +17,30 @@ local variables = [
   ),
 ];
 
-// Cluster-wide stats
-local userNodes = ts.new(
-  'Node Count'
-) + {
-  description: 'Number of nodes in each nodepool in this cluster',
-  options: {
-    tooltip: {
-      mode: 'multi',
-    },
-  },
-  fieldConfig: {
-    min: 0,
-    defaults: {
-      // Only show whole numbers
-      decimals: 0,
-      custom: {
-        stacking: {
-          mode: 'normal',
-        },
-      },
+local commonTSOptions = ts.standardOptions.withMin(
+  // Y axes should *always* start from 0
+  0
+) + ts.options.withTooltip({
+  // Show all values in the legend tooltip
+  mode: 'multi',
+});
 
-    },
-  },
-} + ts.queryOptions.withTargets([
+local commonBarChartOptions = barChart.standardOptions.withMin(
+  // Y axes should *always* start from 0
+  0
+) + barChart.options.withTooltip({
+  // Show all values in the legend tooltip
+  mode: 'multi',
+});
+
+// Cluster-wide stats
+local userNodes = commonTSOptions + ts.new(
+  'Node Count'
+) + ts.panelOptions.withDescription(|||
+  Number of nodes in each nodepool in this cluster
+|||) + ts.standardOptions.withMin(0) + ts.standardOptions.withDecimals(0) + ts.standardOptions.withMin(
+  0
+) + ts.queryOptions.withTargets([
   prometheus.new(
     '$PROMETHEUS_DS',
     |||
@@ -63,15 +63,11 @@ local userNodes = ts.new(
   ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat),
 ]);
 
-local userPods = ts.new(
+local userPods = commonTSOptions + ts.new(
   'Running Users',
-) + {
-  description: |||
-    Count of running users, grouped by namespace
-  |||,
-} + ts.fieldConfig.defaults.custom.withStacking(
-  true
-) + ts.queryOptions.withTargets([
+) + ts.panelOptions.withDescription(|||
+  Count of running users, grouped by namespace
+|||) + ts.standardOptions.withMin(0) + ts.queryOptions.withTargets([
   prometheus.new(
     '$PROMETHEUS_DS',
     |||
@@ -93,25 +89,20 @@ local userPods = ts.new(
   ) + prometheus.withLegendFormat('{{namespace}}'),
 ]);
 
-local clusterMemoryCommitment = ts.new(
+local clusterMemoryCommitment = commonTSOptions + ts.new(
   'Memory commitment %',
-) + {
-  description: |||
-    % of total memory in the cluster currently requested by to non-placeholder pods.
+) + ts.panelOptions.withDescription(|||
+  % of total memory in the cluster currently requested by to non-placeholder pods.
 
-    If autoscaling is efficient, this should be a fairly constant, high number (>70%).
-  |||,
-  fieldConfig: {
-    defaults: {
-      min: 0,
-      // max=1 may be exceeded in exceptional circumstances like evicted pods
-      // but full is still full. This gets a better view of 'fullness' most of the time.
-      // If the commitment is "off the chart" it doesn't super matter by how much.
-      max: 1,
-      unit: 'percentunit',
-    },
-  },
-} + ts.queryOptions.withTargets([
+  If autoscaling is efficient, this should be a fairly constant, high number (>70%).
+|||) + ts.standardOptions.withUnit('percentunit') + ts.standardOptions.withMin(
+  0
+) + ts.standardOptions.withMax(
+  // max=1 may be exceeded in exceptional circumstances like evicted pods
+  // but full is still full. This gets a better view of 'fullness' most of the time.
+  // If the commitment is "off the chart" it doesn't super matter by how much.
+  1
+) + ts.queryOptions.withTargets([
   prometheus.new(
     '$PROMETHEUS_DS',
     |||
@@ -147,25 +138,20 @@ local clusterMemoryCommitment = ts.new(
   ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat),
 ]);
 
-local clusterCPUCommitment = ts.new(
+local clusterCPUCommitment = commonTSOptions + ts.new(
   'CPU commitment %',
-) + {
-  description: |||
-    % of total CPU in the cluster currently requested by to non-placeholder pods.
+) + ts.panelOptions.withDescription(|||
+  % of total CPU in the cluster currently requested by to non-placeholder pods.
 
-    JupyterHub users mostly are capped by memory, so this is not super useful.
-  |||,
-  fieldConfig: {
-    defaults: {
-      unit: 'percentunit',
-      min: 0,
-      // max=1 may be exceeded in exceptional circumstances like evicted pods
-      // but full is still full. This gets a better view of 'fullness' most of the time.
-      // If the commitment is "off the chart" it doesn't super matter by how much.
-      max: 1,
-    },
-  },
-} + ts.queryOptions.withTargets([
+  JupyterHub users mostly are capped by memory, so this is not super useful.
+|||) + ts.standardOptions.withUnit('percentunit') + ts.standardOptions.withMin(
+  0
+) + ts.standardOptions.withMax(
+  // max=1 may be exceeded in exceptional circumstances like evicted pods
+  // but full is still full. This gets a better view of 'fullness' most of the time.
+  // If the commitment is "off the chart" it doesn't super matter by how much.
+  1
+) + ts.queryOptions.withTargets([
   prometheus.new(
     '$PROMETHEUS_DS',
     |||
@@ -201,23 +187,18 @@ local clusterCPUCommitment = ts.new(
   ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat),
 ]);
 
-local nodeCPUCommit = ts.new(
+local nodeCPUCommit = commonTSOptions + ts.new(
   'Node CPU Commit %'
-) + {
-  description: |||
-    % of each node guaranteed to pods on it
-  |||,
-  fieldConfig: {
-    defaults: {
-      unit: 'percentunit',
-      min: 0,
-      // max=1 may be exceeded in exceptional circumstances like evicted pods
-      // but full is still full. This gets a better view of 'fullness' most of the time.
-      // If the commitment is "off the chart" it doesn't super matter by how much.
-      max: 1,
-    },
-  },
-} + ts.queryOptions.withTargets([
+) + ts.panelOptions.withDescription(|||
+  % of each node guaranteed to pods on it
+|||) + ts.standardOptions.withUnit('percentunit') + ts.standardOptions.withMin(
+  0
+) + ts.standardOptions.withMax(
+  // max=1 may be exceeded in exceptional circumstances like evicted pods
+  // but full is still full. This gets a better view of 'fullness' most of the time.
+  // If the commitment is "off the chart" it doesn't super matter by how much.
+  1
+) + ts.queryOptions.withTargets([
   prometheus.new(
     '$PROMETHEUS_DS',
     |||
@@ -253,26 +234,21 @@ local nodeCPUCommit = ts.new(
   ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat + '/{{node}}'),
 ]);
 
-local nodeMemoryCommit = ts.new(
+local nodeMemoryCommit = commonTSOptions + ts.new(
   'Node Memory Commit %'
-) + {
-  description: |||
-    % of each node guaranteed to pods on it.
+) + ts.panelOptions.withDescription(|||
+  % of each node guaranteed to pods on it.
 
-    When this hits 100%, the autoscaler will spawn a new node and the scheduler will stop
-    putting pods on the old node.
-  |||,
-  fieldConfig: {
-    defaults: {
-      unit: 'percentunit',
-      min: 0,
-      // max=1 may be exceeded in exceptional circumstances like evicted pods
-      // but full is still full. This gets a better view of 'fullness' most of the time.
-      // If the commitment is "off the chart" it doesn't super matter by how much.
-      max: 1,
-    },
-  },
-} + ts.queryOptions.withTargets([
+  When this hits 100%, the autoscaler will spawn a new node and the scheduler will stop
+  putting pods on the old node.
+|||) + ts.standardOptions.withUnit('percentunit') + ts.standardOptions.withMin(
+  0
+) + ts.standardOptions.withMax(
+  // max=1 may be exceeded in exceptional circumstances like evicted pods
+  // but full is still full. This gets a better view of 'fullness' most of the time.
+  // If the commitment is "off the chart" it doesn't super matter by how much.
+  1
+) + ts.queryOptions.withTargets([
   prometheus.new(
     '$PROMETHEUS_DS',
     |||
@@ -358,51 +334,21 @@ local nodeMemoryCommit = ts.new(
 //   ),
 // ]);
 
-// local nodeOOMKills = graphPanel.new(
-//   'Out of Memory kill count',
-//   description=|||
-//     Number of Out of Memory (OOM) kills in a given node.
 
-//     When users use up more memory than they are allowed, the notebook kernel they
-//     were running usually gets killed and restarted. This graph shows the number of times
-//     that happens on any given node, and helps validate that a notebook kernel restart was
-//     infact caused by an OOM
-//   |||,
-//   min=0,
-//   legend_hideZero=true,  // Declutter graph by hiding 0s, which we don't care about
-//   decimals=0,
-//   datasource='$PROMETHEUS_DS'
-// ).addTargets([
-//   prometheus.target(
-//     |||
-//       # We use [2m] here, as node_exporter usually scrapes things at 1min intervals
-//       # And oom kills are distinct events, so we want to see 'how many have just happened',
-//       # rather than average over time.
-//       increase(node_vmstat_oom_kill[2m])
-//     |||,
-//     legendFormat='{{ node }}'
-//   ),
-// ]);
-
-local nodeOOMKills = barChart.new(
+local nodeOOMKills = commonBarChartOptions + barChart.new(
   'Out of Memory Kill Count'
-) + {
-  description: |||
+) + barChart.panelOptions.withDescription(
+  |||
     Number of Out of Memory (OOM) kills in a given node.
 
     When users use up more memory than they are allowed, the notebook kernel they
     were running usually gets killed and restarted. This graph shows the number of times
     that happens on any given node, and helps validate that a notebook kernel restart was
     infact caused by an OOM
-  |||,
-  fieldConfig: {
-    defaults: {
-      unit: 'short',
-      min: 0,
-      decimals: 0,
-    },
-  },
-} + barChart.queryOptions.withTargets([
+  |||
+) + barChart.standardOptions.withDecimals(0) + barChart.standardOptions.withMin(
+  0
+) + barChart.queryOptions.withTargets([
   prometheus.new(
     '$PROMETHEUS_DS',
     |||
@@ -418,22 +364,17 @@ local nodeOOMKills = barChart.new(
   ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat + '/{{node}}'),
 ]);
 
-local nonRunningPods = barChart.new(
+local nonRunningPods = commonBarChartOptions + barChart.new(
   'Pods not in Running state'
-) + {
-  description: |||
+) + barChart.panelOptions.withDescription(
+  |||
     Pods in states other than 'Running'.
 
     In a functional clusters, pods should not be in non-Running states for long.
   |||,
-  fieldConfig: {
-    defaults: {
-      unit: 'short',
-      min: 0,
-      decimals: 0,
-    },
-  },
-} + barChart.queryOptions.withTargets([
+) + barChart.standardOptions.withDecimals(0) + barChart.standardOptions.withMin(
+  0
+) + barChart.queryOptions.withTargets([
   prometheus.new(
     '$PROMETHEUS_DS',
     |||
