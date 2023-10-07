@@ -3,6 +3,7 @@
 local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v10.0.0/main.libsonnet';
 local dashboard = grafonnet.dashboard;
 local ts = grafonnet.panel.timeSeries;
+local barChart = grafonnet.panel.barChart;
 local prometheus = grafonnet.query.prometheus;
 local var = grafonnet.dashboard.variable;
 local row = grafonnet.panel.row;
@@ -146,124 +147,166 @@ local clusterMemoryCommitment = ts.new(
   ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat),
 ]);
 
-// local clusterCPUCommitment = graphPanel.new(
-//   'CPU commitment %',
-//   formatY1='percentunit',
-//   description=|||
-//     % of total CPU in the cluster currently requested by to non-placeholder pods.
+local clusterCPUCommitment = ts.new(
+  'CPU commitment %',
+) + {
+  description: |||
+    % of total CPU in the cluster currently requested by to non-placeholder pods.
 
-//     JupyterHub users mostly are capped by memory, so this is not super useful.
-//   |||,
-//   min=0,
-//   // max=1 may be exceeded in exceptional circumstances like evicted pods
-//   // but full is still full. This gets a better view of 'fullness' most of the time.
-//   // If the commitment is "off the chart" it doesn't super matter by how much.
-//   max=1,
-//   datasource='$PROMETHEUS_DS'
-// ).addTargets([
-//   prometheus.target(
-//     |||
-//       sum(
-//         # Get individual container memory requests
-//         kube_pod_container_resource_requests{resource="cpu"}
-//         # Add node pool name as label
-//         * on(node) group_left(label_cloud_google_com_gke_nodepool)
-//         # group aggregator ensures that node names are unique per
-//         # pool.
-//         group(
-//           kube_node_labels
-//         ) by (node, label_cloud_google_com_gke_nodepool)
-//         # Ignore containers from pods that aren't currently running or scheduled
-//         # FIXME: This isn't the best metric here, evaluate what is.
-//         and on (pod) kube_pod_status_scheduled{condition='true'}
-//         # Ignore user and node placeholder pods
-//         and on (pod) kube_pod_labels{label_component!~'user-placeholder|node-placeholder'}
-//       ) by (label_cloud_google_com_gke_nodepool)
-//       /
-//       sum(
-//         # Total allocatable CPU on a node
-//         kube_node_status_allocatable{resource="cpu"}
-//         # Add nodepool name as label
-//         * on(node) group_left(label_cloud_google_com_gke_nodepool)
-//         # group aggregator ensures that node names are unique per
-//         # pool.
-//         group(
-//           kube_node_labels
-//         ) by (node, label_cloud_google_com_gke_nodepool)
-//       ) by (label_cloud_google_com_gke_nodepool)
-//     |||,
-//     legendFormat='{{label_cloud_google_com_gke_nodepool}}'
-//   ),
-// ]);
+    JupyterHub users mostly are capped by memory, so this is not super useful.
+  |||,
+  fieldConfig: {
+    defaults: {
+      unit: 'percentunit',
+      min: 0,
+      // max=1 may be exceeded in exceptional circumstances like evicted pods
+      // but full is still full. This gets a better view of 'fullness' most of the time.
+      // If the commitment is "off the chart" it doesn't super matter by how much.
+      max: 1,
+    },
+  },
+} + ts.queryOptions.withTargets([
+  prometheus.new(
+    '$PROMETHEUS_DS',
+    |||
+      sum(
+        # Get individual container memory requests
+        kube_pod_container_resource_requests{resource="cpu"}
+        # Add node pool name as label
+        * on(node) group_left(%s)
+        # group aggregator ensures that node names are unique per
+        # pool.
+        group(
+          kube_node_labels
+        ) by (node, %s)
+        # Ignore containers from pods that aren't currently running or scheduled
+        # FIXME: This isn't the best metric here, evaluate what is.
+        and on (pod) kube_pod_status_scheduled{condition='true'}
+        # Ignore user and node placeholder pods
+        and on (pod) kube_pod_labels{label_component!~'user-placeholder|node-placeholder'}
+      ) by (%s)
+      /
+      sum(
+        # Total allocatable CPU on a node
+        kube_node_status_allocatable{resource="cpu"}
+        # Add nodepool name as label
+        * on(node) group_left(%s)
+        # group aggregator ensures that node names are unique per
+        # pool.
+        group(
+          kube_node_labels
+        ) by (node, %s)
+      ) by (%s)
+    ||| % std.repeat([jupyterhub.nodePoolLabels], 6),
+  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat),
+]);
 
+local nodeCPUCommit = ts.new(
+  'Node CPU Commit %'
+) + {
+  description: |||
+    % of each node guaranteed to pods on it
+  |||,
+  fieldConfig: {
+    defaults: {
+      unit: 'percentunit',
+      min: 0,
+      // max=1 may be exceeded in exceptional circumstances like evicted pods
+      // but full is still full. This gets a better view of 'fullness' most of the time.
+      // If the commitment is "off the chart" it doesn't super matter by how much.
+      max: 1,
+    },
+  },
+} + ts.queryOptions.withTargets([
+  prometheus.new(
+    '$PROMETHEUS_DS',
+    |||
+      sum(
+        # Get individual container cpu requests
+        kube_pod_container_resource_requests{resource="cpu"}
+        # Add node pool name as label
+        * on(node) group_left(%s)
+        # group aggregator ensures that node names are unique per
+        # pool.
+        group(
+          kube_node_labels
+        ) by (node, %s)
+        # Ignore containers from pods that aren't currently running or scheduled
+        # FIXME: This isn't the best metric here, evaluate what is.
+        and on (pod) kube_pod_status_scheduled{condition='true'}
+        # Ignore user and node placeholder pods
+        and on (pod) kube_pod_labels{label_component!~'user-placeholder|node-placeholder'}
+      ) by (node, %s)
+      /
+      sum(
+        # Total allocatable CPU on a node
+        kube_node_status_allocatable{resource="cpu"}
+        # Add nodepool name as label
+        * on(node) group_left(%s)
+        # group aggregator ensures that node names are unique per
+        # pool.
+        group(
+          kube_node_labels
+        ) by (node, %s)
+      ) by (node, %s)
+    ||| % std.repeat([jupyterhub.nodePoolLabels], 6),
+  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat + '/{{node}}'),
+]);
 
-// local nodeCPUCommit = graphPanel.new(
-//   'Node CPU Commit %',
-//   formatY1='percentunit',
-//   description=|||
-//     % of each node guaranteed to pods on it
-//   |||,
-//   min=0,
-//   // max=1 may be exceeded in exceptional circumstances like evicted pods
-//   // but full is still full. This gets a better view of 'fullness' most of the time.
-//   // If the commitment is "off the chart" it doesn't super matter by how much.
-//   max=1,
-//   datasource='$PROMETHEUS_DS'
-// ).addTargets([
-//   prometheus.target(
-//     |||
-//       sum(
-//         # Get individual container CPU limits
-//         kube_pod_container_resource_requests{resource="cpu"}
-//         # Ignore containers from pods that aren't currently running or scheduled
-//         # FIXME: This isn't the best metric here, evaluate what is.
-//         and on (pod) kube_pod_status_scheduled{condition='true'}
-//         # Ignore user and node placeholder pods
-//         and on (pod) kube_pod_labels{label_component!~'user-placeholder|node-placeholder'}
-//       ) by (node)
-//       /
-//       sum(
-//         # Get individual container CPU requests
-//         kube_node_status_allocatable{resource="cpu"}
-//       ) by (node)
-//     |||,
-//     legendFormat='{{node}}'
-//   ),
-// ]);
+local nodeMemoryCommit = ts.new(
+  'Node Memory Commit %'
+) + {
+  description: |||
+    % of each node guaranteed to pods on it.
 
-// local nodeMemoryCommit = graphPanel.new(
-//   'Node Memory Commit %',
-//   formatY1='percentunit',
-//   description=|||
-//     % of each node guaranteed to pods on it
-//   |||,
-//   min=0,
-//   // max=1 may be exceeded in exceptional circumstances like evicted pods
-//   // but full is still full. This gets a better view most of the time.
-//   // If the commitment is "off the chart" it doesn't super matter by how much.
-//   max=1,
-//   datasource='$PROMETHEUS_DS'
-// ).addTargets([
-//   prometheus.target(
-//     |||
-//       sum(
-//         # Get individual container memory limits
-//         kube_pod_container_resource_requests{resource="memory"}
-//         # Ignore containers from pods that aren't currently running or scheduled
-//         # FIXME: This isn't the best metric here, evaluate what is.
-//         and on (pod) kube_pod_status_scheduled{condition='true'}
-//         # Ignore user and node placeholder pods
-//         and on (pod) kube_pod_labels{label_component!~'user-placeholder|node-placeholder'}
-//       ) by (node)
-//       /
-//       sum(
-//         # Get individual container memory requests
-//         kube_node_status_allocatable{resource="memory"}
-//       ) by (node)
-//     |||,
-//     legendFormat='{{node}}'
-//   ),
-// ]);
+    When this hits 100%, the autoscaler will spawn a new node and the scheduler will stop
+    putting pods on the old node.
+  |||,
+  fieldConfig: {
+    defaults: {
+      unit: 'percentunit',
+      min: 0,
+      // max=1 may be exceeded in exceptional circumstances like evicted pods
+      // but full is still full. This gets a better view of 'fullness' most of the time.
+      // If the commitment is "off the chart" it doesn't super matter by how much.
+      max: 1,
+    },
+  },
+} + ts.queryOptions.withTargets([
+  prometheus.new(
+    '$PROMETHEUS_DS',
+    |||
+      sum(
+        # Get individual container memory requests
+        kube_pod_container_resource_requests{resource="memory"}
+        # Add node pool name as label
+        * on(node) group_left(%s)
+        # group aggregator ensures that node names are unique per
+        # pool.
+        group(
+          kube_node_labels
+        ) by (node, %s)
+        # Ignore containers from pods that aren't currently running or scheduled
+        # FIXME: This isn't the best metric here, evaluate what is.
+        and on (pod) kube_pod_status_scheduled{condition='true'}
+        # Ignore user and node placeholder pods
+        and on (pod) kube_pod_labels{label_component!~'user-placeholder|node-placeholder'}
+      ) by (node, %s)
+      /
+      sum(
+        # Total allocatable memory on a node
+        kube_node_status_allocatable{resource="memory"}
+        # Add nodepool name as label
+        * on(node) group_left(%s)
+        # group aggregator ensures that node names are unique per
+        # pool.
+        group(
+          kube_node_labels
+        ) by (node, %s)
+      ) by (node, %s)
+    ||| % std.repeat([jupyterhub.nodePoolLabels], 6),
+  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat + '/{{node}}'),
+]);
 
 // // Cluster diagnostics
 // local nodeMemoryUtil = graphPanel.new(
@@ -341,24 +384,63 @@ local clusterMemoryCommitment = ts.new(
 //   ),
 // ]);
 
-// local nonRunningPods = graphPanel.new(
-//   'Pods not in Running state',
-//   description=|||
-//     Pods in states other than 'Running'.
+local nodeOOMKills = barChart.new(
+  'Out of Memory Kill Count'
+) + {
+  description: |||
+    Number of Out of Memory (OOM) kills in a given node.
 
-//     In a functional clusters, pods should not be in non-Running states for long.
-//   |||,
-//   decimals=0,
-//   legend_hideZero=true,
-//   min=0,
-//   datasource='$PROMETHEUS_DS'
-// ).addTargets([
-//   prometheus.target(
-//     'sum(kube_pod_status_phase{phase!="Running"}) by (phase)',
-//     legendFormat='{{phase}}',
-//   ),
-// ]);
+    When users use up more memory than they are allowed, the notebook kernel they
+    were running usually gets killed and restarted. This graph shows the number of times
+    that happens on any given node, and helps validate that a notebook kernel restart was
+    infact caused by an OOM
+  |||,
+  fieldConfig: {
+    defaults: {
+      unit: 'short',
+      min: 0,
+      decimals: 0,
+    },
+  },
+} + barChart.queryOptions.withTargets([
+  prometheus.new(
+    '$PROMETHEUS_DS',
+    |||
+      # We use [2m] here, as node_exporter usually scrapes things at 1min intervals
+      # And oom kills are distinct events, so we want to see 'how many have just happened',
+      # rather than average over time.
+      increase(node_vmstat_oom_kill[2m]) * on(node) group_left(%s)
+      group(
+        kube_node_labels
+      )
+      by(node, %s)
+    ||| % std.repeat([jupyterhub.nodePoolLabels], 2)
+  ) + prometheus.withLegendFormat(jupyterhub.nodePoolLabelsLegendFormat + '/{{node}}'),
+]);
 
+local nonRunningPods = barChart.new(
+  'Pods not in Running state'
+) + {
+  description: |||
+    Pods in states other than 'Running'.
+
+    In a functional clusters, pods should not be in non-Running states for long.
+  |||,
+  fieldConfig: {
+    defaults: {
+      unit: 'short',
+      min: 0,
+      decimals: 0,
+    },
+  },
+} + barChart.queryOptions.withTargets([
+  prometheus.new(
+    '$PROMETHEUS_DS',
+    |||
+      sum(kube_pod_status_phase{phase!="Running"}) by (phase)
+    |||
+  ) + prometheus.withLegendFormat('{{phase}}'),
+]);
 
 dashboard.new(
   'Cluster Information',
@@ -371,20 +453,22 @@ dashboard.new(
 ) + dashboard.withPanels(
   grafonnet.util.grid.makeGrid([
     row.new(
-      'Cluster Stats'
+      'Cluster Utilization'
     ) + row.withPanels([
-      userPods + ts.gridPos.withW(24),
-      clusterMemoryCommitment,
-      // clusterCPUCommitment,
+      userPods,
       userNodes,
-
+      clusterMemoryCommitment,
+      clusterCPUCommitment,
     ]),
-    // nonRunningPods,
-    // row.new('Node Stats'),
+    row.new('Cluster Health') + row.withPanels([
+      nonRunningPods,
+      nodeOOMKills,
+    ]),
+    row.new('Node Stats') + row.withPanels([
+      nodeCPUCommit,
+      nodeMemoryCommit,
+    ]),
     // nodeCPUUtil,
     // nodeMemoryUtil,
-    // nodeCPUCommit,
-    // nodeMemoryCommit,
-    // nodeOOMKills,
   ], panelWidth=12, panelHeight=8)
 )
