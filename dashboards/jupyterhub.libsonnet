@@ -1,6 +1,6 @@
-local grafana = import 'grafonnet/grafana.libsonnet';
-local graphPanel = grafana.graphPanel;
-local prometheus = grafana.prometheus;
+local grafonnet = import "github.com/grafana/grafonnet/gen/grafonnet-v10.0.0/main.libsonnet";
+local graphPanel = grafonnet.graphPanel;
+local prometheus = grafonnet.prometheus;
 
 {
   /*
