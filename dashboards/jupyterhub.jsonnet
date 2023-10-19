@@ -28,7 +28,10 @@ local templates = [
     // Allow viewing dashboard for multiple combined hubs
     includeAll=true,
     multi=true
-  ),
+  ) + {
+    // Explicitly set '$hub' to be `.*` when 'All' is selected, as we always use `$hub` as a regex
+    allValue: '.*',
+  },
 ];
 
 
