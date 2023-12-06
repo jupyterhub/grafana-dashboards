@@ -111,6 +111,13 @@ local homedirSharedUsage = graphPanel.new(
 
     Requires https://github.com/yuvipanda/prometheus-dirsize-exporter to
     be set up.
+
+    Similar to server pod names, user names will be *encoded* here
+    using the escapism python library (https://github.com/minrk/escapism).
+    You can unencode them with the following python snippet:
+
+    from escapism import unescape
+    unescape('<escaped-username>', '-')
   |||,
   formatY1='bytes',
   datasource='$PROMETHEUS_DS'
