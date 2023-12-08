@@ -17,3 +17,6 @@
 # Folders generated when building the documentation
 .nox/*
 docs/_build
+
+# Standard Python ignores
+__pycache__/
