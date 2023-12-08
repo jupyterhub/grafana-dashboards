@@ -1,3 +1,4 @@
+(contributing)=
 # Contributing
 
 ## Upgrading grafonnet version
