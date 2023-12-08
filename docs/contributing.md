@@ -1,17 +1,27 @@
 # Contributing
 
-## Upgrading grafonnet version
+Hello and thank you for contributing to JupyterHub Grafana Dashboards!
+We are really excited to have you here!
+
+Below you'll find some useful tasks, guidelines, and instructions for working
+in this repository.
+
+Notice something that's missing? Please open an issue or file a pull request!
+
+## Development tasks and guidelines
+
+### Upgrading the grafonnet version
 
 The grafonnet jsonnet library is bundled here with [jsonnet-bundler](https://github.com/jsonnet-bundler/jsonnet-bundler).
 Just running `jb update` in the git repo root dir after installing jsonnet-bunder should bring
 you up to speed.
 
-## Metrics guidelines
+### Metrics guidelines
 
 Interpreting prometheus metrics and writing PromQL queries that serve a particular
 purpose can be difficult. Here are some guidelines to help.
 
-### Container memory usage metric
+#### Container memory usage metric
 
 "When will the OOM killer start killing processes in this container?" is the most useful
 thing for us to know when measuring container memory usage. Of the many container memory
@@ -20,11 +30,10 @@ and [this issue](https://github.com/jupyterhub/grafana-dashboards/issues/13)).
 So prefer using that metric as the default for 'memory usage' unless specific reasons
 exist for using a different metric.
 
-### Available metrics
+#### Available metrics
 
 The most common prometheus on kubernetes setup in the JupyterHub community seems
 to be the [prometheus helm chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus).
-
 
 1. [kube-state-metrics](https://github.com/kubernetes/kube-state-metrics)
    ([metrics documentation](https://github.com/kubernetes/kube-state-metrics/tree/master/docs))
@@ -53,7 +62,7 @@ to be the [prometheus helm chart](https://github.com/prometheus-community/helm-c
 5. Other components you have installed on your cluster - like prometheus,
    nginx-ingress, etc - will also emit their own metrics.
 
-### Avoid double-counting container metrics
+#### Avoid double-counting container metrics
 
 It seems that one container's resource metrics can be reported multiple times,
 with an empty `name` label and a `name=k8s_...` label.
@@ -67,4 +76,31 @@ For example:
 sum(
     irate(container_cpu_usage_seconds_total{name!=""}[5m])
 ) by (namespace, pod)
+```
+
+## Working with our documentation
+
+### Building the docs locally with `nox`
+
+[`nox`](https://nox.thea.codes/en/stable/) is a command line tool that automates
+testing in multiple Python environments, using a standard Python file for configuration.
+
+You can install `nox` using `pip` via:
+
+```bash
+pip install nox
+```
+
+To build the docs locally, you can then run:
+
+```bash
+nox -s docs
+```
+
+This will generate the html files and output them to the `docs/_build/html` folder.
+
+If you would like to start a live server that reloads as you makes changes, you can run:
+
+```bash
+nox -s docs -- live
 ```
