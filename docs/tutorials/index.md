@@ -1,8 +1,8 @@
 (tutorials)=
 # Tutorials
 
-The documentation in this section provides technical descriptions of the
-components used throughout the project, and how to use them.
+The documentation in this section are step-by-step guides that lead the reader
+through completing a specific task.
 
 ```{note}
 [Read more about the Tutorials quadrant of the diataxis framework.](https://diataxis.fr/tutorials/)
