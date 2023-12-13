@@ -33,13 +33,11 @@ our docs into four main categories:
 tutorials/index.md
 ```
 
-### How-to
+### How-to Guides
 
 ```{toctree}
 :maxdepth: 2
-howto/deploy.md
-howto/user-diagnostics.md
-howto/images.md
+howto/index.md
 ```
 
 ### Explanation
