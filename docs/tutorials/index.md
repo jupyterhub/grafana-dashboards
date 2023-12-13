@@ -13,8 +13,7 @@ This documentation is a Work in Progress!
 Please see our [contributing guide](contributing) if you'd like to add to it.
 ```
 
-% As files are added into this folder, you can add them to the below section so
-% that they appear in the table of contents
 ```{toctree}
 :maxdepth: 2
+deploy.md
 ```
