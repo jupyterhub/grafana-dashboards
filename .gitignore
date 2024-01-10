@@ -14,4 +14,9 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+# Folders generated when building the documentation
+.nox/*
 docs/_build
+
+# Standard Python ignores
+__pycache__/
