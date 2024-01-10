@@ -99,7 +99,7 @@ nox -s docs
 
 This will generate the html files and output them to the `docs/_build/html` folder.
 
-If you would like to start a live server that reloads as you makes changes, you can run:
+If you would like to start a live server that reloads as you make changes, you can run:
 
 ```bash
 nox -s docs -- live
