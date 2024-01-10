@@ -1,5 +1,6 @@
-# How to deploy the dashboards
- 
+(tutorials:deploy)=
+# Deploying the dashboards
+
 ```{warning}
 ANY CHANGES YOU MAKE VIA THE GRAFANA UI WILL BE OVERWRITTEN NEXT TIME YOU RUN deploy.bash.
 TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN
@@ -20,16 +21,15 @@ TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN
    [node-exporter](https://github.com/prometheus/node_exporter) and
    [cadvisor](https://github.com/google/cadvisor) enabled. In
    addition, you should scrape metrics from the hub instance as well.
-   
-   
+
     ```{tip}
     If you're using a prometheus chart older than version `14.*`, then you can deploy the dashboards available prior to the upgrade, in the [`1.0 tag`](https://github.com/jupyterhub/grafana-dashboards/releases/tag/1.0).
     ```
-   
-3. `kube-state-metrics` must be configured to add some labels to metrics 
+
+3. `kube-state-metrics` must be configured to add some labels to metrics
    [since version 2.0](https://kubernetes.io/blog/2021/04/13/kube-state-metrics-v-2-0/).
    If deployed with the prometheus helm chart, the config should look like this:
-   
+
    ```yaml
    kube-state-metrics:
       metricLabelsAllowlist:
@@ -38,7 +38,7 @@ TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN
          # allowing all labels is probably fine for nodes, since they don't churn much, unlike pods
          - nodes=[*]
    ```
-   
+
    ```{tip}
    Make sure this is indented correctly where it should be!
    ```
@@ -49,7 +49,6 @@ TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN
    by going to the configuration pane for your Grafana (the gear icon on the left bar), and
    selecting 'API Keys'. The admin permission is needed to query list of data sources so we
    can auto-populate template variable options (such as list of hubs).
-
 
 ## Additional prometheus exporters
 
@@ -133,7 +132,6 @@ spec:
 ```
 
 You will likely only need to adjust the `claimName` above to use this example.
-
 
 (howto:deploy:per-user-home-dir)=
 ### Per-user home directory metrics (size, last modified, total entries, etc)
@@ -223,7 +221,6 @@ spec:
 
 You will likely only need to adjust the `claimName` above to use this example.
 
-
 ## Deploy the dashbaords
 
 There's a helper `deploy.py` script that can deploy the dashboards to any grafana installation.
@@ -250,4 +247,3 @@ If your Grafana instance uses a self-signed certificate, use the `--no-tls-verif
 ```bash
 ./deploy.py <your-grafana-url> --no-tls-verify
 ```
-
