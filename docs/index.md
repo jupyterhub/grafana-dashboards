@@ -22,7 +22,7 @@ We are currently using the [diátaxis framework](https://diataxis.fr/) to organi
 our docs into four main categories:
 
 - [**Tutorials**](tutorials): Step-by-step guides to complete a specific task
-- **How-To guides**: Directions to solve scenarios faced while using the project. Their titles often complete the sentence "How do I...?"
+- [**How-To guides**](howto): Directions to solve scenarios faced while using the project. Their titles often complete the sentence "How do I...?"
 - [**Explanation**](explanation): More in-depth discussion of topics within the project to broaden understanding.
 - [**Reference**](ref): Technical descriptions of the components within the project, and how to use them
 
