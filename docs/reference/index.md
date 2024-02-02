@@ -17,4 +17,5 @@ Please see our [contributing guide](contributing) if you'd like to add to it.
 % that they appear in the table of contents
 ```{toctree}
 :maxdepth: 2
+cluster-dashboard.md
 ```
