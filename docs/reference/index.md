@@ -17,5 +17,10 @@ Please see our [contributing guide](contributing) if you'd like to add to it.
 % that they appear in the table of contents
 ```{toctree}
 :maxdepth: 2
-cluster-dashboard.md
+dashboards/cluster.md
+dashboards/jupyterhub.md
+dashboards/support.md
+dashboards/usage-report.md
+dashboards/user.md
+dashboards/global.md
 ```
