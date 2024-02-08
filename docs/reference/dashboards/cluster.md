@@ -10,19 +10,28 @@ This section is a Work in Progress!
 
 ### Running Users
 
-Count of running users, grouped by namespace.
+Number of currently running users per hub. Common shapes this visualization may take:
+
+1. A large number of users starting servers at exactly the same time will be visible here as a single spike, and may cause stability issues. Since they share the same cluster, such spikes happening on a *different* hub may still affect your hub.
 
 ### Memory commitment %
 
-Percentage of total memory in the cluster currently requested by to non-placeholder pods.
-If autoscaling is efficient, this should be a fairly constant, high number (>70%).
+Percentage of memory in cluster guaranteed to user workloads. Common shapes:
+
+1. If this is consistently low (<50%), you are paying for cloud compute that you do not need. Consider reducing the size of your nodes, or increasing the amount of memory guaranteed to your users. Some variability based on time of day is to be expected.
 
 ### CPU commitment %
 
-Percentage of total CPU in the cluster currently requested by to non-placeholder pods.
-JupyterHub users mostly are capped by memory, so this is not super useful.
+Percentage of total CPU in the cluster currently guaranteed to user workloads.
+
+Most commonly, JupyterHub workloads are *memory bound*, not CPU bound. So this is not a particularly helpful graph.
+
+Common shapes:
+1. If this is *consistently high* but shaped differently than your memory commitment graph, consider changing your CPU requirements.
 
 ### Node count
+
+Number of nodes in each nodepool in this cluster.
 
 ### Pods not in Running state
 
@@ -37,7 +46,7 @@ Percentage of each node guaranteed to pods on it.
 
 ### Node Memory Commit %
 
-Percentage of each node guaranteed to pods on it.
+Percentage of each node guaranteed to pods on it. When this hits 100%, the autoscaler will spawn a new node and the scheduler will stop putting pods on the old node.
 
 ### Node Memory Utilization %
 
