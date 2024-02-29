@@ -37,7 +37,10 @@ local templates = [
     // Allow viewing dashboard for multiple users
     includeAll=true,
     multi=true
-  ),
+  ) + {
+    // Explicitly set '$user_pod' to be `.*` when 'All' is selected, as we always use `$user_pod` as a regex
+    allValue: '.*',
+  },
   template.new(
     // Queries should use the 'instance' label when querying metrics that
     // come from collectors present on each node - such as node_exporter or
@@ -50,7 +53,10 @@ local templates = [
     // Allow viewing dashboard for multiple nodes
     includeAll=true,
     multi=true
-  ),
+  ) + {
+    // Explicitly set '$instance' to be `.*` when 'All' is selected, as we always use `$instance` as a regex
+    allValue: '.*',
+  },
 ];
 
 
