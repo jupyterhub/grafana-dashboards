@@ -1,7 +1,29 @@
+# pre-commit is a tool to perform a predefined set of tasks manually and/or
+# automatically before git commits are made.
+#
+# Config reference: https://pre-commit.com/#pre-commit-configyaml---top-level
+#
+# Common tasks
+#
+# - Run on all files:   pre-commit run --all-files
+# - Register git hooks: pre-commit install --install-hooks
+#
 repos:
-- repo: https://github.com/google/go-jsonnet
-  rev: v0.20.0
-  hooks:
-    - id: jsonnet-format
-    # jsonnet-lint hook doesn't work
-    # - id: jsonnet-lint
+  - repo: https://github.com/google/go-jsonnet
+    rev: v0.20.0
+    hooks:
+      - id: jsonnet-format
+      # jsonnet-lint hook doesn't work
+      # - id: jsonnet-lint
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.4
+    hooks:
+      - id: ruff-format
+      - id: ruff
+        args:
+          - --fix
+
+# pre-commit.ci config reference: https://pre-commit.ci/#configuration
+ci:
+  autoupdate_schedule: monthly
