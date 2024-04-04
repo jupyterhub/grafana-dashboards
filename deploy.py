@@ -1,26 +1,23 @@
 #!/usr/bin/env python3
-import json
 import argparse
+import json
 import os
-from glob import glob
-from functools import partial
-import subprocess
-from urllib.request import urlopen, Request
-from urllib.parse import urlencode
-from urllib.error import HTTPError
-from copy import deepcopy
 import re
 import ssl
+import subprocess
+from copy import deepcopy
+from functools import partial
+from glob import glob
+from urllib.error import HTTPError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 # UID for the folder under which our dashboards will be setup
 DEFAULT_FOLDER_UID = '70E5EE84-1217-4021-A89E-1E3DE0566D93'
 
 
 def grafana_request(endpoint, token, path, data=None, no_tls_verify=False):
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Content-Type': 'application/json'
-    }
+    headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
     method = 'GET' if data is None else 'POST'
     req = Request(f'{endpoint}/api{path}', headers=headers, method=method)
 
@@ -44,10 +41,7 @@ def ensure_folder(name, uid, api):
     except HTTPError as e:
         if e.code == 404:
             # We got a 404 in
-            folder = {
-                'uid': uid,
-                'title': name
-            }
+            folder = {'uid': uid, 'title': name}
             return api('/folders', folder)
         else:
             raise
@@ -60,12 +54,18 @@ def build_dashboard(dashboard_path, api, global_dash=False):
 
     # We pass the list of all datasources because the global dashboards
     # use this information to show info about all datasources in the same panel
-    return json.loads(subprocess.check_output(
-        [
-            "jsonnet", "-J", "vendor", dashboard_path,
-            "--tla-code", f"datasources={datasources_names}"
-        ]
-    ).decode())
+    return json.loads(
+        subprocess.check_output(
+            [
+                "jsonnet",
+                "-J",
+                "vendor",
+                dashboard_path,
+                "--tla-code",
+                f"datasources={datasources_names}",
+            ]
+        ).decode()
+    )
 
 
 def layout_dashboard(dashboard):
@@ -108,11 +108,7 @@ def deploy_dashboard(dashboard_path, folder_uid, api, global_dash=False):
     db = layout_dashboard(db)
     db = populate_template_variables(api, db)
 
-    data = {
-        'dashboard': db,
-        'folderId': folder_uid,
-        'overwrite': True
-    }
+    data = {'dashboard': db, 'folderId': folder_uid, 'overwrite': True}
     api('/dashboards/db', data)
 
 
@@ -125,7 +121,9 @@ def get_label_values(api, ds_id, template_query):
     in a dashboard
     """
     # re.DOTALL allows the query to be multi-line
-    match = re.match(r'label_values\((?P<query>.*),\s*(?P<label>.*)\)', template_query, re.DOTALL)
+    match = re.match(
+        r'label_values\((?P<query>.*),\s*(?P<label>.*)\)', template_query, re.DOTALL
+    )
     query = match.group('query')
     label = match.group('label')
     query = {'match[]': query}
@@ -133,7 +131,7 @@ def get_label_values(api, ds_id, template_query):
     proxy_url = f'/datasources/proxy/{ds_id}/api/v1/series?{urlencode(query)}'
 
     metrics = api(proxy_url)['data']
-    return sorted(set(m[label] for m in metrics))
+    return sorted({m[label] for m in metrics})
 
 
 def populate_template_variables(api, db):
@@ -151,7 +149,9 @@ def populate_template_variables(api, db):
     for var in db.get('templating', {}).get('list', []):
         datasources = api("/datasources")
         if var["type"] == "datasource":
-            var["options"] = [{"text": ds["name"], "value": ds["name"]} for ds in datasources]
+            var["options"] = [
+                {"text": ds["name"], "value": ds["name"]} for ds in datasources
+            ]
 
             # default selection: first datasource in list
             if datasources and not var.get("current"):
@@ -188,17 +188,38 @@ def populate_template_variables(api, db):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('grafana_url', help='Grafana endpoint to deploy dashboards to')
-    parser.add_argument('--dashboards-dir', default="dashboards", help='Directory of jsonnet dashboards to deploy')
-    parser.add_argument('--folder-name', default='JupyterHub Default Dashboards', help='Name of Folder to deploy to')
-    parser.add_argument('--folder-uid', default=DEFAULT_FOLDER_UID, help='UID of grafana folder to deploy to')
-    parser.add_argument('--no-tls-verify', action='store_true', default=False,
-                        help='Whether or not to skip TLS certificate validation')
+    parser.add_argument(
+        '--dashboards-dir',
+        default="dashboards",
+        help='Directory of jsonnet dashboards to deploy',
+    )
+    parser.add_argument(
+        '--folder-name',
+        default='JupyterHub Default Dashboards',
+        help='Name of Folder to deploy to',
+    )
+    parser.add_argument(
+        '--folder-uid',
+        default=DEFAULT_FOLDER_UID,
+        help='UID of grafana folder to deploy to',
+    )
+    parser.add_argument(
+        '--no-tls-verify',
+        action='store_true',
+        default=False,
+        help='Whether or not to skip TLS certificate validation',
+    )
 
     args = parser.parse_args()
 
     grafana_token = os.environ['GRAFANA_TOKEN']
 
-    api = partial(grafana_request, args.grafana_url, grafana_token, no_tls_verify=args.no_tls_verify)
+    api = partial(
+        grafana_request,
+        args.grafana_url,
+        grafana_token,
+        no_tls_verify=args.no_tls_verify,
+    )
     folder = ensure_folder(args.folder_name, args.folder_uid, api)
 
     for dashboard in glob(f'{args.dashboards_dir}/*.jsonnet'):
