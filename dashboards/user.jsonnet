@@ -1,4 +1,4 @@
-#!/usr/bin/env jsonnet -J ../vendor
+#!/usr/bin/env -S jsonnet -J ../vendor
 local grafana = import 'grafonnet/grafana.libsonnet';
 local dashboard = grafana.dashboard;
 local singlestat = grafana.singlestat;
