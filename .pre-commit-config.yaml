@@ -8,6 +8,7 @@
 # - Run on all files:   pre-commit run --all-files
 # - Register git hooks: pre-commit install --install-hooks
 #
+exclude: ^vendor/.*
 repos:
   - repo: https://github.com/google/go-jsonnet
     rev: v0.20.0
