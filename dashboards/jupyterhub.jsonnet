@@ -551,63 +551,53 @@ local notebookImagesUsed = graphPanel.new(
   ),
 ]);
 
-dashboard.new(
-  'JupyterHub Dashboard',
-  tags=['jupyterhub'],
-  uid='hub-dashboard',
-  editable=true
-).addTemplates(
-  templates
-).addPanel(
-  row.new('Hub usage stats'), {}
-).addPanel(
-  currentActiveUsers, {}
-).addPanel(
-  dailyActiveUsers, {}
-).addPanel(
-  weeklyActiveUsers, {}
-).addPanel(
-  monthlyActiveUsers, {}
-).addPanel(
-  row.new('Container Images'), {},
-).addPanel(
-  notebookImagesUsed, {}
-).addPanel(
-  row.new('User Resource Utilization stats'), {}
-).addPanel(
-  userAgeDistribution, {}
-).addPanel(
-  userCPUDistribution, {},
-).addPanel(
-  userMemoryDistribution, {}
-).addPanel(
-  row.new('Hub Diagnostics'), {}
-).addPanel(
-  serverStartTimes, {}
-).addPanel(
-  serverSpawnFailures, {}
-).addPanel(
-  hubResponseLatency, {}
-).addPanel(
-  hubResponseCodes, {}
-).addPanel(
-  allComponentsCPU, { h: standardDims.h * 1.5 },
-).addPanel(
-  allComponentsMemory, { h: standardDims.h * 1.5 },
-).addPanel(
-  hubDBUsage, {},
-).addPanel(
-  nonRunningPods, {}
-).addPanel(
-  usersPerNode, {}
-).addPanel(
-  sharedVolumeFreeSpace, {}
-).addPanel(
-  row.new('Anomalous user pods'), {},
-).addPanel(
-  oldUserpods, { h: standardDims.h * 1.5 },
-).addPanel(
-  highCPUUserPods, { h: standardDims.h * 1.5 },
-).addPanel(
-  highMemoryUsagePods, { h: standardDims.h * 1.5 },
+dashboard.new('JupyterHub Dashboard')
++ dashboard.withTags(['jupyterhub'])
++ dashboard.withUid('hub-dashboard')
++ dashboard.withEditable(true)
+// FIXME: addTemplates didn't translate to withTemplates --- + dashboard.withTemplates(templates)
++ dashboard.withPanels(
+  grafonnet.util.grid.makeGrid(
+    [
+      row.new('Hub usage stats')
+      + row.withPanels([
+        currentActiveUsers,
+        dailyActiveUsers,
+        weeklyActiveUsers,
+        monthlyActiveUsers,
+      ]),
+      row.new('Container Images')
+      + row.withPanels([
+        notebookImagesUsed,
+      ]),
+      row.new('User Resource Utilization stats')
+      + row.withPanels([
+        userAgeDistribution,
+        userCPUDistribution,
+        userMemoryDistribution,
+      ]),
+      row.new('Hub Diagnostics')
+      + row.withPanels([
+        serverStartTimes,
+        serverSpawnFailures,
+        hubResponseLatency,
+        hubResponseCodes,
+        allComponentsCPU,  // FIXME: previously specified as, is it ok now? { h: standardDims.h * 1.5 },
+        allComponentsMemory,  // FIXME: previously specified as, is it ok now? { h: standardDims.h * 1.5 },
+        hubDBUsage,
+        nonRunningPods,
+        usersPerNode,
+        sharedVolumeFreeSpace,
+      ]),
+      row.new('Anomalous user pods')
+      + row.withPanels([
+        oldUserpods,  // FIXME: previously specified as, is it ok now? { h: standardDims.h * 1.5 },
+        highCPUUserPods,  // FIXME: previously specified as, is it ok now? { h: standardDims.h * 1.5 },
+        highMemoryUsagePods,  // FIXME: previously specified as, is it ok now? { h: standardDims.h * 1.5 },
+      ]),
+    ],
+    // FIXME: panelWidth and panelHeight specified like cluster.jsonnet without visual check
+    panelWidth=12,
+    panelHeight=8,
+  )
 )

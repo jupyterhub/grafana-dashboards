@@ -152,37 +152,33 @@ local prometheusNetwork = graphPanel.new(
   ),
 ]);
 
-dashboard.new(
-  'NFS and Support Information',
-  tags=['support', 'kubernetes'],
-  editable=true
-).addTemplates(
-  templates
-).addPanel(
-  row.new('NFS diagnostics'), {},
-).addPanel(
-  userNodesNFSOps, {},
-).addPanel(
-  userNodesIOWait, {},
-).addPanel(
-  userNodesHighNFSOps, {},
-).addPanel(
-  nfsServerCPU, {},
-).addPanel(
-  nfsServerIOPS, {},
-).addPanel(
-  nfsServerWriteLatency, {},
-).addPanel(
-  nfsServerReadLatency, {},
-
-).addPanel(
-  row.new('Support system diagnostics'), {},
-).addPanel(
-  prometheusCPU, {},
-).addPanel(
-  prometheusMemory, {},
-).addPanel(
-  prometheusDiskSpace, {},
-).addPanel(
-  prometheusNetwork, {},
+dashboard.new('NFS and Support Information')
++ dashboard.withTags(['support', 'kubernetes'])
++ dashboard.withEditable(true)
+// FIXME: addTemplates didn't translate to withTemplates --- + dashboard.withTemplates(templates)
++ dashboard.withPanels(
+  grafonnet.util.grid.makeGrid(
+    [
+      row.new('NFS diagnostics')
+      + row.withPanels([
+        userNodesNFSOps,
+        userNodesIOWait,
+        userNodesHighNFSOps,
+        nfsServerCPU,
+        nfsServerIOPS,
+        nfsServerWriteLatency,
+        nfsServerReadLatency,
+      ]),
+      row.new('Support system diagnostics')
+      + row.withPanels([
+        prometheusCPU,
+        prometheusMemory,
+        prometheusDiskSpace,
+        prometheusNetwork,
+      ]),
+    ],
+    // FIXME: panelWidth and panelHeight specified like cluster.jsonnet without visual check
+    panelWidth=12,
+    panelHeight=8,
+  )
 )

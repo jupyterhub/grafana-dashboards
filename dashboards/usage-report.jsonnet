@@ -148,19 +148,19 @@ local memoryUsageDaskWorkerPods = common.barChartOptions + barGauge.new(
 // ]);
 
 
-dashboard.new(
-  'Usage Report',
-) + dashboard.withTags(
-  ['jupyterhub', 'dask']
-) + dashboard.withEditable(
-  true
-) + dashboard.withVariables(
-  variables
-) + dashboard.withPanels(
-  grafonnet.util.grid.makeGrid([
-    memoryUsageUserPods,
-    // memoryUsageDaskWorkerPods,
-    // memoryUsageDaskSchedulerPods,
-    // memoryUsageGPUPods
-  ], panelWidth=12, panelHeight=8)
+dashboard.new('Usage Report')
++ dashboard.withTags(['jupyterhub', 'dask'])
++ dashboard.withEditable(true)
++ dashboard.withVariables(variables)
++ dashboard.withPanels(
+  grafonnet.util.grid.makeGrid(
+    [
+      memoryUsageUserPods,
+      // memoryUsageDaskWorkerPods,
+      // memoryUsageDaskSchedulerPods,
+      // memoryUsageGPUPods
+    ],
+    panelWidth=12,
+    panelHeight=8,
+  )
 )
