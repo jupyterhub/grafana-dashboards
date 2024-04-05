@@ -1,10 +1,10 @@
 #!/usr/bin/env -S jsonnet -J ../vendor --tla-code 'datasources=["prometheus-test"]'
 // Deploys one dashboard - "Global usage dashboard",
 // with useful stats about usage across all datasources
-local grafana = import '../vendor/grafonnet/grafana.libsonnet';
-local dashboard = grafana.dashboard;
-local barGaugePanel = grafana.barGaugePanel;
-local prometheus = grafana.prometheus;
+local grafonnet = import 'grafonnet/main.libsonnet';
+local dashboard = grafonnet.dashboard;
+local barGaugePanel = grafonnet.barGaugePanel;
+local prometheus = grafonnet.prometheus;
 
 function(datasources)
   local weeklyActiveUsers = barGaugePanel.new(

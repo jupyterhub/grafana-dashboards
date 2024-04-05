@@ -1,15 +1,15 @@
 #!/usr/bin/env -S jsonnet -J ../vendor
 // Deploys one dashboard - "JupyterHub dashboard",
 // with useful stats about usage & diagnostics.
-local grafana = import 'grafonnet/grafana.libsonnet';
-local dashboard = grafana.dashboard;
-local singlestat = grafana.singlestat;
-local graphPanel = grafana.graphPanel;
-local prometheus = grafana.prometheus;
-local template = grafana.template;
-local tablePanel = grafana.tablePanel;
-local row = grafana.row;
-local heatmapPanel = grafana.heatmapPanel;
+local grafonnet = import 'grafonnet/main.libsonnet';
+local dashboard = grafonnet.dashboard;
+local singlestat = grafonnet.singlestat;
+local graphPanel = grafonnet.graphPanel;
+local prometheus = grafonnet.prometheus;
+local template = grafonnet.template;
+local tablePanel = grafonnet.tablePanel;
+local row = grafonnet.row;
+local heatmapPanel = grafonnet.heatmapPanel;
 
 local jupyterhub = import 'jupyterhub.libsonnet';
 local standardDims = jupyterhub.standardDims;

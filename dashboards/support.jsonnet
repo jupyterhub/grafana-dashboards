@@ -1,11 +1,11 @@
 #!/usr/bin/env -S jsonnet -J ../vendor
 // Deploys a dashboard showing information about support resources
-local grafana = import '../vendor/grafonnet/grafana.libsonnet';
-local dashboard = grafana.dashboard;
-local graphPanel = grafana.graphPanel;
-local prometheus = grafana.prometheus;
-local template = grafana.template;
-local row = grafana.row;
+local grafonnet = import 'grafonnet/main.libsonnet';
+local dashboard = grafonnet.dashboard;
+local graphPanel = grafonnet.graphPanel;
+local prometheus = grafonnet.prometheus;
+local template = grafonnet.template;
+local row = grafonnet.row;
 
 local templates = [
   template.datasource(
