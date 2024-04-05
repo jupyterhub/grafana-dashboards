@@ -1,3 +1,4 @@
+#!/usr/bin/env -S jsonnet -J ../vendor --tla-code 'datasources=["prometheus-test"]'
 // Deploys one dashboard - "Global usage dashboard",
 // with useful stats about usage across all datasources
 local grafana = import '../vendor/grafonnet/grafana.libsonnet';
