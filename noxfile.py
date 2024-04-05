@@ -9,6 +9,7 @@ Common tasks:
 - Install nox:                        pip install nox
 - Start a live reloading docs server: nox -s docs -- live
 """
+
 import nox
 
 nox.options.reuse_existing_virtualenvs = True

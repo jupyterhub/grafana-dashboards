@@ -1,3 +1,4 @@
+#!/usr/bin/env -S jsonnet -J ../vendor
 // Deploys a dashboard showing cluster-wide information
 local grafana = import '../vendor/grafonnet/grafana.libsonnet';
 local dashboard = grafana.dashboard;

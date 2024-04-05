@@ -1,4 +1,4 @@
-#!/usr/bin/env jsonnet -J ../vendor
+#!/usr/bin/env -S jsonnet -J ../vendor
 // Deploys one dashboard - "JupyterHub dashboard",
 // with useful stats about usage & diagnostics.
 local grafana = import 'grafonnet/grafana.libsonnet';
