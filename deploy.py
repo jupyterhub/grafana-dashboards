@@ -47,8 +47,7 @@ def ensure_folder(name, uid, api):
             raise
 
 
-def build_dashboard(dashboard_path, api, global_dash=False):
-
+def build_dashboard(dashboard_path, api):
     datasources = api("/datasources")
     datasources_names = [ds["name"] for ds in datasources]
 
@@ -99,8 +98,8 @@ def layout_dashboard(dashboard):
     return dashboard
 
 
-def deploy_dashboard(dashboard_path, folder_uid, api, global_dash=False):
-    db = build_dashboard(dashboard_path, api, global_dash)
+def deploy_dashboard(dashboard_path, folder_uid, api):
+    db = build_dashboard(dashboard_path, api)
 
     if not db:
         return
