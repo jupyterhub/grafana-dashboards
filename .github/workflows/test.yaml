@@ -27,16 +27,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jsonnet-version: [latest]
+        jsonnet-version: ["0.20.0"]
 
     steps:
       - uses: actions/checkout@v4
 
-      # Based on https://github.com/zendesk/setup-jsonnet/blob/master/install-jsonnet.sh
-      - name: Install jsonnet (go-jsonnet)
+      - name: Download jsonnet (go-jsonnet)
         run: |
-          go install "github.com/google/go-jsonnet/cmd/jsonnet@${{ matrix.jsonnet-version }}"
-          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+          JSONNET_VERSION=${{ matrix.jsonnet-version }}
+          wget -qO- https://github.com/google/go-jsonnet/releases/download/v${JSONNET_VERSION}/go-jsonnet_${JSONNET_VERSION}_Linux_x86_64.tar.gz \
+              | tar -xvz --one-top-level=$HOME/.local/bin
 
       - run: jsonnet --version
 
