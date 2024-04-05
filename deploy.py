@@ -82,7 +82,7 @@ def deploy_dashboard(dashboard_path, folder_uid, api):
 def get_label_values(api, ds_id, template_query):
     """
     Return response to a `label_values` template query
-j
+
     `label_values` isn't actually a prometheus thing - it is an API call that
     grafana makes. This function tries to mimic that. Useful for populating variables
     in a dashboard
