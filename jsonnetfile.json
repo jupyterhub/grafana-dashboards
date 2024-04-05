@@ -2,10 +2,11 @@
   "version": 1,
   "dependencies": [
     {
+      "name": "grafonnet",
       "source": {
         "git": {
           "remote": "https://github.com/grafana/grafonnet.git",
-          "subdir": "gen/grafonnet-v10.0.0"
+          "subdir": "gen/grafonnet-v10.4.0"
         }
       },
       "version": "main"
