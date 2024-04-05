@@ -384,33 +384,34 @@ local nonRunningPods = common.barChartOptions + barChart.new(
   ) + prometheus.withLegendFormat('{{phase}}'),
 ]);
 
-dashboard.new(
-  'Cluster Information',
-) + dashboard.withTags(
-  ['jupyterhub', 'kubernetes']
-) + dashboard.withEditable(
-  true
-) + dashboard.withVariables(
-  common.variables.prometheus
-) + dashboard.withPanels(
-  grafonnet.util.grid.makeGrid([
-    row.new(
-      'Cluster Utilization'
-    ) + row.withPanels([
-      userPods,
-      userNodes,
-      nodepoolMemoryCommitment,
-      nodepoolCPUCommitment,
-    ]),
-    row.new('Cluster Health') + row.withPanels([
-      nonRunningPods,
-      nodeOOMKills,
-    ]),
-    row.new('Node Stats') + row.withPanels([
-      nodeCPUCommit,
-      nodeMemoryCommit,
-      nodeCPUUtil,
-      nodeMemoryUtil,
-    ]),
-  ], panelWidth=12, panelHeight=8)
+dashboard.new('Cluster Information')
++ dashboard.withTags(['jupyterhub', 'kubernetes'])
++ dashboard.withEditable(true)
++ dashboard.withVariables(common.variables.prometheus)
++ dashboard.withPanels(
+  grafonnet.util.grid.makeGrid(
+    [
+      row.new('Cluster Utilization')
+      + row.withPanels([
+        userPods,
+        userNodes,
+        nodepoolMemoryCommitment,
+        nodepoolCPUCommitment,
+      ]),
+      row.new('Cluster Health')
+      + row.withPanels([
+        nonRunningPods,
+        nodeOOMKills,
+      ]),
+      row.new('Node Stats')
+      + row.withPanels([
+        nodeCPUCommit,
+        nodeMemoryCommit,
+        nodeCPUUtil,
+        nodeMemoryUtil,
+      ]),
+    ],
+    panelWidth=12,
+    panelHeight=8,
+  )
 )
