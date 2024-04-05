@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  render-dashboards:
+  render-lint-dashboards:
     runs-on: ubuntu-22.04
 
     strategy:
@@ -48,23 +48,6 @@ jobs:
           do
               jsonnet -J vendor --tla-code 'datasources=["prometheus-test"]' --output-file rendered-dashboards/`basename $file` $file
           done
-
-      - name: Upload rendered dashboards
-        uses: actions/upload-artifact@v4
-        with:
-          name: rendered-dashboards-${{ github.run_attempt }}
-          path: ./rendered-dashboards
-
-  lint-dashboards:
-    runs-on: ubuntu-22.04
-    needs: [render-dashboards]
-
-    steps:
-      - name: Download rendered dashboards
-        uses: actions/download-artifact@v4
-        with:
-          name: rendered-dashboards-${{ github.run_attempt }}
-          path: ./rendered-dashboards
 
       - name: Install dashboard-linter
         run: |
