@@ -13,8 +13,36 @@ repos:
     rev: v0.20.0
     hooks:
       - id: jsonnet-format
-      # jsonnet-lint hook doesn't work
-      # - id: jsonnet-lint
+      # To workaround https://github.com/google/go-jsonnet/issues/591, we run
+      # the jsonnet-lint hook once per .jsonnet / .libsonnet file.
+      - id: jsonnet-lint
+        pass_filenames: false
+        name: jsonnet-lint cluster.jsonnet
+        args: [-J, vendor, dashboards/cluster.jsonnet]
+      - id: jsonnet-lint
+        pass_filenames: false
+        name: jsonnet-lint jupyterhub.jsonnet
+        args: [-J, vendor, dashboards/jupyterhub.jsonnet]
+      - id: jsonnet-lint
+        pass_filenames: false
+        name: jsonnet-lint jupyterhub.libsonnet
+        args: [-J, vendor, dashboards/jupyterhub.libsonnet]
+      - id: jsonnet-lint
+        pass_filenames: false
+        name: jsonnet-lint support.jsonnet
+        args: [-J, vendor, dashboards/support.jsonnet]
+      - id: jsonnet-lint
+        pass_filenames: false
+        name: jsonnet-lint usage-report.jsonnet
+        args: [-J, vendor, dashboards/usage-report.jsonnet]
+      - id: jsonnet-lint
+        pass_filenames: false
+        name: jsonnet-lint user.jsonnet
+        args: [-J, vendor, dashboards/user.jsonnet]
+      - id: jsonnet-lint
+        pass_filenames: false
+        name: jsonnet-lint global-usage-stats.jsonnet
+        args: [-J, vendor, global-dashboards/global-usage-stats.jsonnet]
 
   # Autoformat: Python code, syntax patterns are modernized
   - repo: https://github.com/asottile/pyupgrade
