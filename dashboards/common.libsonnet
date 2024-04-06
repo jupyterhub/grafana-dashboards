@@ -5,41 +5,43 @@ local barGauge = grafonnet.panel.barGauge;
 local var = grafonnet.dashboard.variable;
 
 {
-  // Common options to be passed onto all panels
-  tsOptions: ts.standardOptions.withMin(
-    // Y axes should *always* start from 0
-    0
-  ) + ts.options.withTooltip({
-    // Show all values in the legend tooltip
-    mode: 'multi',
-  }),
+  /**
+   * Declare common panel options
+   *
+   * For the panels we configure, we want:
+   * - Y axes to start from 0            -- withMin(0)
+   * - Legend tooltip to show all values -- withTooltip({mode: 'multi'})
+   *
+   * ref: https://grafana.com/docs/grafana/v10.4/panels-visualizations/configure-panel-options/
+   */
 
-  barChartOptions: barChart.standardOptions.withMin(
-    // Y axes should *always* start from 0
-    0
-  ) + barChart.options.withTooltip({
-    // Show all values in the legend tooltip
-    mode: 'multi',
-  }),
+  // grafana ref:   https://grafana.com/docs/grafana/v10.4/panels-visualizations/visualizations/time-series/
+  // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/timeSeries/index.html
+  tsOptions:
+    ts.standardOptions.withMin(0)
+    + ts.options.withTooltip({ mode: 'multi' }),
 
-  barGaugeOptions: barGauge.standardOptions.withMin(
-    // Y axes should *always* start from 0
-    0
-  ),
+  // grafana ref:   https://grafana.com/docs/grafana/v10.4/panels-visualizations/visualizations/bar-chart/
+  // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/barChart/index.html
+  barChartOptions:
+    barChart.standardOptions.withMin(0)
+    + barChart.options.withTooltip({ mode: 'multi' }),
+
+  // grafana ref:   https://grafana.com/docs/grafana/v10.4/panels-visualizations/visualizations/bar-gauge/
+  // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/barGauge/index.html
+  barGaugeOptions:
+    barGauge.standardOptions.withMin(0),
 
   variables: {
-    prometheus: var.datasource.new(
-      'PROMETHEUS_DS', 'prometheus'
-    ),
-    hub: var.query.new(
-      'hub'
-    ) + var.query.withDatasourceFromVariable(
-      self.prometheus
-    ) + var.query.withRefresh(
-      'time'
-    ) + var.query.selectionOptions.withMulti(
-    ) + var.query.selectionOptions.withIncludeAll(
-    ) + var.query.queryTypes.withLabelValues('namespace', 'kube_service_labels{service="hub"}'),
+    prometheus:
+      var.datasource.new('PROMETHEUS_DS', 'prometheus'),
+    hub:
+      var.query.new('hub')
+      + var.query.withDatasourceFromVariable(self.prometheus)
+      + var.query.withRefresh('time')
+      + var.query.selectionOptions.withMulti()
+      + var.query.selectionOptions.withIncludeAll()
+      + var.query.queryTypes.withLabelValues('namespace', 'kube_service_labels{service="hub"}'),
   },
 
   _nodePoolLabelKeys: [
