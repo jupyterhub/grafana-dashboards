@@ -1,0 +1,87 @@
+# This is a GitHub workflow defining a set of jobs with a set of steps.
+# ref: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions
+#
+name: Tests
+
+on:
+  pull_request:
+    paths-ignore:
+      - "docs/**"
+      - ".github/workflows/*.yaml"
+      - "!.github/workflows/test.yaml"
+  push:
+    paths-ignore:
+      - "docs/**"
+      - ".github/workflows/*.yaml"
+      - "!.github/workflows/test.yaml"
+    branches-ignore:
+      - "dependabot/**"
+      - "pre-commit-ci-update-config"
+    tags: ["**"]
+  workflow_dispatch:
+
+jobs:
+  render-lint-dashboards:
+    runs-on: ubuntu-22.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        jsonnet-version: ["0.20.0"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download jsonnet (go-jsonnet)
+        run: |
+          JSONNET_VERSION=${{ matrix.jsonnet-version }}
+          wget -qO- https://github.com/google/go-jsonnet/releases/download/v${JSONNET_VERSION}/go-jsonnet_${JSONNET_VERSION}_Linux_x86_64.tar.gz \
+              | tar -xvz --one-top-level=$HOME/.local/bin
+
+      - run: jsonnet --version
+
+      - name: Render dashboards
+        run: |
+          mkdir rendered-dashboards
+          dashboard_folders="dashboards global-dashboards"
+          for file in `find $dashboard_folders -name '*.jsonnet'`
+          do
+              jsonnet -J vendor --tla-code 'datasources=["prometheus-test"]' --output-file rendered-dashboards/`basename $file` $file
+          done
+
+      - name: Install dashboard-linter
+        run: |
+          go install github.com/grafana/dashboard-linter@latest
+          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+
+      - name: dashboard-linter rules
+        run: |
+          echo "Available rules are documented in https://github.com/grafana/dashboard-linter/blob/main/docs/index.md#rules"
+          echo ""
+          dashboard-linter rules
+
+      - name: dashboard-linter lint
+        run: |
+          lint_failures=""
+
+          dashboard_folders=rendered-dashboards
+          for file in `find $dashboard_folders -name '*.jsonnet'`
+          do
+              lint_fail=""
+              echo "::group::$file"
+              dashboard-linter lint --strict $file || lint_fail=1
+              echo "::endgroup::"
+              if [ -n "$lint_fail" ]; then
+                  lint_failures="$lint_failures $file";
+              fi
+          done
+
+          if [ -n "$lint_failures" ]; then
+              echo ""
+              echo "dashboard-linter errored for:"
+              for file in $lint_failures
+              do
+                  echo `basename $file`
+              done
+              exit 1
+          fi
