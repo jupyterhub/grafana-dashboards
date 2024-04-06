@@ -5,7 +5,6 @@ local dashboard = grafonnet.dashboard;
 local ts = grafonnet.panel.timeSeries;
 local barChart = grafonnet.panel.barChart;
 local prometheus = grafonnet.query.prometheus;
-local var = grafonnet.dashboard.variable;
 local row = grafonnet.panel.row;
 
 local common = import './common.libsonnet';
