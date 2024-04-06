@@ -3,55 +3,55 @@
 // with useful stats about usage across all datasources
 local grafonnet = import 'grafonnet/main.libsonnet';
 local dashboard = grafonnet.dashboard;
-local barGaugePanel = grafonnet.barGaugePanel;
-local prometheus = grafonnet.prometheus;
+local barGauge = grafonnet.panel.barGauge;
+local prometheus = grafonnet.query.prometheus;
 
 function(datasources)
-  local weeklyActiveUsers = barGaugePanel.new(
-    'Active users (over 7 days)',
-    datasource='-- Mixed --',
-    thresholds=[
-      {
-        value: 0,
-        color: 'green',
-      },
-    ],
-  ).addTargets([
-    prometheus.target(
-      // Removes any pods caused by stress testing
-      |||
-        count(
-          sum(
-            min_over_time(
-              kube_pod_labels{
-                label_app="jupyterhub",
-                label_component="singleuser-server",
-                label_hub_jupyter_org_username!~"(service|perf|hubtraf)-",
-              }[7d]
-            )
-          ) by (pod)
-        )
-      |||,
-      legendFormat=x,
-      interval='7d',
-      datasource=x
-    )
-    // Create a target for each datasource
-    for x in datasources
-  ]);
+  local weeklyActiveUsers =
+    barGauge.new('Active users (over 7 days)')
+    //thresholds=[
+    //  {
+    //    value: 0,
+    //    color: 'green',
+    //  },
+    //],
+    + barGauge.queryOptions.withInterval('7d')
+    + barGauge.queryOptions.withTargets([
+      prometheus.new(
+        x,
+        // Removes any pods caused by stress testing
+        |||
+          count(
+            sum(
+              min_over_time(
+                kube_pod_labels{
+                  label_app="jupyterhub",
+                  label_component="singleuser-server",
+                  label_hub_jupyter_org_username!~"(service|perf|hubtraf)-",
+                }[7d]
+              )
+            ) by (pod)
+          )
+        |||,
+      )
+      + prometheus.withLegendFormat(x)
+      // Create a target for each datasource
+      for x in datasources
+    ]);
 
-  dashboard.new(
-    'Global Usage Dashboard',
-    uid='global-usage-dashboard',
-    tags=['jupyterhub', 'global'],
-    editable=true,
-    time_from='now-7d',
-  ).addPanel(
-    weeklyActiveUsers,
-    gridPos={
-      x: 0,
-      y: 0,
-      w: 25,
-      h: 10,
-    },
+  dashboard.new('Global Usage Dashboard')
+  + dashboard.withUid('global-usage-dashboard')
+  + dashboard.withTags(['jupyterhub', 'global'])
+  + dashboard.withEditable(true)
+  // time_from='now-7d',
+  + dashboard.withPanels(
+    grafonnet.util.grid.makeGrid([
+      weeklyActiveUsers,
+    ])
+    // gridPos={
+    //   x: 0,
+    //   y: 0,
+    //   w: 25,
+    //   h: 10,
+    // },
   )
