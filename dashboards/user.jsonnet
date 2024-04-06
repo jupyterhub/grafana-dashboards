@@ -4,61 +4,13 @@ local dashboard = grafonnet.dashboard;
 local singlestat = grafonnet.singlestat;
 local graphPanel = grafonnet.graphPanel;
 local prometheus = grafonnet.prometheus;
-local template = grafonnet.template;
 local tablePanel = grafonnet.tablePanel;
 local row = grafonnet.row;
 local heatmapPanel = grafonnet.heatmapPanel;
 
+local common = import './common.libsonnet';
 local jupyterhub = import 'jupyterhub.libsonnet';
 local standardDims = jupyterhub.standardDims;
-
-local templates = [
-  template.datasource(
-    name='PROMETHEUS_DS',
-    query='prometheus',
-    current=null,
-    hide='label',
-  ),
-  template.new(
-    'hub',
-    datasource='$PROMETHEUS_DS',
-    query='label_values(kube_service_labels{service="hub"}, namespace)',
-    // Allow viewing dashboard for multiple combined hubs
-    includeAll=true,
-    multi=true
-  ) + {
-    // Explicitly set '$hub' to be `.*` when 'All' is selected, as we always use `$hub` as a regex
-    allValue: '.*',
-  },
-  template.new(
-    'user_pod',
-    datasource='$PROMETHEUS_DS',
-    query='label_values(kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub"}, pod)',
-    // Allow viewing dashboard for multiple users
-    includeAll=true,
-    multi=true
-  ) + {
-    // Explicitly set '$user_pod' to be `.*` when 'All' is selected, as we always use `$user_pod` as a regex
-    allValue: '.*',
-  },
-  template.new(
-    // Queries should use the 'instance' label when querying metrics that
-    // come from collectors present on each node - such as node_exporter or
-    // container_ metrics, and use the 'node' label when querying metrics
-    // that come from collectors that are present once per cluster, like
-    // kube_state_metrics.
-    'instance',
-    datasource='$PROMETHEUS_DS',
-    query='label_values(kube_node_info, node)',
-    // Allow viewing dashboard for multiple nodes
-    includeAll=true,
-    multi=true
-  ) + {
-    // Explicitly set '$instance' to be `.*` when 'All' is selected, as we always use `$instance` as a regex
-    allValue: '.*',
-  },
-];
-
 
 local memoryUsage = graphPanel.new(
   'Memory Usage',
@@ -178,7 +130,12 @@ dashboard.new('User Diagnostics Dashboard')
 + dashboard.withTags(['jupyterhub'])
 + dashboard.withUid('user-pod-diagnostics-dashboard')
 + dashboard.withEditable(true)
-// FIXME: addTemplates didn't translate to withTemplates --- + dashboard.withTemplates(templates)
++ dashboard.withVariables([
+  common.variables.prometheus,
+  common.variables.hub,
+  common.variables.user_pod,
+  common.variables.instance,
+])
 + dashboard.withPanels(
   grafonnet.util.grid.makeGrid(
     [

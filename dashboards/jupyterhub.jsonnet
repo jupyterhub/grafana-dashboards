@@ -6,34 +6,13 @@ local dashboard = grafonnet.dashboard;
 local singlestat = grafonnet.singlestat;
 local graphPanel = grafonnet.graphPanel;
 local prometheus = grafonnet.prometheus;
-local template = grafonnet.template;
 local tablePanel = grafonnet.tablePanel;
 local row = grafonnet.row;
 local heatmapPanel = grafonnet.heatmapPanel;
 
+local common = import './common.libsonnet';
 local jupyterhub = import 'jupyterhub.libsonnet';
 local standardDims = jupyterhub.standardDims;
-
-local templates = [
-  template.datasource(
-    name='PROMETHEUS_DS',
-    query='prometheus',
-    current=null,
-    hide='label',
-  ),
-  template.new(
-    'hub',
-    datasource='$PROMETHEUS_DS',
-    query='label_values(kube_service_labels{service="hub"}, namespace)',
-    // Allow viewing dashboard for multiple combined hubs
-    includeAll=true,
-    multi=true
-  ) + {
-    // Explicitly set '$hub' to be `.*` when 'All' is selected, as we always use `$hub` as a regex
-    allValue: '.*',
-  },
-];
-
 
 // Hub usage stats
 local currentActiveUsers = graphPanel.new(
@@ -555,7 +534,10 @@ dashboard.new('JupyterHub Dashboard')
 + dashboard.withTags(['jupyterhub'])
 + dashboard.withUid('hub-dashboard')
 + dashboard.withEditable(true)
-// FIXME: addTemplates didn't translate to withTemplates --- + dashboard.withTemplates(templates)
++ dashboard.withVariables([
+  common.variables.prometheus,
+  common.variables.hub,
+])
 + dashboard.withPanels(
   grafonnet.util.grid.makeGrid(
     [

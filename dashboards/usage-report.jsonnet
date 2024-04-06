@@ -10,12 +10,6 @@ local row = grafonnet.panel.row;
 
 local common = import './common.libsonnet';
 
-local variables = [
-  common.variables.prometheus,
-  common.variables.hub,
-];
-
-
 local memoryUsageUserPods = common.barChartOptions + barGauge.new(
   'User pod memory usage',
 ) + barGauge.standardOptions.withUnit(
@@ -151,7 +145,10 @@ local memoryUsageDaskWorkerPods = common.barChartOptions + barGauge.new(
 dashboard.new('Usage Report')
 + dashboard.withTags(['jupyterhub', 'dask'])
 + dashboard.withEditable(true)
-+ dashboard.withVariables(variables)
++ dashboard.withVariables([
+  common.variables.prometheus,
+  common.variables.hub,
+])
 + dashboard.withPanels(
   grafonnet.util.grid.makeGrid(
     [

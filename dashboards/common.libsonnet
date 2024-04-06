@@ -42,6 +42,25 @@ local var = grafonnet.dashboard.variable;
       + var.query.selectionOptions.withMulti()
       + var.query.selectionOptions.withIncludeAll()
       + var.query.queryTypes.withLabelValues('namespace', 'kube_service_labels{service="hub"}'),
+    user_pod:
+      var.query.new('user_pod')
+      + var.query.withDatasourceFromVariable(self.prometheus)
+      + var.query.withRefresh('time')
+      + var.query.selectionOptions.withMulti()
+      + var.query.selectionOptions.withIncludeAll()
+      + var.query.queryTypes.withLabelValues('pod', 'kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub"}'),
+    // Queries should use the 'instance' label when querying metrics that
+    // come from collectors present on each node - such as node_exporter or
+    // container_ metrics, and use the 'node' label when querying metrics
+    // that come from collectors that are present once per cluster, like
+    // kube_state_metrics.
+    instance:
+      var.query.new('instance')
+      + var.query.withDatasourceFromVariable(self.prometheus)
+      + var.query.withRefresh('time')
+      + var.query.selectionOptions.withMulti()
+      + var.query.selectionOptions.withIncludeAll()
+      + var.query.queryTypes.withLabelValues('node', 'kube_node_info'),
   },
 
   _nodePoolLabelKeys: [

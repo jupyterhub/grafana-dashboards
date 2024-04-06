@@ -387,7 +387,9 @@ local nonRunningPods = common.barChartOptions + barChart.new(
 dashboard.new('Cluster Information')
 + dashboard.withTags(['jupyterhub', 'kubernetes'])
 + dashboard.withEditable(true)
-+ dashboard.withVariables(common.variables.prometheus)
++ dashboard.withVariables([
+  common.variables.prometheus,
+])
 + dashboard.withPanels(
   grafonnet.util.grid.makeGrid(
     [

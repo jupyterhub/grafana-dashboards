@@ -4,17 +4,9 @@ local grafonnet = import 'grafonnet/main.libsonnet';
 local dashboard = grafonnet.dashboard;
 local graphPanel = grafonnet.graphPanel;
 local prometheus = grafonnet.prometheus;
-local template = grafonnet.template;
 local row = grafonnet.row;
 
-local templates = [
-  template.datasource(
-    name='PROMETHEUS_DS',
-    query='prometheus',
-    current=null,
-    hide='label',
-  ),
-];
+local common = import './common.libsonnet';
 
 // NFS Stats
 local userNodesNFSOps = graphPanel.new(
@@ -155,7 +147,9 @@ local prometheusNetwork = graphPanel.new(
 dashboard.new('NFS and Support Information')
 + dashboard.withTags(['support', 'kubernetes'])
 + dashboard.withEditable(true)
-// FIXME: addTemplates didn't translate to withTemplates --- + dashboard.withTemplates(templates)
++ dashboard.withVariables([
+  common.variables.prometheus,
+])
 + dashboard.withPanels(
   grafonnet.util.grid.makeGrid(
     [
