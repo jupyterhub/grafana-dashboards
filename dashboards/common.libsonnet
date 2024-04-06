@@ -2,6 +2,8 @@ local grafonnet = import 'grafonnet/main.libsonnet';
 local ts = grafonnet.panel.timeSeries;
 local barChart = grafonnet.panel.barChart;
 local barGauge = grafonnet.panel.barGauge;
+local heatmap = grafonnet.panel.heatmap;
+local table = grafonnet.panel.table;
 local var = grafonnet.dashboard.variable;
 
 {
@@ -31,6 +33,15 @@ local var = grafonnet.dashboard.variable;
   // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/barGauge/index.html
   barGaugeOptions:
     barGauge.standardOptions.withMin(0),
+
+  // grafana ref:   https://grafana.com/docs/grafana/v10.4/panels-visualizations/visualizations/heatmap/
+  // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/heatmap/index.html
+  heatmapOptions:
+    heatmap.standardOptions.withMin(0),
+
+  tableOptions:
+    table.standardOptions.withMin(0),
+
 
   variables: {
     prometheus:
