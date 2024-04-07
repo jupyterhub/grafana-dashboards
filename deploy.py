@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -69,13 +70,19 @@ def build_dashboard(dashboard_path, api):
 
 def deploy_dashboard(dashboard_path, folder_uid, api):
     db = build_dashboard(dashboard_path, api)
+    # without this modification, deploying to a second folder deletes deployed
+    # dashboards in another folder, likely due to generated dashboard UID is the
+    # same as an already existing dashboard UID. They are probably generated
+    # based on some hash that didn't get new input when deployed to the second
+    # folder compared to initially deployed to the first folder.
+    db['uid'] = hashlib.sha256((dashboard_path + folder_uid).encode()).hexdigest()[:16]
 
     if not db:
         return
 
     db = populate_template_variables(api, db)
 
-    data = {'dashboard': db, 'folderId': folder_uid, 'overwrite': True}
+    data = {'dashboard': db, 'folderUid': folder_uid, 'overwrite': True}
     api('/dashboards/db', data)
 
 
@@ -187,10 +194,10 @@ def main():
         grafana_token,
         no_tls_verify=args.no_tls_verify,
     )
-    folder = ensure_folder(args.folder_name, args.folder_uid, api)
+    ensure_folder(args.folder_name, args.folder_uid, api)
 
     for dashboard in glob(f'{args.dashboards_dir}/*.jsonnet'):
-        deploy_dashboard(dashboard, folder['id'], api)
+        deploy_dashboard(dashboard, args.folder_uid, api)
         print(f'Deployed {dashboard}')
 
 
