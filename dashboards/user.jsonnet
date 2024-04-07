@@ -149,14 +149,13 @@ dashboard.new('User Diagnostics Dashboard')
 + dashboard.withPanels(
   grafonnet.util.grid.makeGrid(
     [
-      memoryUsage,  // FIXME: previously specified as, is it ok now? { h: standardDims.h * 1.5, w: standardDims.w * 2 }
-      cpuUsage,  // FIXME: previously specified as, is it ok now? { h: standardDims.h * 1.5, w: standardDims.w * 2 }
-      homedirSharedUsage,  // FIXME: previously specified as, is it ok now? { h: standardDims.h * 1.5, w: standardDims.w * 2 }
-      memoryRequests,  // FIXME: previously specified as, is it ok now? { h: standardDims.h * 1.5, w: standardDims.w * 2 }
-      cpuRequests,  // FIXME: previously specified as, is it ok now? { h: standardDims.h * 1.5, w: standardDims.w * 2 }
+      memoryUsage,
+      cpuUsage,
+      homedirSharedUsage,
+      memoryRequests,
+      cpuRequests,
     ],
-    // FIXME: panelWidth and panelHeight specified like cluster.jsonnet without visual check
-    panelWidth=12,
-    panelHeight=8,
+    panelWidth=24,
+    panelHeight=16,
   )
 )

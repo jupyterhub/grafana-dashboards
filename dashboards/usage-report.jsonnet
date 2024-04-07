@@ -8,13 +8,17 @@ local common = import './common.libsonnet';
 
 // FIXME: apply threshold coloring, provided like this historically, for all
 //        four panels in this dashboard
-//
+// FIXME: not migrated config thresholds, should apply to all panels
 // thresholds=[
 //   {
 //     value: 0,
 //     color: 'green',
 //   },
 // ]
+// IDEAS:
+// + barGauge.standardOptions.thresholds.withMode('percentage')
+// + barGauge.standardOptions.color.withMode('continuous-greens')
+//
 
 local memoryUsageUserPods =
   common.barGaugeOptions
@@ -155,7 +159,7 @@ dashboard.new('Usage Report')
       memoryUsageDaskSchedulerPods,
       memoryUsageGPUPods,
     ],
-    panelWidth=12,
-    panelHeight=8,
+    panelWidth=24,
+    panelHeight=10,
   )
 )

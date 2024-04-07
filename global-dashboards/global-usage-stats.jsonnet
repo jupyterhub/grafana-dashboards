@@ -9,6 +9,7 @@ local prometheus = grafonnet.query.prometheus;
 function(datasources)
   local weeklyActiveUsers =
     barGauge.new('Active users (over 7 days)')
+    // FIXME: not migrated config thresholds
     //thresholds=[
     //  {
     //    value: 0,
@@ -43,15 +44,13 @@ function(datasources)
   + dashboard.withUid('global-usage-dashboard')
   + dashboard.withTags(['jupyterhub', 'global'])
   + dashboard.withEditable(true)
-  // time_from='now-7d',
+  + dashboard.time.withFrom('now-7d')
   + dashboard.withPanels(
-    grafonnet.util.grid.makeGrid([
-      weeklyActiveUsers,
-    ])
-    // gridPos={
-    //   x: 0,
-    //   y: 0,
-    //   w: 25,
-    //   h: 10,
-    // },
+    grafonnet.util.grid.makeGrid(
+      [
+        weeklyActiveUsers,
+      ],
+      panelWidth=24,
+      panelHeight=10,
+    )
   )

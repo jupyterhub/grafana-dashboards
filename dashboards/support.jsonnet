@@ -199,8 +199,7 @@ dashboard.new('NFS and Support Information')
         prometheusNetwork,
       ]),
     ],
-    // FIXME: panelWidth and panelHeight specified like cluster.jsonnet without visual check
     panelWidth=12,
-    panelHeight=8,
+    panelHeight=10,
   )
 )

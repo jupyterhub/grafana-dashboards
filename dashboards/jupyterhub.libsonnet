@@ -80,6 +80,7 @@ local prometheus = grafonnet.query.prometheus;
    */
   componentResourcePanel(title, metric, component='', formatY1=null, decimalsY1=null, multi=false)::
     ts.new(title)
+    // FIXME: not migrated config below commented out
     //decimalsY1=decimalsY1,
     //formatY1=formatY1,
     // show legend as a table with current, avg, max values
