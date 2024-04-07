@@ -189,7 +189,7 @@ def main():
     )
     folder = ensure_folder(args.folder_name, args.folder_uid, api)
 
-    for dashboard in glob(f'{args.dashboards_dir}/cluster.jsonnet'):
+    for dashboard in glob(f'{args.dashboards_dir}/*.jsonnet'):
         deploy_dashboard(dashboard, folder['id'], api)
         print(f'Deployed {dashboard}')
 
