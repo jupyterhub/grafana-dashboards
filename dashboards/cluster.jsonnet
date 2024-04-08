@@ -18,6 +18,7 @@ local userNodes =
       Number of nodes in each nodepool in this cluster
     |||
   )
+  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + ts.standardOptions.withDecimals(0)
   + ts.queryOptions.withTargets([
     prometheus.new(
@@ -58,6 +59,7 @@ local userPods =
         may still affect your hub.
     |||
   )
+  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + ts.standardOptions.withDecimals(0)
   + ts.queryOptions.withTargets([
     prometheus.new(
@@ -380,6 +382,7 @@ local nodeOOMKills =
       infact caused by an OOM
     |||
   )
+  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + barChart.standardOptions.withDecimals(0)
   + barChart.queryOptions.withTargets([
     prometheus.new(
@@ -409,6 +412,7 @@ local nonRunningPods =
       In a functional clusters, pods should not be in non-Running states for long.
     |||,
   )
+  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + barChart.standardOptions.withDecimals(0)
   + barChart.queryOptions.withTargets([
     prometheus.new(

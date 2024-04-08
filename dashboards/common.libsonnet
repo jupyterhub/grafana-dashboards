@@ -21,26 +21,33 @@ local var = grafonnet.dashboard.variable;
   // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/timeSeries/index.html
   tsOptions:
     ts.standardOptions.withMin(0)
-    + ts.options.withTooltip({ mode: 'multi' }),
+    + ts.options.withTooltip({ mode: 'multi' })
+    + ts.fieldConfig.defaults.custom.withLineInterpolation('stepAfter')
+    + ts.fieldConfig.defaults.custom.withFillOpacity(10)
+  ,
 
   // grafana ref:   https://grafana.com/docs/grafana/v10.4/panels-visualizations/visualizations/bar-chart/
   // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/barChart/index.html
   barChartOptions:
     barChart.standardOptions.withMin(0)
-    + barChart.options.withTooltip({ mode: 'multi' }),
+    + barChart.options.withTooltip({ mode: 'multi' })
+  ,
 
   // grafana ref:   https://grafana.com/docs/grafana/v10.4/panels-visualizations/visualizations/bar-gauge/
   // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/barGauge/index.html
   barGaugeOptions:
-    barGauge.standardOptions.withMin(0),
+    barGauge.standardOptions.withMin(0)
+  ,
 
   // grafana ref:   https://grafana.com/docs/grafana/v10.4/panels-visualizations/visualizations/heatmap/
   // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/heatmap/index.html
   heatmapOptions:
-    heatmap.standardOptions.withMin(0),
+    heatmap.standardOptions.withMin(0)
+  ,
 
   tableOptions:
-    table.standardOptions.withMin(0),
+    table.standardOptions.withMin(0)
+  ,
 
 
   variables: {
