@@ -9,13 +9,8 @@ local prometheus = grafonnet.query.prometheus;
 function(datasources)
   local weeklyActiveUsers =
     barGauge.new('Active users (over 7 days)')
-    // FIXME: not migrated config thresholds
-    //thresholds=[
-    //  {
-    //    value: 0,
-    //    color: 'green',
-    //  },
-    //],
+    + barGauge.standardOptions.color.withMode('fixed')
+    + barGauge.standardOptions.color.withFixedColor('green')
     + barGauge.queryOptions.withInterval('7d')
     + barGauge.queryOptions.withTargets([
       prometheus.new(

@@ -94,8 +94,8 @@ local nfsServerWriteLatency =
       |||
         sum(rate(node_disk_write_time_seconds_total{job="prometheus-nfsd-server"}[5m])) by (device) / sum(rate(node_disk_writes_completed_total{job="prometheus-nfsd-server"}[5m])) by (device)
       |||
-      + prometheus.withLegendFormat('{{ device }}'),
-    ),
+    )
+    + prometheus.withLegendFormat('{{ device }}'),
   ]);
 
 local nfsServerReadLatency =
@@ -107,8 +107,8 @@ local nfsServerReadLatency =
       |||
         sum(rate(node_disk_read_time_seconds_total{job="prometheus-nfsd-server"}[5m])) by (device) / sum(rate(node_disk_reads_completed_total{job="prometheus-nfsd-server"}[5m])) by (device)
       |||
-      + prometheus.withLegendFormat('{{ device }}'),
-    ),
+    )
+    + prometheus.withLegendFormat('{{ device }}'),
   ]);
 
 // Support Metrics
@@ -161,15 +161,15 @@ local prometheusNetwork =
       |||
         sum(rate(container_network_receive_bytes_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))
       |||
-      + prometheus.withLegendFormat('receive'),
-    ),
+    )
+    + prometheus.withLegendFormat('receive'),
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
         sum(rate(container_network_send_bytes_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))
       |||
-      + prometheus.withLegendFormat('send'),
-    ),
+    )
+    + prometheus.withLegendFormat('send'),
   ]);
 
 dashboard.new('NFS and Support Information')

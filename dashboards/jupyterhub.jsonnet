@@ -22,7 +22,7 @@ local currentActiveUsers =
     |||
   )
   + ts.standardOptions.withDecimals(0)
-  // FIXME: not migrated config stack=true,
+  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -51,7 +51,7 @@ local dailyActiveUsers =
   )
   // FIXME: not migrated config legend_hideZero=false,
   + ts.standardOptions.withDecimals(0)
-  // FIXME: not migrated config stack=true,
+  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -76,7 +76,7 @@ local weeklyActiveUsers =
   )
   // FIXME: not migrated config legend_hideZero=false,
   + ts.standardOptions.withDecimals(0)
-  // FIXME: not migrated config stack=true,
+  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -101,7 +101,7 @@ local monthlyActiveUsers =
   )
   // FIXME: not migrated config legend_hideZero=false,
   + ts.standardOptions.withDecimals(0)
-  // FIXME: not migrated config stack=true,
+  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -380,7 +380,7 @@ local nonRunningPods =
     |||
   )
   // decimalsY1=0,
-  // FIXME: not migrated config stack=true,
+  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -560,7 +560,7 @@ local notebookImagesUsed =
   )
   // FIXME: not migrated config legend_hideZero=false,
   + ts.standardOptions.withDecimals(0)
-  // FIXME: not migrated config stack=false,
+  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',

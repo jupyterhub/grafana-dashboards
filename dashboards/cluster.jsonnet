@@ -447,10 +447,10 @@ dashboard.new('Cluster Information')
       ]),
       row.new('Node Stats')
       + row.withPanels([
-        nodeCPUCommit,
-        nodeMemoryCommit,
         nodeCPUUtil,
         nodeMemoryUtil,
+        nodeCPUCommit,
+        nodeMemoryCommit,
       ]),
     ],
     panelWidth=12,

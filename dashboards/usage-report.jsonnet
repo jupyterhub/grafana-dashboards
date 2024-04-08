@@ -6,24 +6,12 @@ local prometheus = grafonnet.query.prometheus;
 
 local common = import './common.libsonnet';
 
-// FIXME: apply threshold coloring, provided like this historically, for all
-//        four panels in this dashboard
-// FIXME: not migrated config thresholds, should apply to all panels
-// thresholds=[
-//   {
-//     value: 0,
-//     color: 'green',
-//   },
-// ]
-// IDEAS:
-// + barGauge.standardOptions.thresholds.withMode('percentage')
-// + barGauge.standardOptions.color.withMode('continuous-greens')
-//
-
 local memoryUsageUserPods =
   common.barGaugeOptions
   + barGauge.new('User pod memory usage')
   + barGauge.standardOptions.withUnit('bytes')
+  + barGauge.standardOptions.color.withMode('fixed')
+  + barGauge.standardOptions.color.withFixedColor('green')
   + barGauge.queryOptions.withTargets([
     // Computes sum of pod memory requests, grouped by username, for notebook pods
     prometheus.new(
@@ -53,6 +41,8 @@ local memoryUsageDaskWorkerPods =
   common.barGaugeOptions
   + barGauge.new('Dask-gateway worker pod memory usage')
   + barGauge.standardOptions.withUnit('bytes')
+  + barGauge.standardOptions.color.withMode('fixed')
+  + barGauge.standardOptions.color.withFixedColor('green')
   + barGauge.queryOptions.withTargets([
     // Computes sum of pod memory requests, grouped by username, and dask-gateway cluster
     // for dask-gateway worker pods
@@ -85,6 +75,8 @@ local memoryUsageDaskSchedulerPods =
   common.barGaugeOptions
   + barGauge.new('Dask-gateway scheduler pod memory usage')
   + barGauge.standardOptions.withUnit('bytes')
+  + barGauge.standardOptions.color.withMode('fixed')
+  + barGauge.standardOptions.color.withFixedColor('green')
   + barGauge.queryOptions.withTargets([
     // Computes sum of pod memory requests, grouped by username, and dask-gateway cluster
     // for dask-gateway scheduler pods
@@ -117,6 +109,8 @@ local memoryUsageGPUPods =
   common.barGaugeOptions
   + barGauge.new('GPU pod memory usage')
   + barGauge.standardOptions.withUnit('bytes')
+  + barGauge.standardOptions.color.withMode('fixed')
+  + barGauge.standardOptions.color.withFixedColor('green')
   + barGauge.queryOptions.withTargets([
     // Computes sum of pod memory requests, grouped by username for notebook gpu pods
     prometheus.new(
