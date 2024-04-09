@@ -435,10 +435,8 @@ dashboard.new('Cluster Information')
     [
       row.new('Cluster Utilization')
       + row.withPanels([
-        userPods,  // FIXME: previously width 24
+        userPods,
         userNodes,
-        nodepoolMemoryCommitment,
-        nodepoolCPUCommitment,
       ]),
       row.new('Cluster Health')
       + row.withPanels([
@@ -451,6 +449,8 @@ dashboard.new('Cluster Information')
         nodeMemoryUtil,
         nodeCPUCommit,
         nodeMemoryCommit,
+        nodepoolCPUCommitment,
+        nodepoolMemoryCommitment,
       ]),
     ],
     panelWidth=12,

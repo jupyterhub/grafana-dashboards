@@ -156,6 +156,6 @@ dashboard.new('User Diagnostics Dashboard')
       cpuRequests,
     ],
     panelWidth=24,
-    panelHeight=16,
+    panelHeight=12,
   )
 )

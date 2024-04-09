@@ -42,31 +42,34 @@ local var = grafonnet.dashboard.variable;
   // grafana ref:   https://grafana.com/docs/grafana/v10.4/panels-visualizations/visualizations/heatmap/
   // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/heatmap/index.html
   heatmapOptions:
-    heatmap.standardOptions.withMin(0)
+    heatmap.options.withCalculate(true)
+    + heatmap.options.yAxis.withMin(0)
   ,
 
   tableOptions:
     table.standardOptions.withMin(0)
   ,
 
-
+  // grafonnet ref: https://grafana.github.io/grafonnet/API/dashboard/variable.html
   variables: {
     prometheus:
-      var.datasource.new('PROMETHEUS_DS', 'prometheus'),
+      var.datasource.new('PROMETHEUS_DS', 'prometheus')
+      + var.datasource.generalOptions.showOnDashboard.withValueOnly()
+    ,
     hub:
       var.query.new('hub')
       + var.query.withDatasourceFromVariable(self.prometheus)
-      + var.query.withRefresh('time')
       + var.query.selectionOptions.withMulti()
-      + var.query.selectionOptions.withIncludeAll()
-      + var.query.queryTypes.withLabelValues('namespace', 'kube_service_labels{service="hub"}'),
+      + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
+      + var.query.queryTypes.withLabelValues('namespace', 'kube_service_labels{service="hub"}')
+    ,
     user_pod:
       var.query.new('user_pod')
       + var.query.withDatasourceFromVariable(self.prometheus)
-      + var.query.withRefresh('time')
       + var.query.selectionOptions.withMulti()
-      + var.query.selectionOptions.withIncludeAll()
-      + var.query.queryTypes.withLabelValues('pod', 'kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub"}'),
+      + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
+      + var.query.queryTypes.withLabelValues('pod', 'kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub"}')
+    ,
     // Queries should use the 'instance' label when querying metrics that
     // come from collectors present on each node - such as node_exporter or
     // container_ metrics, and use the 'node' label when querying metrics
@@ -75,9 +78,8 @@ local var = grafonnet.dashboard.variable;
     instance:
       var.query.new('instance')
       + var.query.withDatasourceFromVariable(self.prometheus)
-      + var.query.withRefresh('time')
       + var.query.selectionOptions.withMulti()
-      + var.query.selectionOptions.withIncludeAll()
+      + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
       + var.query.queryTypes.withLabelValues('node', 'kube_node_info'),
   },
 

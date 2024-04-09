@@ -64,34 +64,24 @@ local prometheus = grafonnet.query.prometheus;
     )
   ,
   /**
-   * Creates a graph panel for a resource for one (or more) JupyterHub component(s).
+   * Creates a timeseries panel for a resource for one (or more) JupyterHub component(s).
    * The given metric will be summed across pods for the given component.
-   * if `multi` a multi-component chart will be produced, with sums for each component.
    *
    * @name jupyterhub.componentResourcePanel
    *
-   * @param title The title of the graph panel.
+   * @param title The title of the timeseries panel.
    * @param metric The metric to be observed.
-   * @param component The component to be measured (or excluded). Optional if `multi=true`, in which case it is an exclusion, otherwise required.
-   * @param formatY1 (optional) Passthrough `formatY1` to `ts.new`
-   * @param decimalsY1 (optional) Passthrough `decimalsY1` to `ts.new`
-   * @param multi (default `false`) If true, do a multi-component chart instead of single-component.
-   *     The chart will have a legend table for each component.
+   * @param component The component to be measured (or excluded).
    */
-  componentResourcePanel(title, metric, component='', formatY1=null, decimalsY1=null, multi=false)::
+  componentResourcePanel(title, metric, component)::
     ts.new(title)
-    // FIXME: not migrated config below commented out
-    //decimalsY1=decimalsY1,
-    //formatY1=formatY1,
     // show legend as a table with current, avg, max values
-    //legend_alignAsTable=true,
-    //legend_current=true,
-    //legend_avg=true,
-    //legend_max=true,
     //legend_hideZero=true,
     // legend_values is required for any of the above to work
     //legend_values=true,
     //min=0,
+    + ts.options.legend.withDisplayMode('table')
+    + ts.options.legend.withCalcs(['min', 'mean', 'max'])
     + ts.queryOptions.withTargets([
       prometheus.new(
         '$PROMETHEUS_DS',
@@ -104,24 +94,22 @@ local prometheus = grafonnet.query.prometheus;
           |||,
           [
             metric,
-            self.onComponentLabel(component, cmp=if multi then '!=' else '=', group_left='container, label_component'),
+            self.onComponentLabel(component, cmp='!=', group_left='container, label_component'),
           ],
         )
       )
-      + prometheus.withLegendFormat(if multi then '{{ label_component }}' else title),
+      + prometheus.withLegendFormat('{{ label_component }}'),
     ]),
 
   /**
-   * Creates a memory (working set) graph panel for one (or more) JupyterHub component(s).
+   * Creates a memory (working set) timeseries panel for one (or more) JupyterHub component(s).
    *
    * @name jupyterhub.memoryPanel
    *
    * @param name The name of the resource. Used to create the title.
-   * @param component The component to be measured (or excluded). Optional if `multi=true`, in which case it is an exclusion, otherwise required.
-   * @param multi (default `false`) If true, do a multi-component chart instead of single-component.
-   *     The chart will have a legend table for each component.
+   * @param component The component to be measured (or excluded).
    */
-  memoryPanel(name, component, multi=false)::
+  memoryPanel(name, component)::
     self.componentResourcePanel(
       std.format('%s Memory (Working Set)', [name]),
       component=component,
@@ -131,21 +119,19 @@ local prometheus = grafonnet.query.prometheus;
         # in which case sum() reports double the actual metric
         container_memory_working_set_bytes{name!=""}
       |||,
-      formatY1='bytes',
-      multi=multi,
-    ),
+    )
+    + ts.standardOptions.withUnit('bytes')
+  ,
 
   /**
-   * Creates a CPU usage graph panel for one (or more) JupyterHub component(s).
+   * Creates a CPU usage timeseries panel for one (or more) JupyterHub component(s).
    *
    * @name jupyterhub.cpuPanel
    *
    * @param name The name of the resource. Used to create the title.
-   * @param component The component to be measured (or excluded). Optional if `multi=true`, in which case it is an exclusion, otherwise required.
-   * @param multi (default `false`) If true, do a multi-component chart instead of single-component.
-   *     The chart will have a legend table for each component.
+   * @param component The component to be measured (or excluded).
    */
-  cpuPanel(name, component, multi=false)::
+  cpuPanel(name, component)::
     self.componentResourcePanel(
       std.format('%s CPU', [name]),
       component=component,
@@ -155,9 +141,7 @@ local prometheus = grafonnet.query.prometheus;
         # in which case sum() reports double the actual metric
         irate(container_cpu_usage_seconds_total{name!=""}[5m])
       |||,
-      // decimals=1 with percentunit means round to nearest 10%
-      decimalsY1=1,
-      formatY1='percentunit',
-      multi=multi,
-    ),
+    )
+    + ts.standardOptions.withDecimals(1)
+    + ts.standardOptions.withUnit('percentunit'),
 }

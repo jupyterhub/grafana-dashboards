@@ -49,7 +49,6 @@ local dailyActiveUsers =
       Requires JupyterHub 3.1.
     |||,
   )
-  // FIXME: not migrated config legend_hideZero=false,
   + ts.standardOptions.withDecimals(0)
   + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + ts.queryOptions.withTargets([
@@ -74,7 +73,6 @@ local weeklyActiveUsers =
       Requires JupyterHub 3.1.
     |||
   )
-  // FIXME: not migrated config legend_hideZero=false,
   + ts.standardOptions.withDecimals(0)
   + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + ts.queryOptions.withTargets([
@@ -99,7 +97,6 @@ local monthlyActiveUsers =
       Requires JupyterHub 3.1.
     |||
   )
-  // FIXME: not migrated config legend_hideZero=false,
   + ts.standardOptions.withDecimals(0)
   + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + ts.queryOptions.withTargets([
@@ -117,8 +114,8 @@ local monthlyActiveUsers =
 local userMemoryDistribution =
   common.heatmapOptions
   + heatmap.new('User memory usage distribution')
-  + heatmap.standardOptions.withUnit('bytes')
-  + heatmap.options.color.HeatmapColorOptions.withScheme('interpolateViridis')
+  + heatmap.options.yAxis.withUnit('bytes')
+  + heatmap.options.color.HeatmapColorOptions.withScheme('Viridis')
   + heatmap.options.calculation.xBuckets.withMode('size')
   + heatmap.options.calculation.xBuckets.withValue('600s')  // must align with interval
   + heatmap.queryOptions.withInterval('600s')  // must align with xBuckets value
@@ -142,8 +139,8 @@ local userMemoryDistribution =
 local userCPUDistribution =
   common.heatmapOptions
   + heatmap.new('User CPU usage distribution')
-  + heatmap.standardOptions.withUnit('percentunit')
-  + heatmap.options.color.HeatmapColorOptions.withScheme('interpolateViridis')
+  + heatmap.options.yAxis.withUnit('percentunit')
+  + heatmap.options.color.HeatmapColorOptions.withScheme('Viridis')
   + heatmap.options.calculation.xBuckets.withMode('size')
   + heatmap.options.calculation.xBuckets.withValue('600s')  // must align with interval
   + heatmap.queryOptions.withInterval('600s')  // must align with xBuckets value
@@ -167,8 +164,8 @@ local userCPUDistribution =
 local userAgeDistribution =
   common.heatmapOptions
   + heatmap.new('User active age distribution')
-  + heatmap.standardOptions.withUnit('s')
-  + heatmap.options.color.HeatmapColorOptions.withScheme('interpolateViridis')
+  + heatmap.options.yAxis.withUnit('s')
+  + heatmap.options.color.HeatmapColorOptions.withScheme('Viridis')
   + heatmap.options.calculation.xBuckets.withMode('size')
   + heatmap.options.calculation.xBuckets.withValue('600s')  // must align with interval
   + heatmap.queryOptions.withInterval('600s')  // must align with xBuckets value
@@ -193,7 +190,8 @@ local userAgeDistribution =
 local hubResponseLatency =
   common.tsOptions
   + ts.new('Hub response latency')
-  // formatY1='s',
+  + ts.standardOptions.withUnit('s')
+  + ts.queryOptions.withInterval('1m')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -257,6 +255,7 @@ local hubResponseLatency =
 local hubResponseCodes =
   common.tsOptions
   + ts.new('Hub response status codes')
+  + ts.standardOptions.withUnit('short')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -276,8 +275,14 @@ local hubResponseCodes =
 
 
 // with multi=true, component='singleuser-server' means all components *except* singleuser-server
-local allComponentsMemory = jupyterhub.memoryPanel('All JupyterHub Components', component='singleuser-server', multi=true);
-local allComponentsCPU = jupyterhub.cpuPanel('All JupyterHub Components', component='singleuser-server', multi=true);
+local allComponentsMemory = jupyterhub.memoryPanel(
+  'All JupyterHub Components',
+  component='singleuser-server',
+);
+local allComponentsCPU = jupyterhub.cpuPanel(
+  'All JupyterHub Components',
+  component='singleuser-server',
+);
 
 local hubDBUsage =
   common.tsOptions
@@ -289,7 +294,7 @@ local hubDBUsage =
   )
   + ts.standardOptions.withDecimals(0)
   + ts.standardOptions.withMax(1)
-  // formatY1='percentunit',
+  + ts.standardOptions.withUnit('percentunit')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -307,10 +312,9 @@ local hubDBUsage =
 local serverStartTimes =
   common.tsOptions
   + ts.new('Server Start Times')
-  // formatY1='s',
-  // lines=false,
-  // points=true,
-  // pointradius=2,
+  + ts.fieldConfig.defaults.custom.withDrawStyle('points')
+  + ts.standardOptions.withUnit('s')
+  + ts.queryOptions.withInterval('5m')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -333,11 +337,9 @@ local serverSpawnFailures =
       Attempts by users to start servers that failed.
     |||
   )
-  // lines=false,
-  // points=false,
-  // FIXME: not migrated config legend_hideZero=true,
-  // bars=true,
-  // pointradius=2,
+  + ts.fieldConfig.defaults.custom.withDrawStyle('points')
+  + ts.standardOptions.withDecimals(0)
+  + ts.queryOptions.withInterval('2m')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -408,7 +410,7 @@ local sharedVolumeFreeSpace =
   )
   // decimalsY1=0,
   + ts.standardOptions.withMax(1)
-  // formatY1='percentunit',
+  + ts.standardOptions.withUnit('percentunit')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -434,19 +436,25 @@ local oldUserpods =
       This often indicates problems with the idle culler
     |||
   )
-  // styles=[
-  //   {
-  //     pattern: 'Value',
-  //     type: 'number',
-  //     unit: 's',
-  //     alias: 'Age',
-  //   },
-  // ],
-  + table.options.withSortBy({
-    col: 2,
-    desc: true,
-  })
-  + table.queryOptions.withTransformations('timeseries_to_rows')
+  + table.standardOptions.withUnit('s')
+  + table.options.withSortBy({ displayName: 'Age', desc: true })
+  + table.queryOptions.withTransformations([
+    {
+      id: 'reduce',
+      options: {
+        reducers: ['last'],
+      },
+    },
+    {
+      id: 'organize',
+      options: {
+        renameByName: {
+          Field: 'User pod',
+          Last: 'Age',
+        },
+      },
+    },
+  ])
   + table.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -457,10 +465,9 @@ local oldUserpods =
       |||
       % jupyterhub.onComponentLabel('singleuser-server')
     )
+    + prometheus.withInstant(true)
     + prometheus.withLegendFormat('{{ namespace }}/{{ pod }}'),
-    // instant=true
   ]);
-// FIXME: not migrated config .hideColumn('Time')
 
 local highCPUUserPods =
   common.tableOptions
@@ -473,19 +480,24 @@ local highCPUUserPods =
       unnecessarily.
     |||
   )
-  // styles=[
-  //   {
-  //     pattern: 'Value',
-  //     type: 'number',
-  //     unit: 'percentunit',
-  //     alias: 'CPU usage',
-  //   },
-  // ],
-  + table.options.withSortBy({
-    col: 2,
-    desc: true,
-  })
-  + table.queryOptions.withTransformations('timeseries_to_rows')
+  + table.options.withSortBy({ displayName: 'CPU used', desc: true })
+  + table.queryOptions.withTransformations([
+    {
+      id: 'reduce',
+      options: {
+        reducers: ['last'],
+      },
+    },
+    {
+      id: 'organize',
+      options: {
+        renameByName: {
+          Field: 'User pod',
+          Last: 'CPU used',
+        },
+      },
+    },
+  ])
   + table.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -497,10 +509,9 @@ local highCPUUserPods =
       |||
       % jupyterhub.onComponentLabel('singleuser-server', group_left='')
     )
+    + prometheus.withInstant(true)
     + prometheus.withLegendFormat('{{ namespace }}/{{ pod }}'),
-    // instant=true
   ]);
-// FIXME: not migrated config .hideColumn('Time')
 
 local highMemoryUsagePods =
   common.tableOptions
@@ -512,19 +523,25 @@ local highMemoryUsagePods =
       Once they hit their memory limit, user kernels will start dying.
     |||
   )
-  // styles=[
-  //   {
-  //     pattern: 'Value',
-  //     type: 'number',
-  //     unit: 'percentunit',
-  //     alias: '% of mem limit consumed',
-  //   },
-  // ],
-  + table.options.withSortBy({
-    col: 2,
-    desc: true,
-  })
-  + table.queryOptions.withTransformations('timeseries_to_rows')
+  + table.standardOptions.withUnit('percentunit')
+  + table.options.withSortBy({ displayName: '% of mem limit consumed', desc: true })
+  + table.queryOptions.withTransformations([
+    {
+      id: 'reduce',
+      options: {
+        reducers: ['last'],
+      },
+    },
+    {
+      id: 'organize',
+      options: {
+        renameByName: {
+          Field: 'User pod',
+          Last: '% of mem limit consumed',
+        },
+      },
+    },
+  ])
   + table.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -544,10 +561,9 @@ local highMemoryUsagePods =
         selector: jupyterhub.onComponentLabel('singleuser-server', group_left=''),
       }
     )
+    + prometheus.withInstant(true)
     + prometheus.withLegendFormat('{{ namespace }}/{{ pod }}'),
-    // instant=true
   ]);
-// FIXME: not migrated config .hideColumn('Time')
 
 // Show images used by different users on the hub
 local notebookImagesUsed =
@@ -558,7 +574,6 @@ local notebookImagesUsed =
       Number of user servers using a container image.
     |||
   )
-  // FIXME: not migrated config legend_hideZero=false,
   + ts.standardOptions.withDecimals(0)
   + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + ts.queryOptions.withTargets([
@@ -608,18 +623,18 @@ dashboard.new('JupyterHub Dashboard')
         serverSpawnFailures,
         hubResponseLatency,
         hubResponseCodes,
-        allComponentsCPU,  // FIXME: previous height 12
-        allComponentsMemory,  // FIXME: previous height 12
-        hubDBUsage,
-        nonRunningPods,
+        allComponentsCPU,
+        allComponentsMemory,
         usersPerNode,
+        nonRunningPods,
+        hubDBUsage,
         sharedVolumeFreeSpace,
       ]),
       row.new('Anomalous user pods')
       + row.withPanels([
-        oldUserpods,  // FIXME: previous height 12
-        highCPUUserPods,  // FIXME: previous height 12
-        highMemoryUsagePods,  // FIXME: previous height 12
+        oldUserpods,
+        highCPUUserPods,
+        highMemoryUsagePods,
       ]),
     ],
     panelWidth=12,
