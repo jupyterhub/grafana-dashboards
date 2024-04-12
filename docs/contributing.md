@@ -11,6 +11,51 @@ Notice something that's missing? Please open an issue or file a pull request!
 
 ## Development tasks and guidelines
 
+### Partial setup of a development environment
+
+You need to have a Grafana instance with a Prometheus datasource collecting
+metrics to test changes to the dashboards against. Assuming you have that,
+prepare a Grafana API token to use. Further details on how is not included
+currently in these docs, but the [Grafana docs](https://grafana.com/docs/grafana/latest/administration/api-keys/#steps) on this topic might serve as a good enough starting point.
+
+With that setup, and Python installed, you only need `jsonnet` installed.
+Install `jsonnet` distributed via the go-jsonnet project, for example via
+[go-jsonnet's GitHub Releases] page. There is a C++ based version of `jsonnet`
+developed in parallel, but this project is only tested against the go-jsonnet
+project's binaries currently.
+
+[`go-jsonnet`'s GitHub Releases]: https://github.com/google/go-jsonnet/releases
+
+### Tweaking dashboard settings
+
+Dashboards are `.json` files generated from `.jsonnet` files using `jsonnet`
+like this:
+
+```shell
+# --tla-code flag is currently only relevant for global-dashboards
+jsonnet -J vendor --tla-code 'datasources=["prometheus-test"]' dashboards/cluster.json
+```
+
+To tweak dashboard settings in the `.jsonnet` files can be tricky. One way to do
+it is to first trial changes via Grafana's UI where you can edit dashboards, and
+then look at [grafonnet's API docs] to figure out what you should change to
+mimic what you did via the UI.
+
+Once you have tweaked a `.jsonnet` file and optionally first tested it renders
+with `jsonnet`, you can deploy dashboards to a Grafana instance like this:
+
+```shell
+# note the space before the sensitive command below,
+# it makes it not get saved into shell history
+ export GRAFANA_TOKEN=...
+
+# deploy all dashboards in the dashboards folder using
+# the environment variable GRAFANA_TOKEN
+./deploy.py --dashboards-dir dashboards https://grafana-domain.example.com
+```
+
+[grafonnet's API docs]: https://grafana.github.io/grafonnet/API/index.html
+
 ### Upgrading the grafonnet version
 
 The grafonnet jsonnet library is bundled here with [jsonnet-bundler](https://github.com/jsonnet-bundler/jsonnet-bundler).

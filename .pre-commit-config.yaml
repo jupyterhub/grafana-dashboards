@@ -22,6 +22,10 @@ repos:
         args: [-J, vendor, dashboards/cluster.jsonnet]
       - id: jsonnet-lint
         pass_filenames: false
+        name: jsonnet-lint common.libsonnet
+        args: [-J, vendor, dashboards/common.libsonnet]
+      - id: jsonnet-lint
+        pass_filenames: false
         name: jsonnet-lint jupyterhub.jsonnet
         args: [-J, vendor, dashboards/jupyterhub.jsonnet]
       - id: jsonnet-lint
