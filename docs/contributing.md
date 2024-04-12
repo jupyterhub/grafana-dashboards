@@ -16,7 +16,7 @@ Notice something that's missing? Please open an issue or file a pull request!
 You need to have a Grafana instance with a Prometheus datasource collecting
 metrics to test changes to the dashboards against. Assuming you have that,
 prepare a Grafana API token to use. Further details on how is not included
-currently in these docs.
+currently in these docs, but the [Grafana docs](https://grafana.com/docs/grafana/latest/administration/api-keys/#steps) on this topic might serve as a good enough starting point.
 
 With that setup, and Python installed, you only need `jsonnet` installed.
 Install `jsonnet` distributed via the go-jsonnet project, for example via
