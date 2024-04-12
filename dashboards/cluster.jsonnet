@@ -91,7 +91,7 @@ local nodepoolMemoryCommitment =
     |||
       % of memory in each node pool guaranteed to user workloads.
 
-      Common shapes:
+      Common shapes this visualization may take:
       1. If this is consistently low (<50%), you are paying for cloud compute that you do not
         need. Consider reducing the size of your nodes, or increasing the amount of
         memory guaranteed to your users. Some variability based on time of day is to be expected.
@@ -150,7 +150,7 @@ local nodepoolCPUCommitment =
       Most commonly, JupyterHub workloads are *memory bound*, not CPU bound. So this is
       not a particularly helpful graph.
 
-      Common shapes:
+      Common shapes this visualization may take:
       1. If this is *consistently high* but shaped differently than your memory commitment
         graph, consider changing your CPU requirements.
     |||
