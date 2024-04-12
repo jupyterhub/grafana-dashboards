@@ -72,14 +72,16 @@ local prometheus = grafonnet.query.prometheus;
    * @param title The title of the timeseries panel.
    * @param metric The metric to be observed.
    * @param component The component to be measured (or excluded).
+   *     Optional if `multi=true`, in which case it is an exclusion, otherwise required.
+   * @param multi (default `false`) If true, do a multi-component chart instead of single-component.
+   *     The chart will have a legend table for each component.
    */
-  componentResourcePanel(title, metric, component)::
+  componentResourcePanel(title, metric, component, multi, namespace)::
     ts.new(title)
     // show legend as a table with current, avg, max values
     //legend_hideZero=true,
     // legend_values is required for any of the above to work
     //legend_values=true,
-    //min=0,
     + ts.options.legend.withDisplayMode('table')
     + ts.options.legend.withCalcs(['min', 'mean', 'max'])
     + ts.queryOptions.withTargets([
@@ -94,11 +96,16 @@ local prometheus = grafonnet.query.prometheus;
           |||,
           [
             metric,
-            self.onComponentLabel(component, cmp='!=', group_left='container, label_component'),
+            self.onComponentLabel(
+              component,
+              cmp=if multi then '!=' else '=',
+              group_left='container, label_component',
+              namespace=namespace,
+            ),
           ],
         )
       )
-      + prometheus.withLegendFormat('{{ label_component }}'),
+      + prometheus.withLegendFormat(if multi then '{{ label_component }}' else title),
     ]),
 
   /**
@@ -108,11 +115,16 @@ local prometheus = grafonnet.query.prometheus;
    *
    * @param name The name of the resource. Used to create the title.
    * @param component The component to be measured (or excluded).
+   *     Optional if `multi=true`, in which case it is an exclusion, otherwise required.
+   * @param multi (default `false`) If true, do a multi-component chart instead of single-component.
+   *     The chart will have a legend table for each component.
    */
-  memoryPanel(name, component)::
+  memoryPanel(name, component, multi=false, namespace='$hub')::
     self.componentResourcePanel(
       std.format('%s Memory (Working Set)', [name]),
       component=component,
+      multi=multi,
+      namespace=namespace,
       metric=|||
         # exclude name="" because the same container can be reported
         # with both no name and `name=k8s_...`,
@@ -130,11 +142,16 @@ local prometheus = grafonnet.query.prometheus;
    *
    * @param name The name of the resource. Used to create the title.
    * @param component The component to be measured (or excluded).
+   *     Optional if `multi=true`, in which case it is an exclusion, otherwise required.
+   * @param multi (default `false`) If true, do a multi-component chart instead of single-component.
+   *     The chart will have a legend table for each component.
    */
-  cpuPanel(name, component)::
+  cpuPanel(name, component, multi=false, namespace='$hub')::
     self.componentResourcePanel(
       std.format('%s CPU', [name]),
       component=component,
+      multi=multi,
+      namespace=namespace,
       metric=|||
         # exclude name="" because the same container can be reported
         # with both no name and `name=k8s_...`,

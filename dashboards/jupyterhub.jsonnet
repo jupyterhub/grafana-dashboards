@@ -16,11 +16,6 @@ local jupyterhub = import 'jupyterhub.libsonnet';
 local currentActiveUsers =
   common.tsOptions
   + ts.new('Currently Active Users')
-  + ts.panelOptions.withDescription(
-    |||
-      TODO
-    |||
-  )
   + ts.standardOptions.withDecimals(0)
   + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + ts.queryOptions.withTargets([
@@ -278,10 +273,12 @@ local hubResponseCodes =
 local allComponentsMemory = jupyterhub.memoryPanel(
   'All JupyterHub Components',
   component='singleuser-server',
+  multi=true,
 );
 local allComponentsCPU = jupyterhub.cpuPanel(
   'All JupyterHub Components',
   component='singleuser-server',
+  multi=true,
 );
 
 local hubDBUsage =
