@@ -3,15 +3,12 @@ import argparse
 import hashlib
 import json
 import os
-import re
 import shutil
 import ssl
 import subprocess
-from copy import deepcopy
 from functools import partial
 from glob import glob
 from urllib.error import HTTPError
-from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 # UID for the folder under which our dashboards will be setup
@@ -94,84 +91,9 @@ def deploy_dashboard(dashboard_path, folder_uid, api):
     # folder compared to initially deployed to the first folder.
     db['uid'] = hashlib.sha256((dashboard_path + folder_uid).encode()).hexdigest()[:16]
 
-    db = populate_template_variables(api, db)
-
     # api ref: https://grafana.com/docs/grafana/latest/developers/http_api/dashboard/#create--update-dashboard
     data = {'dashboard': db, 'folderUid': folder_uid, 'overwrite': True}
     api('/dashboards/db', data)
-
-
-def get_label_values(api, ds_id, template_query):
-    """
-    Return response to a `label_values` template query
-
-    `label_values` isn't actually a prometheus thing - it is an API call that
-    grafana makes. This function tries to mimic that. Useful for populating variables
-    in a dashboard
-    """
-    # re.DOTALL allows the query to be multi-line
-    match = re.match(
-        r'label_values\((?P<query>.*),\s*(?P<label>.*)\)', template_query, re.DOTALL
-    )
-    query = match.group('query')
-    label = match.group('label')
-    query = {'match[]': query}
-    # Send a request to the backing prometheus datastore
-    proxy_url = f'/datasources/proxy/{ds_id}/api/v1/series?{urlencode(query)}'
-
-    metrics = api(proxy_url)['data']
-    return sorted({m[label] for m in metrics})
-
-
-def populate_template_variables(api, db):
-    """
-    Populate options for template variables.
-
-    For list of hubs and similar, users should be able to select a hub from
-    a dropdown list. This is not automatically populated by grafana if you are
-    using the API (https://community.grafana.com/t/template-update-variable-api/1882/4)
-    so we do it here.
-    """
-    # We're going to make modifications to db, so let's make a copy
-    db = deepcopy(db)
-
-    for var in db.get('templating', {}).get('list', []):
-        datasources = api("/datasources")
-        if var["type"] == "datasource":
-            var["options"] = [
-                {"text": ds["name"], "value": ds["name"]} for ds in datasources
-            ]
-
-            # default selection: first datasource in list
-            if datasources and not var.get("current"):
-                var["current"] = {
-                    "selected": True,
-                    "tags": [],
-                    "text": datasources[0]["name"],
-                    "value": datasources[0]["name"],
-                }
-                var["options"][0]["selected"] = True
-        elif var['type'] == 'query':
-            template_query = var['query']
-
-            # This requires our token to have admin permissions
-            # Default to the first datasource
-            prom_id = datasources[0]["id"]
-
-            labels = get_label_values(api, prom_id, template_query)
-            var["options"] = [{"text": label, "value": label} for label in labels]
-            if labels and not var.get("current"):
-                # default selection: all current values
-                # logical alternative: pick just the first
-                var["current"] = {
-                    "selected": True,
-                    "tags": [],
-                    "text": labels[0],
-                    "value": labels[0],
-                }
-                var["options"][0]["selected"] = True
-
-    return db
 
 
 def main():
