@@ -66,7 +66,7 @@ def build_dashboard(dashboard_path, api):
     datasources = api("/datasources")
     datasources_names = [ds["name"] for ds in datasources]
 
-    return json.loads(
+    dashboard = json.loads(
         subprocess.check_output(
             [
                 "jsonnet",
@@ -78,6 +78,9 @@ def build_dashboard(dashboard_path, api):
             ]
         ).decode()
     )
+    if not dashboard:
+        raise ValueError(f"jsonnet render of {dashboard_path} led to an empty object")
+    return dashboard
 
 
 def deploy_dashboard(dashboard_path, folder_uid, api):
@@ -85,15 +88,13 @@ def deploy_dashboard(dashboard_path, folder_uid, api):
     Creates a new dashboard or updates an existing dashboard.
     """
     db = build_dashboard(dashboard_path, api)
+
     # without this modification, deploying to a second folder deletes deployed
     # dashboards in another folder, likely due to generated dashboard UID is the
     # same as an already existing dashboard UID. They are probably generated
     # based on some hash that didn't get new input when deployed to the second
     # folder compared to initially deployed to the first folder.
     db['uid'] = hashlib.sha256((dashboard_path + folder_uid).encode()).hexdigest()[:16]
-
-    if not db:
-        return
 
     db = populate_template_variables(api, db)
 
