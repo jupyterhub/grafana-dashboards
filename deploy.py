@@ -211,6 +211,13 @@ def main():
             "The environment variable GRAFANA_TOKEN needs to be set in order to deploying dashboards to a Grafana deployment."
         )
 
+    # ensure jsonnet (go-jsonnet)
+    if not shutil.which("jsonnet"):
+        raise ValueError(
+            "No jsonnet binary was found on path! "
+            "Install go-jsonnet via https://github.com/google/go-jsonnet/releases."
+        )
+
     api = partial(
         grafana_request,
         args.grafana_url,
