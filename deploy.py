@@ -37,11 +37,16 @@ def grafana_request(endpoint, token, path, data=None, no_tls_verify=False):
 
 
 def ensure_folder(name, uid, api):
+    """
+    Checks for a folder based on its UID and creates one if a folder didn't
+    exist.
+    """
     try:
+        # api ref: https://grafana.com/docs/grafana/latest/developers/http_api/folder/#get-folder-by-uid
         return api(f'/folders/{uid}')
     except HTTPError as e:
         if e.code == 404:
-            # We got a 404 in
+            # api ref: https://grafana.com/docs/grafana/latest/developers/http_api/folder/#create-folder
             folder = {'uid': uid, 'title': name}
             return api('/folders', folder)
         else:
@@ -49,11 +54,18 @@ def ensure_folder(name, uid, api):
 
 
 def build_dashboard(dashboard_path, api):
+    """
+    Returns JSON representing a Grafana dashboard by rendering an individual
+    `.jsonnet` dashboard template with `jsonnet`.
+    """
+    # global-dashboards/global-usage-stats.json needs to be rendered with
+    # information about the grafana instance's datasources in order to show info
+    # about all datasources in a single panel. Due to that, we also ask the
+    # Grafana instance we are to deploy to about its datasources and then pass
+    # them to `jsonnet` when rendering via the `--tla-code` flag.
     datasources = api("/datasources")
     datasources_names = [ds["name"] for ds in datasources]
 
-    # We pass the list of all datasources because the global dashboards
-    # use this information to show info about all datasources in the same panel
     return json.loads(
         subprocess.check_output(
             [
@@ -69,6 +81,9 @@ def build_dashboard(dashboard_path, api):
 
 
 def deploy_dashboard(dashboard_path, folder_uid, api):
+    """
+    Creates a new dashboard or updates an existing dashboard.
+    """
     db = build_dashboard(dashboard_path, api)
     # without this modification, deploying to a second folder deletes deployed
     # dashboards in another folder, likely due to generated dashboard UID is the
@@ -82,6 +97,7 @@ def deploy_dashboard(dashboard_path, folder_uid, api):
 
     db = populate_template_variables(api, db)
 
+    # api ref: https://grafana.com/docs/grafana/latest/developers/http_api/dashboard/#create--update-dashboard
     data = {'dashboard': db, 'folderUid': folder_uid, 'overwrite': True}
     api('/dashboards/db', data)
 
