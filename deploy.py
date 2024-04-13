@@ -18,9 +18,9 @@ from urllib.request import Request, urlopen
 DEFAULT_FOLDER_UID = '70E5EE84-1217-4021-A89E-1E3DE0566D93'
 
 
-def grafana_request(endpoint, token, path, data=None, no_tls_verify=False):
+def grafana_request(endpoint, token, path, data=None, method=None, no_tls_verify=False):
     headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
-    method = 'GET' if data is None else 'POST'
+    method = method or ('GET' if data is None else 'POST')
     req = Request(f'{endpoint}/api{path}', headers=headers, method=method)
 
     if not isinstance(data, bytes):
@@ -37,19 +37,25 @@ def grafana_request(endpoint, token, path, data=None, no_tls_verify=False):
         return json.load(resp)
 
 
-def ensure_folder(name, uid, api):
+def ensure_folder(title, uid, api):
     """
-    Checks for a folder based on its UID and creates one if a folder didn't
-    exist.
+    Checks for a folder based on its UID and creates one if needed or updates
+    the title if needed.
     """
     try:
         # api ref: https://grafana.com/docs/grafana/latest/developers/http_api/folder/#get-folder-by-uid
-        return api(f'/folders/{uid}')
+        folder = api(f'/folders/{uid}')
+        if folder["title"] != title:
+            # api ref: https://grafana.com/docs/grafana/latest/developers/http_api/folder/#update-folder
+            api(
+                f'/folders/{uid}',
+                {'title': title, 'version': folder["version"]},
+                method='PUT',
+            )
     except HTTPError as e:
         if e.code == 404:
             # api ref: https://grafana.com/docs/grafana/latest/developers/http_api/folder/#create-folder
-            folder = {'uid': uid, 'title': name}
-            return api('/folders', folder)
+            api('/folders', {'uid': uid, 'title': title})
         else:
             raise
 
