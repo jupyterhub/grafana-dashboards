@@ -19,6 +19,10 @@ repos:
       - id: jsonnet-lint
         pass_filenames: false
         name: jsonnet-lint cluster.jsonnet
+        args: [-J, vendor, dashboards/activity.jsonnet]
+      - id: jsonnet-lint
+        pass_filenames: false
+        name: jsonnet-lint cluster.jsonnet
         args: [-J, vendor, dashboards/cluster.jsonnet]
       - id: jsonnet-lint
         pass_filenames: false
@@ -44,10 +48,6 @@ repos:
         pass_filenames: false
         name: jsonnet-lint user.jsonnet
         args: [-J, vendor, dashboards/user.jsonnet]
-      - id: jsonnet-lint
-        pass_filenames: false
-        name: jsonnet-lint global-usage-stats.jsonnet
-        args: [-J, vendor, global-dashboards/global-usage-stats.jsonnet]
 
   # Autoformat: Python code, syntax patterns are modernized
   - repo: https://github.com/asottile/pyupgrade

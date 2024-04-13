@@ -43,10 +43,10 @@ jobs:
       - name: Render dashboards
         run: |
           mkdir rendered-dashboards
-          dashboard_folders="dashboards global-dashboards"
+          dashboard_folders="dashboards"
           for file in `find $dashboard_folders -name '*.jsonnet'`
           do
-              jsonnet -J vendor --tla-code 'datasources=["prometheus-test"]' --output-file rendered-dashboards/`basename $file` $file
+              jsonnet -J vendor --output-file rendered-dashboards/`basename $file` $file
           done
 
       - name: Install dashboard-linter

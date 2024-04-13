@@ -32,8 +32,7 @@ Dashboards are `.json` files generated from `.jsonnet` files using `jsonnet`
 like this:
 
 ```shell
-# --tla-code flag is currently only relevant for global-dashboards
-jsonnet -J vendor --tla-code 'datasources=["prometheus-test"]' dashboards/cluster.json
+jsonnet -J vendor dashboards/cluster.json
 ```
 
 To tweak dashboard settings in the `.jsonnet` files can be tricky. One way to do

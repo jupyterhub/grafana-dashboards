@@ -226,21 +226,18 @@ You will likely only need to adjust the `claimName` above to use this example.
 There's a helper `deploy.py` script that can deploy the dashboards to any grafana installation.
 
 ```bash
-export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
+# note the leading space in the command below, it makes the
+# sensitive command not be stored in your shell history
+ export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
+
 ./deploy.py <your-grafana-url>
 ```
 
 This creates a folder called 'JupyterHub Default Dashboards' in your grafana, and adds
 a couple of dashboards to it.
 
-If your Grafana deployment supports more than one datasource, then apart from the default dashboards in the [`dashboards` directory](https://github.com/jupyterhub/grafana-dashboards/tree/main/dashboards), you should also consider deploying apart the dashboards in [`global-dashboards` directory](https://github.com/jupyterhub/grafana-dashboards/tree/main/global-dashboards).
-
-```bash
-export GRAFANA_TOKEN="<API-TOKEN-FOR-YOUR-GRAFANA>
-./deploy.py <your-grafana-url> --dashboards-dir global-dashboards
-```
-
-The global dashboards will use the list of available dashboards in your Grafana provided to them and will build dashboards across all of them.
+The Activity dashboard is unique because it repeats rows of panels for every
+prometheus datasource accessible by Grafana.
 
 If your Grafana instance uses a self-signed certificate, use the `--no-tls-verify` flag when executing the `deploy.py` script. For example:
 
