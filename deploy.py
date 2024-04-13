@@ -217,6 +217,12 @@ def main():
             "No jsonnet binary was found on path! "
             "Install go-jsonnet via https://github.com/google/go-jsonnet/releases."
         )
+    jsonnet_version = subprocess.check_output(["jsonnet", "--version"], text=True)
+    if "go" not in jsonnet_version.casefold():
+        print(
+            "WARNING: The jsonnet binary on path doesn't seem to be go-jsonnet from https://github.com/google/go-jsonnet/releases! "
+            "Only that jsonnet implementation is known to work."
+        )
 
     api = partial(
         grafana_request,
