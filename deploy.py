@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import ssl
 import subprocess
 from copy import deepcopy
@@ -203,7 +204,12 @@ def main():
 
     args = parser.parse_args()
 
-    grafana_token = os.environ['GRAFANA_TOKEN']
+    # ensure GRAFANA_TOKEN
+    grafana_token = os.environ.get("GRAFANA_TOKEN")
+    if not grafana_token:
+        raise ValueError(
+            "The environment variable GRAFANA_TOKEN needs to be set in order to deploying dashboards to a Grafana deployment."
+        )
 
     api = partial(
         grafana_request,
