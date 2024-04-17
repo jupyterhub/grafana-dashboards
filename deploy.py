@@ -65,14 +65,6 @@ def build_dashboard(dashboard_path, api):
     Returns JSON representing a Grafana dashboard by rendering an individual
     `.jsonnet` dashboard template with `jsonnet`.
     """
-    # global-dashboards/global-usage-stats.json needs to be rendered with
-    # information about the grafana instance's datasources in order to show info
-    # about all datasources in a single panel. Due to that, we also ask the
-    # Grafana instance we are to deploy to about its datasources and then pass
-    # them to `jsonnet` when rendering via the `--tla-code` flag.
-    datasources = api("/datasources")
-    datasources_names = [ds["name"] for ds in datasources]
-
     dashboard = json.loads(
         subprocess.check_output(
             [
@@ -80,10 +72,9 @@ def build_dashboard(dashboard_path, api):
                 "-J",
                 "vendor",
                 dashboard_path,
-                "--tla-code",
-                f"datasources={datasources_names}",
-            ]
-        ).decode()
+            ],
+            text=True,
+        )
     )
     if not dashboard:
         raise ValueError(f"jsonnet render of {dashboard_path} led to an empty object")

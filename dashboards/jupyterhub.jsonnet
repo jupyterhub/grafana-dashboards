@@ -12,100 +12,6 @@ local row = grafonnet.panel.row;
 local common = import './common.libsonnet';
 local jupyterhub = import 'jupyterhub.libsonnet';
 
-// Hub usage stats
-local currentActiveUsers =
-  common.tsOptions
-  + ts.new('Currently Active Users')
-  + ts.standardOptions.withDecimals(0)
-  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
-  + ts.queryOptions.withTargets([
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        sum(
-          group(
-            kube_pod_status_phase{phase="Running"}
-          ) by (label_component, pod, namespace)
-          %s
-        ) by (namespace)
-      |||
-      % jupyterhub.onComponentLabel('singleuser-server', group_right=''),
-    )
-    + prometheus.withLegendFormat('{{ namespace }}'),
-  ]);
-
-local dailyActiveUsers =
-  common.tsOptions
-  + ts.new('Daily Active Users')
-  + ts.panelOptions.withDescription(
-    |||
-      Number of unique users who were active within the preceding 24h period.
-
-      Requires JupyterHub 3.1.
-    |||,
-  )
-  + ts.standardOptions.withDecimals(0)
-  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
-  + ts.queryOptions.withTargets([
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        max(
-          jupyterhub_active_users{period="24h", namespace=~"$hub"}
-        ) by (namespace)
-      |||
-    )
-    + prometheus.withLegendFormat('{{ namespace }}'),
-  ]);
-
-local weeklyActiveUsers =
-  common.tsOptions
-  + ts.new('Weekly Active Users')
-  + ts.panelOptions.withDescription(
-    |||
-      Number of unique users who were active within the preceeding 7d period.
-
-      Requires JupyterHub 3.1.
-    |||
-  )
-  + ts.standardOptions.withDecimals(0)
-  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
-  + ts.queryOptions.withTargets([
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        max(
-          jupyterhub_active_users{period="7d", namespace=~"$hub"}
-        ) by (namespace)
-      |||
-    )
-    + prometheus.withLegendFormat('{{ namespace }}'),
-  ]);
-
-local monthlyActiveUsers =
-  common.tsOptions
-  + ts.new('Monthly Active Users')
-  + ts.panelOptions.withDescription(
-    |||
-      Number of unique users who were active within the preceeding 7d period.
-
-      Requires JupyterHub 3.1.
-    |||
-  )
-  + ts.standardOptions.withDecimals(0)
-  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
-  + ts.queryOptions.withTargets([
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        max(
-          jupyterhub_active_users{period="30d", namespace=~"$hub"}
-        ) by (namespace)
-      |||,
-    )
-    + prometheus.withLegendFormat('{{ namespace }}'),
-  ]);
-
 local userMemoryDistribution =
   common.heatmapOptions
   + heatmap.new('User memory usage distribution')
@@ -597,13 +503,6 @@ dashboard.new('JupyterHub Dashboard')
 + dashboard.withPanels(
   grafonnet.util.grid.makeGrid(
     [
-      row.new('Hub usage stats')
-      + row.withPanels([
-        currentActiveUsers,
-        dailyActiveUsers,
-        weeklyActiveUsers,
-        monthlyActiveUsers,
-      ]),
       row.new('Container Images')
       + row.withPanels([
         notebookImagesUsed,
