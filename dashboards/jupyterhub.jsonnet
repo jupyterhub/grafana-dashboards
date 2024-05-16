@@ -230,6 +230,11 @@ local serverStartTimes =
       'histogram_quantile(0.5, sum(rate(jupyterhub_server_spawn_duration_seconds_bucket{app="jupyterhub", namespace=~"$hub"}[5m])) by (le))',
     )
     + prometheus.withLegendFormat('50th percentile'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      'histogram_quantile(0.2, sum(rate(jupyterhub_server_spawn_duration_seconds_bucket{app="jupyterhub", namespace=~"$hub"}[5m])) by (le))',
+    )
+    + prometheus.withLegendFormat('20th percentile'),
   ]);
 
 local serverSpawnFailures =
