@@ -139,5 +139,7 @@ dashboard.new('Home Directory Usage Dashboard')
   common.variables.hub,
 ])
 + dashboard.withPanels(
-  homedirUsage
+  grafonnet.util.grid.makeGrid([
+    homedirUsage,
+  ], panelWidth=24, panelHeight=24)
 )
