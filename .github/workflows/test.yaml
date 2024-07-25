@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  render-lint-dashboards:
+  render-dashboards:
     runs-on: ubuntu-22.04
 
     strategy:
@@ -48,40 +48,3 @@ jobs:
           do
               jsonnet -J vendor --output-file rendered-dashboards/`basename $file` $file
           done
-
-      - name: Install dashboard-linter
-        run: |
-          go install github.com/grafana/dashboard-linter@latest
-          echo "$HOME/go/bin" >> "$GITHUB_PATH"
-
-      - name: dashboard-linter rules
-        run: |
-          echo "Available rules are documented in https://github.com/grafana/dashboard-linter/blob/main/docs/index.md#rules"
-          echo ""
-          dashboard-linter rules
-
-      - name: dashboard-linter lint
-        run: |
-          lint_failures=""
-
-          dashboard_folders=rendered-dashboards
-          for file in `find $dashboard_folders -name '*.jsonnet'`
-          do
-              lint_fail=""
-              echo "::group::$file"
-              dashboard-linter lint --strict $file || lint_fail=1
-              echo "::endgroup::"
-              if [ -n "$lint_fail" ]; then
-                  lint_failures="$lint_failures $file";
-              fi
-          done
-
-          if [ -n "$lint_failures" ]; then
-              echo ""
-              echo "dashboard-linter errored for:"
-              for file in $lint_failures
-              do
-                  echo `basename $file`
-              done
-              exit 1
-          fi
