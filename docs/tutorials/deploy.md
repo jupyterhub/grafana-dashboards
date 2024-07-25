@@ -221,6 +221,8 @@ spec:
 
 You will likely only need to adjust the `claimName` above to use this example.
 
+This is required for the "Home directory usage" dashboard.
+
 ## Deploy the dashbaords
 
 There's a helper `deploy.py` script that can deploy the dashboards to any grafana installation.
