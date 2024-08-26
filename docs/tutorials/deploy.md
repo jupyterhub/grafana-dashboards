@@ -9,7 +9,7 @@ TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN
 ## Pre-requisites
 
 1. Locally, you need to have
-   [jsonnet](https://github.com/google/jsonnet#packages) installed.  The
+   [go-jsonnet](https://github.com/google/go-jsonnet) installed.  The
    [grafonnet](https://grafana.github.io/grafonnet-lib/) library is already
    vendored in, using
    [jsonnet-builder](https://github.com/jsonnet-bundler/jsonnet-bundler).
