@@ -20,4 +20,4 @@ via code. This can then be deployed on any Grafana instance!
 
 ## Deployment
 
-Deployment instructions are available in [the documentation site](https://jupyterhub-grafana.readthedocs.io/en/latest/howto/deploy.html).
+Deployment instructions are available in [the documentation site](https://jupyterhub-grafana.readthedocs.io/en/latest/tutorials/deploy.html).
