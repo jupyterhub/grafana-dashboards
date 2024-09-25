@@ -1,6 +1,6 @@
 #!/usr/bin/env -S jsonnet -J ../vendor
 // Deploys a dashboard showing information about support resources
-local grafonnet = import 'grafonnet/main.libsonnet';
+local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v10.4.0/main.libsonnet';
 local dashboard = grafonnet.dashboard;
 local ts = grafonnet.panel.timeSeries;
 local prometheus = grafonnet.query.prometheus;

@@ -1,4 +1,4 @@
-local grafonnet = import 'grafonnet/main.libsonnet';
+local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v10.4.0/main.libsonnet';
 local ts = grafonnet.panel.timeSeries;
 local prometheus = grafonnet.query.prometheus;
 
