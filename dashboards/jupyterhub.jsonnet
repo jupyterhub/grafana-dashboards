@@ -16,7 +16,7 @@ local userMemoryDistribution =
   common.heatmapOptions
   + heatmap.new('User memory usage distribution')
   + heatmap.options.yAxis.withUnit('bytes')
-  + heatmap.options.color.HeatmapColorOptions.withScheme('Viridis')
+  + heatmap.options.color.withScheme('Viridis')
   + heatmap.options.calculation.xBuckets.withMode('size')
   + heatmap.options.calculation.xBuckets.withValue('600s')  // must align with interval
   + heatmap.queryOptions.withInterval('600s')  // must align with xBuckets value
@@ -41,7 +41,7 @@ local userCPUDistribution =
   common.heatmapOptions
   + heatmap.new('User CPU usage distribution')
   + heatmap.options.yAxis.withUnit('percentunit')
-  + heatmap.options.color.HeatmapColorOptions.withScheme('Viridis')
+  + heatmap.options.color.withScheme('Viridis')
   + heatmap.options.calculation.xBuckets.withMode('size')
   + heatmap.options.calculation.xBuckets.withValue('600s')  // must align with interval
   + heatmap.queryOptions.withInterval('600s')  // must align with xBuckets value
@@ -66,7 +66,7 @@ local userAgeDistribution =
   common.heatmapOptions
   + heatmap.new('User active age distribution')
   + heatmap.options.yAxis.withUnit('s')
-  + heatmap.options.color.HeatmapColorOptions.withScheme('Viridis')
+  + heatmap.options.color.withScheme('Viridis')
   + heatmap.options.calculation.xBuckets.withMode('size')
   + heatmap.options.calculation.xBuckets.withValue('600s')  // must align with interval
   + heatmap.queryOptions.withInterval('600s')  // must align with xBuckets value
