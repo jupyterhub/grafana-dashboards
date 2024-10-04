@@ -57,9 +57,15 @@ with `jsonnet`, you can deploy dashboards to a Grafana instance like this:
 
 ### Upgrading the grafonnet version
 
-The grafonnet jsonnet library is bundled here with [jsonnet-bundler](https://github.com/jsonnet-bundler/jsonnet-bundler).
-Just running `jb update` in the git repo root dir after installing jsonnet-bunder should bring
-you up to speed.
+The grafonnet jsonnet library is bundled here with [jsonnet-bundler]. The
+upgrade procedure looks looks like this:
+
+1. Install jsonnet-bunder
+2. Update `jsonnetfile.json` to reference the new version
+3. Run `jb update` in the git repo root dir
+4. Search and replace remaining old version references with the new version
+
+[jsonnet-bundler]: https://github.com/jsonnet-bundler/jsonnet-bundler
 
 ### Metrics guidelines
 
