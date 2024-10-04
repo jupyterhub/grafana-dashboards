@@ -1,7 +1,7 @@
 #!/usr/bin/env -S jsonnet -J ../vendor
 // Deploys one dashboard - "JupyterHub dashboard",
 // with useful stats about usage & diagnostics.
-local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v10.4.0/main.libsonnet';
+local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v11.1.0/main.libsonnet';
 local dashboard = grafonnet.dashboard;
 local ts = grafonnet.panel.timeSeries;
 local prometheus = grafonnet.query.prometheus;

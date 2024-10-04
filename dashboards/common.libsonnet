@@ -1,4 +1,4 @@
-local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v10.4.0/main.libsonnet';
+local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v11.1.0/main.libsonnet';
 local ts = grafonnet.panel.timeSeries;
 local barChart = grafonnet.panel.barChart;
 local barGauge = grafonnet.panel.barGauge;
@@ -14,10 +14,10 @@ local var = grafonnet.dashboard.variable;
    * - Y axes to start from 0            -- withMin(0)
    * - Legend tooltip to show all values -- withTooltip({mode: 'multi'})
    *
-   * ref: https://grafana.com/docs/grafana/v10.4/panels-visualizations/configure-panel-options/
+   * ref: https://grafana.com/docs/grafana/v11.1/panels-visualizations/configure-panel-options/
    */
 
-  // grafana ref:   https://grafana.com/docs/grafana/v10.4/panels-visualizations/visualizations/time-series/
+  // grafana ref:   https://grafana.com/docs/grafana/v11.1/panels-visualizations/visualizations/time-series/
   // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/timeSeries/index.html
   tsOptions:
     ts.standardOptions.withMin(0)
@@ -26,20 +26,20 @@ local var = grafonnet.dashboard.variable;
     + ts.fieldConfig.defaults.custom.withFillOpacity(10)
   ,
 
-  // grafana ref:   https://grafana.com/docs/grafana/v10.4/panels-visualizations/visualizations/bar-chart/
+  // grafana ref:   https://grafana.com/docs/grafana/v11.1/panels-visualizations/visualizations/bar-chart/
   // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/barChart/index.html
   barChartOptions:
     barChart.standardOptions.withMin(0)
     + barChart.options.withTooltip({ mode: 'multi' })
   ,
 
-  // grafana ref:   https://grafana.com/docs/grafana/v10.4/panels-visualizations/visualizations/bar-gauge/
+  // grafana ref:   https://grafana.com/docs/grafana/v11.1/panels-visualizations/visualizations/bar-gauge/
   // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/barGauge/index.html
   barGaugeOptions:
     barGauge.standardOptions.withMin(0)
   ,
 
-  // grafana ref:   https://grafana.com/docs/grafana/v10.4/panels-visualizations/visualizations/heatmap/
+  // grafana ref:   https://grafana.com/docs/grafana/v11.1/panels-visualizations/visualizations/heatmap/
   // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/heatmap/index.html
   heatmapOptions:
     heatmap.options.withCalculate(true)
