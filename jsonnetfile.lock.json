@@ -5,11 +5,11 @@
       "source": {
         "git": {
           "remote": "https://github.com/grafana/grafonnet.git",
-          "subdir": "gen/grafonnet-v10.4.0"
+          "subdir": "gen/grafonnet-v11.1.0"
         }
       },
-      "version": "6ac1593ca787638da223380ff4a3fd0f96e953e1",
-      "sum": "ZSmDT7i/qU9P8ggmuPuJT+jonq1ZEsBRCXycW/H5L/A=",
+      "version": "1ce5aec95ce32336fe47c8881361847c475b5254",
+      "sum": "41w7p/rwrNsITqNHMXtGSJAfAyKmnflg6rFhKBduUxM=",
       "name": "grafonnet"
     },
     {

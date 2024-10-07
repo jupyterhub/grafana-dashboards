@@ -1,7 +1,7 @@
 #!/usr/bin/env -S jsonnet -J ../vendor
 // Deploys one dashboard - "JupyterHub dashboard",
 // with useful stats about usage & diagnostics.
-local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v10.4.0/main.libsonnet';
+local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v11.1.0/main.libsonnet';
 local dashboard = grafonnet.dashboard;
 local ts = grafonnet.panel.timeSeries;
 local prometheus = grafonnet.query.prometheus;
@@ -16,7 +16,7 @@ local userMemoryDistribution =
   common.heatmapOptions
   + heatmap.new('User memory usage distribution')
   + heatmap.options.yAxis.withUnit('bytes')
-  + heatmap.options.color.HeatmapColorOptions.withScheme('Viridis')
+  + heatmap.options.color.withScheme('Viridis')
   + heatmap.options.calculation.xBuckets.withMode('size')
   + heatmap.options.calculation.xBuckets.withValue('600s')  // must align with interval
   + heatmap.queryOptions.withInterval('600s')  // must align with xBuckets value
@@ -41,7 +41,7 @@ local userCPUDistribution =
   common.heatmapOptions
   + heatmap.new('User CPU usage distribution')
   + heatmap.options.yAxis.withUnit('percentunit')
-  + heatmap.options.color.HeatmapColorOptions.withScheme('Viridis')
+  + heatmap.options.color.withScheme('Viridis')
   + heatmap.options.calculation.xBuckets.withMode('size')
   + heatmap.options.calculation.xBuckets.withValue('600s')  // must align with interval
   + heatmap.queryOptions.withInterval('600s')  // must align with xBuckets value
@@ -66,7 +66,7 @@ local userAgeDistribution =
   common.heatmapOptions
   + heatmap.new('User active age distribution')
   + heatmap.options.yAxis.withUnit('s')
-  + heatmap.options.color.HeatmapColorOptions.withScheme('Viridis')
+  + heatmap.options.color.withScheme('Viridis')
   + heatmap.options.calculation.xBuckets.withMode('size')
   + heatmap.options.calculation.xBuckets.withValue('600s')  // must align with interval
   + heatmap.queryOptions.withInterval('600s')  // must align with xBuckets value

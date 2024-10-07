@@ -2,7 +2,7 @@
 # Deploying the dashboards
 
 ```{warning}
-ANY CHANGES YOU MAKE VIA THE GRAFANA UI WILL BE OVERWRITTEN NEXT TIME YOU RUN deploy.bash.
+ANY CHANGES YOU MAKE VIA THE GRAFANA UI WILL BE OVERWRITTEN NEXT TIME YOU RUN `deploy.py`.
 TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN
 ```
 
@@ -43,7 +43,8 @@ TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN
    Make sure this is indented correctly where it should be!
    ```
 
-4. A recent version of Grafana, with a prometheus data source already added.
+4. A recent version of Grafana (v11.1.0 or higher), with a prometheus data
+   source already added.
 
 5. An API key with 'admin' permissions. This is per-organization, and you can make a new one
    by going to the configuration pane for your Grafana (the gear icon on the left bar), and
