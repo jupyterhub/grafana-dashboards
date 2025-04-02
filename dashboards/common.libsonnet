@@ -76,7 +76,7 @@ local var = grafonnet.dashboard.variable;
       + var.query.selectionOptions.withMulti()
       + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
       + var.query.queryTypes.withLabelValues('label_hub_jupyter_org_username', 'kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub"}')
-    ,    
+    ,
     // Queries should use the 'instance' label when querying metrics that
     // come from collectors present on each node - such as node_exporter or
     // container_ metrics, and use the 'node' label when querying metrics
