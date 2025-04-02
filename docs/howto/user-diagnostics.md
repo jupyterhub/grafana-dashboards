@@ -1,9 +1,13 @@
 # Look at individual user metrics
 
 A common support request for JupyterHub admins pertains to specific issues
-faced by a particular user. The "User Diagnostics" dashboard helps with this.
-It also helps look for *outliers* in a hub - people using too much of a particular
-resource, or not enough of a particular resource.
+faced by a particular user. The "User Diagnostics" dashboard helps displaying
+metrics on a per-user level. It also helps look for *outliers* in a hub –
+people using too much of a particular resource, or not enough of a particular
+resource.
+
+The "Pod Diagnostics" dashboard displays metrics on a per-user per-server level.
+For example, a JupyterHub can be configured to [allow multiple named servers per user](https://jupyterhub.readthedocs.io/en/stable/howto/configuration/config-user-env.html#named-servers) running at the same time.
 
 ## Home directory size (with shared volumes)
 
