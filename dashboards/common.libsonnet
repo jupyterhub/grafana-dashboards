@@ -70,7 +70,7 @@ local var = grafonnet.dashboard.variable;
       + var.query.selectionOptions.withMulti()
       + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
       + var.query.queryTypes.withLabelValues('namespace', 'kube_pod_labels')
-    ,    
+    ,
     user_pod:
       var.query.new('user_pod')
       + var.query.withDatasourceFromVariable(self.prometheus)
@@ -95,8 +95,7 @@ local var = grafonnet.dashboard.variable;
       + var.query.withDatasourceFromVariable(self.prometheus)
       + var.query.selectionOptions.withMulti()
       + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
-      + var.query.queryTypes.withLabelValues('node', 'kube_node_info')
-    ,
+      + var.query.queryTypes.withLabelValues('node', 'kube_node_info'),
   },
 
   _nodePoolLabelKeys: [
