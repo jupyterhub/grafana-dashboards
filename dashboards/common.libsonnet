@@ -88,13 +88,13 @@ local var = grafonnet.dashboard.variable;
       + var.query.selectionOptions.withMulti()
       + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
       + var.query.queryTypes.withLabelValues('node', 'kube_node_info')
-      ,
+    ,
     namespace:
       var.query.new('namespace')
       + var.query.withDatasourceFromVariable(self.prometheus)
       + var.query.selectionOptions.withMulti()
       + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
-      + var.query.queryTypes.withLabelValues('namespace', 'kube_pod_labels')      
+      + var.query.queryTypes.withLabelValues('namespace', 'kube_pod_labels'),
 
   },
 
