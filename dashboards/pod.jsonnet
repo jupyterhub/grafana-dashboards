@@ -106,7 +106,7 @@ local cpuRequests =
   ]);
 
 dashboard.new('Pod Diagnostics Dashboard')
-+ dashboard.withTags(['jupyterhub'])
++ dashboard.withTags(['kubernetes'])
 + dashboard.withUid('pod-diagnostics-dashboard')
 + dashboard.withEditable(true)
 + dashboard.withVariables([
