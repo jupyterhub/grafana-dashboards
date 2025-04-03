@@ -23,10 +23,10 @@ local memoryUsage =
           # exclude name="" because the same container can be reported
           # with both no name and `name=k8s_...`,
           # in which case sum() by (pod) reports double the actual metric
-          container_memory_working_set_bytes{name!="", instance=~"$instance"}
+          container_memory_working_set_bytes{name!="", instance=~"$instance", namespace=~"$namespace"}
           * on (namespace, pod) group_left(container)
           group(
-              kube_pod_labels{namespace=~"$hub", pod=~"$user_pod"}
+              kube_pod_labels{namespace=~"$namespace", pod=~"$user_pod"}
           ) by (pod, namespace)
         ) by (pod, namespace)
       |||
@@ -55,7 +55,7 @@ local cpuUsage =
           irate(container_cpu_usage_seconds_total{name!="", instance=~"$instance"}[5m])
           * on (namespace, pod) group_left(container)
           group(
-              kube_pod_labels{namespace=~"$hub", pod=~"$user_pod"}
+              kube_pod_labels{namespace=~"$namespace", pod=~"$user_pod"}
           ) by (pod, namespace)
         ) by (pod, namespace)
       |||
@@ -77,7 +77,7 @@ local memoryRequests =
       '$PROMETHEUS_DS',
       |||
         sum(
-          kube_pod_container_resource_requests{resource="memory", namespace=~"$hub", node=~"$instance"}
+          kube_pod_container_resource_requests{resource="memory", namespace=~"$namespace", node=~"$instance"}
         ) by (pod, namespace)
       |||
     )
@@ -98,7 +98,7 @@ local cpuRequests =
       '$PROMETHEUS_DS',
       |||
         sum(
-          kube_pod_container_resource_requests{resource="cpu", namespace=~"$hub", node=~"$instance"}
+          kube_pod_container_resource_requests{resource="cpu", namespace=~"$namespace", node=~"$instance"}
         ) by (pod, namespace)
       |||
     )
@@ -111,8 +111,8 @@ dashboard.new('Pod Diagnostics Dashboard')
 + dashboard.withEditable(true)
 + dashboard.withVariables([
   common.variables.prometheus,
-  common.variables.hub,
   common.variables.user_pod,
+  common.variables.namespace,
   common.variables.instance,
 ])
 + dashboard.withPanels(
