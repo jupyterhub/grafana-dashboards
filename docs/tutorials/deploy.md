@@ -27,7 +27,7 @@ TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN
     ```
 
 3. `kube-state-metrics` must be configured to add some labels to metrics
-   [since version 2.0](https://kubernetes.io/blog/2021/04/13/kube-state-metrics-v-2-0/).
+   [(since version 2.0)](https://kubernetes.io/blog/2021/04/13/kube-state-metrics-v-2-0/) and annotations to metrics (since version 2.2.0).
    If deployed with the prometheus helm chart, the config should look like this:
 
    ```yaml
@@ -37,6 +37,10 @@ TO MAKE CHANGES, EDIT THE JSONNET FILE AND DEPLOY AGAIN
          - pods=[app,component,hub.jupyter.org/username]
          # allowing all labels is probably fine for nodes, since they don't churn much, unlike pods
          - nodes=[*]
+         - service=[app, component]
+      metricAnnotationsAllowlist:
+         # collect pod annotation for unescaped usernames
+         - pods=[hub.jupyter.org/username]
    ```
 
    ```{tip}
