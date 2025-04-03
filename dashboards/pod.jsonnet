@@ -26,7 +26,7 @@ local memoryUsage =
           container_memory_working_set_bytes{name!="", instance=~"$instance", namespace=~"$namespace"}
           * on (namespace, pod) group_left(container)
           group(
-              kube_pod_labels{namespace=~"$namespace", pod=~"$user_pod"}
+              kube_pod_labels{namespace=~"$namespace"}
           ) by (pod, namespace)
         ) by (pod, namespace)
       |||
@@ -55,7 +55,7 @@ local cpuUsage =
           irate(container_cpu_usage_seconds_total{name!="", instance=~"$instance"}[5m])
           * on (namespace, pod) group_left(container)
           group(
-              kube_pod_labels{namespace=~"$namespace", pod=~"$user_pod"}
+              kube_pod_labels{namespace=~"$namespace"}
           ) by (pod, namespace)
         ) by (pod, namespace)
       |||
@@ -107,11 +107,10 @@ local cpuRequests =
 
 dashboard.new('Pod Diagnostics Dashboard')
 + dashboard.withTags(['jupyterhub'])
-+ dashboard.withUid('user-pod-diagnostics-dashboard')
++ dashboard.withUid('pod-diagnostics-dashboard')
 + dashboard.withEditable(true)
 + dashboard.withVariables([
   common.variables.prometheus,
-  common.variables.user_pod,
   common.variables.namespace,
   common.variables.instance,
 ])

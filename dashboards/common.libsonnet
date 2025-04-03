@@ -56,6 +56,7 @@ local var = grafonnet.dashboard.variable;
       var.datasource.new('PROMETHEUS_DS', 'prometheus')
       + var.datasource.generalOptions.showOnDashboard.withValueOnly()
     ,
+    // Restrict namespaces that run a hub service for user diagnostics
     hub:
       var.query.new('hub')
       + var.query.withDatasourceFromVariable(self.prometheus)
@@ -63,6 +64,13 @@ local var = grafonnet.dashboard.variable;
       + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
       + var.query.queryTypes.withLabelValues('namespace', 'kube_service_labels{service="hub"}')
     ,
+    namespace:
+      var.query.new('namespace')
+      + var.query.withDatasourceFromVariable(self.prometheus)
+      + var.query.selectionOptions.withMulti()
+      + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
+      + var.query.queryTypes.withLabelValues('namespace', 'kube_pod_labels')
+    ,    
     user_pod:
       var.query.new('user_pod')
       + var.query.withDatasourceFromVariable(self.prometheus)
@@ -89,13 +97,6 @@ local var = grafonnet.dashboard.variable;
       + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
       + var.query.queryTypes.withLabelValues('node', 'kube_node_info')
       ,
-    namespace:
-      var.query.new('namespace')
-      + var.query.withDatasourceFromVariable(self.prometheus)
-      + var.query.selectionOptions.withMulti()
-      + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
-      + var.query.queryTypes.withLabelValues('namespace', 'kube_pod_labels')      
-
   },
 
   _nodePoolLabelKeys: [
