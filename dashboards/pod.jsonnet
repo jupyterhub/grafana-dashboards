@@ -26,7 +26,7 @@ local memoryUsage =
           container_memory_working_set_bytes{name!="", instance=~"$instance"}
           * on (namespace, pod) group_left(container)
           group(
-              kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub", pod=~"$user_pod"}
+              kube_pod_labels{namespace=~"$hub", pod=~"$user_pod"}
           ) by (pod, namespace)
         ) by (pod, namespace)
       |||
@@ -55,43 +55,12 @@ local cpuUsage =
           irate(container_cpu_usage_seconds_total{name!="", instance=~"$instance"}[5m])
           * on (namespace, pod) group_left(container)
           group(
-              kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub", pod=~"$user_pod"}
+              kube_pod_labels{namespace=~"$hub", pod=~"$user_pod"}
           ) by (pod, namespace)
         ) by (pod, namespace)
       |||
     )
     + prometheus.withLegendFormat('{{ pod }} - ({{ namespace }})'),
-  ]);
-
-local homedirSharedUsage =
-  common.tsOptions
-  + ts.new('Home Directory Usage (on shared home directories)')
-  + ts.panelOptions.withDescription(
-    |||
-      Per user home directory size, when using a shared home directory.
-
-      Requires https://github.com/yuvipanda/prometheus-dirsize-exporter to
-      be set up.
-
-      Similar to server pod names, user names will be *encoded* here
-      using the escapism python library (https://github.com/minrk/escapism).
-      You can unencode them with the following python snippet:
-
-      from escapism import unescape
-      unescape('<escaped-username>', '-')
-    |||
-  )
-  + ts.standardOptions.withUnit('bytes')
-  + ts.queryOptions.withTargets([
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        max(
-          dirsize_total_size_bytes{namespace="$hub"}
-        ) by (directory, namespace)
-      |||
-    )
-    + prometheus.withLegendFormat('{{ directory }} - ({{ namespace }})'),
   ]);
 
 local memoryRequests =
@@ -151,7 +120,6 @@ dashboard.new('Pod Diagnostics Dashboard')
     [
       memoryUsage,
       cpuUsage,
-      homedirSharedUsage,
       memoryRequests,
       cpuRequests,
     ],
