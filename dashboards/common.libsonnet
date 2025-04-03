@@ -56,7 +56,7 @@ local var = grafonnet.dashboard.variable;
       var.datasource.new('PROMETHEUS_DS', 'prometheus')
       + var.datasource.generalOptions.showOnDashboard.withValueOnly()
     ,
-    // Restrict namespaces that run a hub service for user diagnostics
+    // Limit namespaces to those that run a hub service
     hub:
       var.query.new('hub')
       + var.query.withDatasourceFromVariable(self.prometheus)
