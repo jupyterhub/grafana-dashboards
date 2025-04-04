@@ -23,7 +23,7 @@ local memoryUsage =
           # exclude name="" because the same container can be reported
           # with both no name and `name=k8s_...`,
           # in which case sum() by (pod) reports double the actual metric
-          container_memory_working_set_bytes{name!="", instance=~"$instance", pod=~"jupyter-.*"}
+          container_memory_working_set_bytes{name!="", instance=~"$instance", pod!="jupyter-deployment-service-check", pod=~"jupyter-.*"}
           * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
           group(
               kube_pod_annotations{namespace=~"$hub", annotation_hub_jupyter_org_username=~"$user_name"}
@@ -52,7 +52,7 @@ local cpuUsage =
           # exclude name="" because the same container can be reported
           # with both no name and `name=k8s_...`,
           # in which case sum() by (pod) reports double the actual metric
-          irate(container_cpu_usage_seconds_total{name!="", instance=~"$instance", pod=~"jupyter-.*"}[5m])
+          irate(container_cpu_usage_seconds_total{name!="", instance=~"$instance", pod!="jupyter-deployment-service-check",pod=~"jupyter-.*"}[5m])
           * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
           group(
               kube_pod_annotations{namespace=~"$hub", annotation_hub_jupyter_org_username=~"$user_name"}
@@ -108,7 +108,7 @@ local memoryRequests =
       '$PROMETHEUS_DS',
       |||
         sum(
-          kube_pod_container_resource_requests{resource="memory", namespace=~"$hub", node=~"$instance", pod=~"jupyter-.*"} * on (namespace, pod)
+          kube_pod_container_resource_requests{resource="memory", namespace=~"$hub", node=~"$instance", pod!="jupyter-deployment-service-check", pod=~"jupyter-.*"} * on (namespace, pod)
           group_left(annotation_hub_jupyter_org_username) group(
             kube_pod_annotations{namespace=~"$hub", annotation_hub_jupyter_org_username=~"$user_name"}
             ) by (pod, namespace, annotation_hub_jupyter_org_username)
@@ -132,7 +132,7 @@ local cpuRequests =
       '$PROMETHEUS_DS',
       |||
         sum(
-          kube_pod_container_resource_requests{resource="cpu", namespace=~"$hub", node=~"$instance", pod=~"jupyter-.*"} * on (namespace, pod)
+          kube_pod_container_resource_requests{resource="cpu", namespace=~"$hub", node=~"$instance", pod!="jupyter-deployment-service-check", pod=~"jupyter-.*"} * on (namespace, pod)
           group_left(annotation_hub_jupyter_org_username) group(
             kube_pod_annotations{namespace=~"$hub", annotation_hub_jupyter_org_username=~"$user_name"}
             ) by (pod, namespace, annotation_hub_jupyter_org_username)
