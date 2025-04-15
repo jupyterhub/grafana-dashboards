@@ -87,7 +87,7 @@ local homedirSharedUsage =
       '$PROMETHEUS_DS',
       |||
         max(
-          dirsize_total_size_bytes{namespace="$hub"}
+          dirsize_total_size_bytes{namespace=~"$hub"}
         ) by (directory, namespace)
       |||
     )
