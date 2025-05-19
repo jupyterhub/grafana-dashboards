@@ -11,7 +11,7 @@ local memoryUsage =
   + ts.new('Memory Usage')
   + ts.panelOptions.withDescription(
     |||
-      Per-user per-server memory usage
+      Per user memory usage
     |||
   )
   + ts.standardOptions.withUnit('bytes')
@@ -20,18 +20,15 @@ local memoryUsage =
       '$PROMETHEUS_DS',
       |||
         sum(
-          # exclude name="" because the same container can be reported
-          # with both no name and `name=k8s_...`,
-          # in which case sum() by (pod) reports double the actual metric
-          container_memory_working_set_bytes{name!="", instance=~"$instance"}
-          * on (namespace, pod) group_left(container)
-          group(
-              kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub", pod=~"$user_pod"}
-          ) by (pod, namespace)
-        ) by (pod, namespace)
+          container_memory_working_set_bytes{name!="", pod=~"jupyter-.*", namespace=~"$hub_name"}
+            * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
+            group(
+                kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"$user_name", pod=~"jupyter-.*"}
+            ) by (pod, namespace, annotation_hub_jupyter_org_username)
+        ) by (annotation_hub_jupyter_org_username, namespace)
       |||
     )
-    + prometheus.withLegendFormat('{{ pod }} - ({{ namespace }})'),
+    + prometheus.withLegendFormat('{{ annotation_hub_jupyter_org_username }} - ({{ namespace }})'),
   ]);
 
 
@@ -40,7 +37,7 @@ local cpuUsage =
   + ts.new('CPU Usage')
   + ts.panelOptions.withDescription(
     |||
-      Per-user per-server CPU usage
+      Per user CPU usage
     |||
   )
   + ts.standardOptions.withUnit('percentunit')
@@ -52,15 +49,15 @@ local cpuUsage =
           # exclude name="" because the same container can be reported
           # with both no name and `name=k8s_...`,
           # in which case sum() by (pod) reports double the actual metric
-          irate(container_cpu_usage_seconds_total{name!="", instance=~"$instance"}[5m])
-          * on (namespace, pod) group_left(container)
+          irate(container_cpu_usage_seconds_total{name!="", pod=~"jupyter-.*"}[5m])
+          * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
           group(
-              kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub", pod=~"$user_pod"}
-          ) by (pod, namespace)
-        ) by (pod, namespace)
+              kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"$user_name"}
+          ) by (pod, namespace, annotation_hub_jupyter_org_username)
+        ) by (annotation_hub_jupyter_org_username, namespace)
       |||
     )
-    + prometheus.withLegendFormat('{{ pod }} - ({{ namespace }})'),
+    + prometheus.withLegendFormat('{{ annotation_hub_jupyter_org_username }} - ({{ namespace }})'),
   ]);
 
 local homedirSharedUsage =
@@ -87,11 +84,17 @@ local homedirSharedUsage =
       '$PROMETHEUS_DS',
       |||
         max(
-          dirsize_total_size_bytes{namespace="$hub"}
-        ) by (directory, namespace)
+          dirsize_total_size_bytes{namespace=~"$hub_name"}
+          * on (namespace, directory) group_left(username)
+          group(
+            label_replace(
+              jupyterhub_user_group_info{namespace=~"$hub_name", username_escaped=~".*"},
+                "directory", "$1", "username_escaped", "(.+)")
+          ) by (directory, namespace, username)
+        ) by (namespace, username)
       |||
     )
-    + prometheus.withLegendFormat('{{ directory }} - ({{ namespace }})'),
+    + prometheus.withLegendFormat('{{ username }} - ({{ namespace }})'),
   ]);
 
 local memoryRequests =
@@ -99,7 +102,7 @@ local memoryRequests =
   + ts.new('Memory Requests')
   + ts.panelOptions.withDescription(
     |||
-      Per-user per-server memory Requests
+      Per-user memory requests
     |||
   )
   + ts.standardOptions.withUnit('bytes')
@@ -108,11 +111,14 @@ local memoryRequests =
       '$PROMETHEUS_DS',
       |||
         sum(
-          kube_pod_container_resource_requests{resource="memory", namespace=~"$hub", node=~"$instance"}
-        ) by (pod, namespace)
+          kube_pod_container_resource_requests{resource="memory", namespace=~"$hub_name", pod=~"jupyter-.*"}  * on (namespace, pod)
+          group_left(annotation_hub_jupyter_org_username) group(
+            kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"$user_name"}
+            ) by (pod, namespace, annotation_hub_jupyter_org_username)
+        ) by (annotation_hub_jupyter_org_username, namespace)
       |||
     )
-    + prometheus.withLegendFormat('{{ pod }} - ({{ namespace }})'),
+    + prometheus.withLegendFormat('{{ annotation_hub_jupyter_org_username }} - ({{ namespace }})'),
   ]);
 
 local cpuRequests =
@@ -120,7 +126,7 @@ local cpuRequests =
   + ts.new('CPU Requests')
   + ts.panelOptions.withDescription(
     |||
-      Per-user per-server CPU Requests
+      Per user CPU requests
     |||
   )
   + ts.standardOptions.withUnit('percentunit')
@@ -129,22 +135,24 @@ local cpuRequests =
       '$PROMETHEUS_DS',
       |||
         sum(
-          kube_pod_container_resource_requests{resource="cpu", namespace=~"$hub", node=~"$instance"}
-        ) by (pod, namespace)
+          kube_pod_container_resource_requests{resource="cpu", namespace=~"$hub_name", pod=~"jupyter-.*"} * on (namespace, pod)
+          group_left(annotation_hub_jupyter_org_username) group(
+            kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"$user_name"}
+            ) by (pod, namespace, annotation_hub_jupyter_org_username)
+        ) by (annotation_hub_jupyter_org_username, namespace)
       |||
     )
-    + prometheus.withLegendFormat('{{ pod }} - ({{ namespace }})'),
+    + prometheus.withLegendFormat('{{ annotation_hub_jupyter_org_username }} - ({{ namespace }})'),
   ]);
 
 dashboard.new('User Diagnostics Dashboard')
 + dashboard.withTags(['jupyterhub'])
-+ dashboard.withUid('user-pod-diagnostics-dashboard')
++ dashboard.withUid('user-diagnostics-dashboard')
 + dashboard.withEditable(true)
 + dashboard.withVariables([
   common.variables.prometheus,
-  common.variables.hub,
-  common.variables.user_pod,
-  common.variables.instance,
+  common.variables.hub_name,
+  common.variables.user_name,
 ])
 + dashboard.withPanels(
   grafonnet.util.grid.makeGrid(
