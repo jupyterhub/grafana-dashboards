@@ -63,12 +63,33 @@ local var = grafonnet.dashboard.variable;
       + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
       + var.query.queryTypes.withLabelValues('namespace', 'kube_service_labels{service="hub"}')
     ,
-    user_pod:
-      var.query.new('user_pod')
+    hub_name:
+      var.query.new('hub_name')
+      + var.query.withDatasourceFromVariable(self.prometheus)
+      + var.query.selectionOptions.withMulti()
+      + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')      
+      + var.query.queryTypes.withLabelValues('namespace', 'kube_service_labels{service="hub"}')
+    ,    
+    namespace:
+      var.query.new('namespace')
       + var.query.withDatasourceFromVariable(self.prometheus)
       + var.query.selectionOptions.withMulti()
       + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
-      + var.query.queryTypes.withLabelValues('pod', 'kube_pod_labels{label_app="jupyterhub", label_component="singleuser-server", namespace=~"$hub"}')
+      + var.query.queryTypes.withLabelValues('namespace', 'kube_pod_labels')
+    ,
+    user_group:
+      var.query.new('user_group')
+      + var.query.withDatasourceFromVariable(self.prometheus)
+      + var.query.selectionOptions.withMulti()
+      + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
+      + var.query.queryTypes.withLabelValues('usergroup', 'jupyterhub_user_group_info')
+    ,    
+    user_name:
+      var.query.new('user_name')
+      + var.query.withDatasourceFromVariable(self.prometheus)
+      + var.query.selectionOptions.withMulti()
+      + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
+      + var.query.queryTypes.withLabelValues('annotation_hub_jupyter_org_username', 'kube_pod_annotations{ namespace=~"$hub_name"}')
     ,
     // Queries should use the 'instance' label when querying metrics that
     // come from collectors present on each node - such as node_exporter or
