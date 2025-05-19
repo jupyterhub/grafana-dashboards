@@ -67,9 +67,9 @@ local var = grafonnet.dashboard.variable;
       var.query.new('hub_name')
       + var.query.withDatasourceFromVariable(self.prometheus)
       + var.query.selectionOptions.withMulti()
-      + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')      
+      + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
       + var.query.queryTypes.withLabelValues('namespace', 'kube_service_labels{service="hub"}')
-    ,    
+    ,
     namespace:
       var.query.new('namespace')
       + var.query.withDatasourceFromVariable(self.prometheus)
@@ -83,7 +83,7 @@ local var = grafonnet.dashboard.variable;
       + var.query.selectionOptions.withMulti()
       + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
       + var.query.queryTypes.withLabelValues('usergroup', 'jupyterhub_user_group_info')
-    ,    
+    ,
     user_name:
       var.query.new('user_name')
       + var.query.withDatasourceFromVariable(self.prometheus)
