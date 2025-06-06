@@ -11,10 +11,12 @@ local memoryUsage =
   + ts.new('Memory Usage')
   + ts.panelOptions.withDescription(
     |||
-      Per group memory usage
+      Per group memory usage.
+
+      User groups are derived from authenticator managed groups where available, e.g. GitHub teams. If a user is a member of multiple groups, then they will be assigned to the group 'other' by default. 
 
       Requires https://github.com/2i2c-org/jupyterhub-groups-exporter to
-      be set up.
+      be set up. If the panels show no data, then please try selecting another time range where usage was active.
     |||
   )
   + ts.standardOptions.withUnit('bytes')
@@ -47,8 +49,10 @@ local cpuUsage =
     |||
       Per group CPU usage
 
+      User groups are derived from authenticator managed groups where available, e.g. GitHub teams. If a user is a member of multiple groups, then they will be assigned to the group 'other' by default. 
+
       Requires https://github.com/2i2c-org/jupyterhub-groups-exporter to
-      be set up.
+      be set up. If the panels show no data, then please try selecting another time range where usage was active.
     |||
   )
   + ts.standardOptions.withUnit('percentunit')
@@ -83,6 +87,8 @@ local homedirSharedUsage =
     |||
       Per group home directory size, when using a shared home directory.
 
+      User groups are derived from authenticator managed groups where available, e.g. GitHub teams. If a user is a member of multiple groups, then they will be assigned to the group 'other' by default. 
+
       Requires https://github.com/yuvipanda/prometheus-dirsize-exporter and https://github.com/2i2c-org/jupyterhub-groups-exporter to
       be set up.
     |||
@@ -115,8 +121,10 @@ local memoryRequests =
     |||
       Per group memory requests
 
+      User groups are derived from authenticator managed groups where available, e.g. GitHub teams. If a user is a member of multiple groups, then they will be assigned to the group 'other' by default. 
+
       Requires https://github.com/2i2c-org/jupyterhub-groups-exporter to
-      be set up.
+      be set up. If the panels show no data, then please try selecting another time range where usage was active.
     |||
   )
   + ts.standardOptions.withUnit('bytes')
@@ -147,8 +155,10 @@ local cpuRequests =
     |||
       Per group CPU requests
 
+      User groups are derived from authenticator managed groups where available, e.g. GitHub teams. If a user is a member of multiple groups, then they will be assigned to the group 'other' by default. 
+
       Requires https://github.com/2i2c-org/jupyterhub-groups-exporter to
-      be set up.
+      be set up. If the panels show no data, then please try selecting another time range where usage was active.
     |||
   )
   + ts.standardOptions.withUnit('percentunit')
