@@ -163,7 +163,7 @@ local hubResponseCodes =
       |||
         sum(
           increase(
-            jupyterhub_request_duration_seconds_bucket{
+            jupyterhub_request_duration_seconds_count{
               app="jupyterhub",
               namespace=~"$hub",
             }[2m]
