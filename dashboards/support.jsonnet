@@ -135,9 +135,10 @@ local prometheusMemory =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(container_memory_working_set_bytes{pod=~"support-prometheus-server-.*", namespace="support"})
+        sum(container_memory_working_set_bytes{pod=~".*prometheus-server-.*", container!=""}) by (namespace, pod, container)
       |||
-    ),
+    )
+    + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
   ]);
 
 local prometheusCPU =
@@ -147,9 +148,10 @@ local prometheusCPU =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(rate(container_cpu_usage_seconds_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))
+        sum(irate(container_cpu_usage_seconds_total{pod=~".*prometheus-server-.*", container!=""}[5m])) by (namespace, pod, container)
       |||
-    ),
+    )
+    + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
   ]);
 
 local prometheusDiskSpace =
@@ -160,31 +162,32 @@ local prometheusDiskSpace =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kubelet_volume_stats_available_bytes{namespace="support",persistentvolumeclaim="support-prometheus-server"})
+        sum(kubelet_volume_stats_available_bytes{persistentvolumeclaim=~".*-prometheus-server"}) by (namespace, persistentvolumeclaim)
       |||
-    ),
+    )
+    + prometheus.withLegendFormat('{{namespace}}: {{persistentvolumeclaim}}'),
   ]);
 
 local prometheusNetwork =
   common.tsOptions
   + ts.new('Prometheus Network Usage')
-  + ts.standardOptions.withUnit('bytes')
+  + ts.standardOptions.withUnit('binBps')
   + ts.standardOptions.withDecimals(0)
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(rate(container_network_receive_bytes_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))
+        sum(irate(container_network_receive_bytes_total{pod=~".*-prometheus-server-.*"}[5m])) by (namespace, pod)
       |||
     )
-    + prometheus.withLegendFormat('receive'),
+    + prometheus.withLegendFormat('receive ({{namespace}}: {{pod}})'),
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(rate(container_network_send_bytes_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))
+        sum(irate(container_network_transmit_bytes_total{pod=~".*-prometheus-server-.*"}[5m])) by (namespace, pod)
       |||
     )
-    + prometheus.withLegendFormat('send'),
+    + prometheus.withLegendFormat('transmit ({{namespace}}: {{pod}})'),
   ]);
 
 dashboard.new('NFS and Support Information')
