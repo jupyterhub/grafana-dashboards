@@ -41,6 +41,7 @@ local nodesHighNFSOps =
   common.tsOptions
   + ts.new('NFS Operation Types on nodes')
   + ts.standardOptions.withDecimals(0)
+  + ts.standardOptions.withUnit('percentunit')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -54,6 +55,7 @@ local nodesHighNFSOps =
 local nfsServerCPU =
   common.tsOptions
   + ts.new('NFS Server CPU')
+  + ts.standardOptions.withUnit('sishort')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -144,6 +146,7 @@ local prometheusMemory =
 local prometheusCPU =
   common.tsOptions
   + ts.new('Prometheus CPU')
+  + ts.standardOptions.withUnit('sishort')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
