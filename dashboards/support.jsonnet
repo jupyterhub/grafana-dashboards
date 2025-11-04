@@ -9,9 +9,9 @@ local row = grafonnet.panel.row;
 local common = import './common.libsonnet';
 
 // NFS Stats
-local userNodesNFSOps =
+local nodesNFSOps =
   common.tsOptions
-  + ts.new('User Nodes NFS Ops')
+  + ts.new('Nodes NFS Ops')
   + ts.standardOptions.withDecimals(0)
   + ts.queryOptions.withTargets([
     prometheus.new(
@@ -23,7 +23,7 @@ local userNodesNFSOps =
     + prometheus.withLegendFormat('{{ node }}'),
   ]);
 
-local userNodesIOWait =
+local nodesIOWait =
   common.tsOptions
   + ts.new('iowait % on each node')
   + ts.standardOptions.withDecimals(0)
@@ -37,9 +37,9 @@ local userNodesIOWait =
     + prometheus.withLegendFormat('{{ node }}'),
   ]);
 
-local userNodesHighNFSOps =
+local nodesHighNFSOps =
   common.tsOptions
-  + ts.new('NFS Operation Types on user nodes')
+  + ts.new('NFS Operation Types on nodes')
   + ts.standardOptions.withDecimals(0)
   + ts.queryOptions.withTargets([
     prometheus.new(
@@ -201,11 +201,11 @@ dashboard.new('NFS and Support Information')
     [
       row.new('NFS diagnostics')
       + row.withPanels([
-        userNodesNFSOps,
-        userNodesIOWait,
-        userNodesHighNFSOps,
-        nfsServerCPU,
+        nodesNFSOps,
+        nodesIOWait,
+        nodesHighNFSOps,
         nfsServerIOPS,
+        nfsServerCPU,
         nfsServerWriteLatency,
         nfsServerReadLatency,
       ]),
