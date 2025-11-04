@@ -60,10 +60,10 @@ local nfsServerCPU =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        avg(rate(node_cpu_seconds_total{job="prometheus-nfsd-server", mode!="idle"}[2m])) by (mode)
+        sum(irate(container_cpu_usage_seconds_total{pod=~".*home-nfs.*", container!=""}[5m])) by (namespace, container)
       |||
     )
-    + prometheus.withLegendFormat('{{ mode }}'),
+    + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
   ]);
 
 local nfsServerIOPS =
