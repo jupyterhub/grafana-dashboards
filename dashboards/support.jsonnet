@@ -1,5 +1,5 @@
 #!/usr/bin/env -S jsonnet -J ../vendor
-// Deploys a dashboard showing information about support resources
+// Deploys a dashboard showing information about NFS server and Prometheus.
 local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v11.1.0/main.libsonnet';
 local dashboard = grafonnet.dashboard;
 local ts = grafonnet.panel.timeSeries;
@@ -207,8 +207,8 @@ local prometheusNetwork =
     + prometheus.withLegendFormat('transmit ({{namespace}}: {{pod}})'),
   ]);
 
-dashboard.new('NFS and Support Information')
-+ dashboard.withTags(['support', 'kubernetes'])
+dashboard.new('NFS and Prometheus Information')
++ dashboard.withTags(['kubernetes', 'nfs', 'prometheus'])
 + dashboard.withEditable(true)
 + dashboard.withVariables([
   common.variables.prometheus,
@@ -227,7 +227,7 @@ dashboard.new('NFS and Support Information')
         nfsServerWriteLatency,
         nfsServerReadLatency,
       ]),
-      row.new('Support system diagnostics')
+      row.new('Prometheus diagnostics')
       + row.withPanels([
         prometheusCPU,
         prometheusMemory,
