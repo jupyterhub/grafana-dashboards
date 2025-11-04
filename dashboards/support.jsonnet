@@ -66,6 +66,20 @@ local nfsServerCPU =
     + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
   ]);
 
+local nfsServerMemory =
+  common.tsOptions
+  + ts.new('NFS Server Memory (Working Set)')
+  + ts.standardOptions.withUnit('bytes')
+  + ts.queryOptions.withTargets([
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        sum(container_memory_working_set_bytes{pod=~".*home-nfs-.*", container!=""}) by (namespace, pod, container)
+      |||
+    )
+    + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
+  ]);
+
 local nfsServerIOPS =
   common.tsOptions
   + ts.new('NFS Server Disk ops')
@@ -209,6 +223,7 @@ dashboard.new('NFS and Support Information')
         nodesHighNFSOps,
         nfsServerIOPS,
         nfsServerCPU,
+        nfsServerMemory,
         nfsServerWriteLatency,
         nfsServerReadLatency,
       ]),
