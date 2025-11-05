@@ -66,20 +66,6 @@ local nfsServerMemory =
     + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
   ]);
 
-local prometheusMemory =
-  common.tsOptions
-  + ts.new('Prometheus Memory (Working Set)')
-  + ts.standardOptions.withUnit('bytes')
-  + ts.queryOptions.withTargets([
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        sum(container_memory_working_set_bytes{pod=~".*prometheus-server-.*", container!=""}) by (namespace, pod, container)
-      |||
-    )
-    + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
-  ]);
-
 local prometheusCPU =
   common.tsOptions
   + ts.new('Prometheus CPU')
@@ -89,6 +75,20 @@ local prometheusCPU =
       '$PROMETHEUS_DS',
       |||
         sum(irate(container_cpu_usage_seconds_total{pod=~".*prometheus-server-.*", container!=""}[5m])) by (namespace, pod, container)
+      |||
+    )
+    + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
+  ]);
+
+local prometheusMemory =
+  common.tsOptions
+  + ts.new('Prometheus Memory (Working Set)')
+  + ts.standardOptions.withUnit('bytes')
+  + ts.queryOptions.withTargets([
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        sum(container_memory_working_set_bytes{pod=~".*prometheus-server-.*", container!=""}) by (namespace, pod, container)
       |||
     )
     + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
