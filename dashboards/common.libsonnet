@@ -6,6 +6,36 @@ local heatmap = grafonnet.panel.heatmap;
 local table = grafonnet.panel.table;
 local var = grafonnet.dashboard.variable;
 
+/**
+  * Local utility functions
+  */
+local _getDashedLineOverride(pattern, color) = {
+  matcher: {
+    id: 'byRegexp',
+    options: pattern,
+  },
+  properties: [
+    {
+      id: 'color',
+      value: {
+        mode: 'fixed',
+        fixedColor: color,
+      },
+    },
+    {
+      id: 'custom.fillOpacity',
+      value: 0,
+    },
+    {
+      id: 'custom.lineStyle',
+      value: {
+        fill: 'dash',
+        dash: [10, 10],
+      },
+    },
+  ],
+};
+
 {
   /**
    * Declare common panel options
@@ -48,6 +78,19 @@ local var = grafonnet.dashboard.variable;
 
   tableOptions:
     table.standardOptions.withMin(0)
+  ,
+
+  tsRequestLimitStylingOverrides:
+    ts.standardOptions.withOverrides([
+      _getDashedLineOverride('/request.*/', 'orange'),
+      _getDashedLineOverride('/limit.*/', 'red'),
+    ])
+  ,
+
+  tsCapacityStylingOverrides:
+    ts.standardOptions.withOverrides([
+      _getDashedLineOverride('/capacity.*/', 'red'),
+    ])
   ,
 
   // grafonnet ref: https://grafana.github.io/grafonnet/API/dashboard/variable.html
