@@ -66,53 +66,6 @@ local nfsServerMemory =
     + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
   ]);
 
-local nfsServerIOPS =
-  common.tsOptions
-  + ts.new('NFS Server Disk ops')
-  + ts.standardOptions.withDecimals(0)
-  + ts.queryOptions.withTargets([
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        sum(rate(node_nfsd_disk_bytes_read_total[5m]))
-      |||
-    )
-    + prometheus.withLegendFormat('Read'),
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        sum(rate(node_nfsd_disk_bytes_written_total[5m]))
-      |||
-    )
-    + prometheus.withLegendFormat('Write'),
-  ]);
-
-local nfsServerWriteLatency =
-  common.tsOptions
-  + ts.new('NFS Server disk write latency')
-  + ts.queryOptions.withTargets([
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        sum(rate(node_disk_write_time_seconds_total{job="prometheus-nfsd-server"}[5m])) by (device) / sum(rate(node_disk_writes_completed_total{job="prometheus-nfsd-server"}[5m])) by (device)
-      |||
-    )
-    + prometheus.withLegendFormat('{{ device }}'),
-  ]);
-
-local nfsServerReadLatency =
-  common.tsOptions
-  + ts.new('NFS Server disk read latency')
-  + ts.queryOptions.withTargets([
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        sum(rate(node_disk_read_time_seconds_total{job="prometheus-nfsd-server"}[5m])) by (device) / sum(rate(node_disk_reads_completed_total{job="prometheus-nfsd-server"}[5m])) by (device)
-      |||
-    )
-    + prometheus.withLegendFormat('{{ device }}'),
-  ]);
-
 // Support Metrics
 
 // FIXME: Can we transition to using the function to generate the prometheus memory and cpu panels?
@@ -209,11 +162,8 @@ dashboard.new('NFS and Prometheus Information')
       ]),
       row.new('NFS server diagnostics')
       + row.withPanels([
-        nfsServerIOPS,
         nfsServerCPU,
         nfsServerMemory,
-        nfsServerWriteLatency,
-        nfsServerReadLatency,
       ]),
       row.new('Prometheus server diagnostics')
       + row.withPanels([
