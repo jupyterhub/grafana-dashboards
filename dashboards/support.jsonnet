@@ -8,7 +8,9 @@ local row = grafonnet.panel.row;
 
 local common = import './common.libsonnet';
 
-// NFS Stats
+
+// NFS usage diagnostics
+// ---------------------
 local nfsReqPerNode =
   common.tsOptions
   + ts.new('NFS requests per node')
@@ -38,6 +40,9 @@ local nfsReqPerOp =
     + prometheus.withLegendFormat('{{ method }}'),
   ]);
 
+
+// NFS server diagnostics
+// ----------------------
 local nfsServerCPU =
   common.tsOptions
   + ts.new('NFS Server CPU')
@@ -66,7 +71,10 @@ local nfsServerMemory =
     + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
   ]);
 
-local prometheusCPU =
+
+// Prometheus server diagnostics
+// -----------------------------
+local promServerCPU =
   common.tsOptions
   + ts.new('Prometheus CPU')
   + ts.standardOptions.withUnit('sishort')
@@ -80,7 +88,7 @@ local prometheusCPU =
     + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
   ]);
 
-local prometheusMemory =
+local promServerMemory =
   common.tsOptions
   + ts.new('Prometheus Memory (Working Set)')
   + ts.standardOptions.withUnit('bytes')
@@ -94,7 +102,7 @@ local prometheusMemory =
     + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
   ]);
 
-local prometheusDiskSpace =
+local promServerDiskSpace =
   common.tsOptions
   + ts.new('Prometheus Free Disk space')
   + ts.standardOptions.withUnit('bytes')
@@ -108,7 +116,7 @@ local prometheusDiskSpace =
     + prometheus.withLegendFormat('{{namespace}}: {{persistentvolumeclaim}}'),
   ]);
 
-local prometheusNetwork =
+local promServerNetwork =
   common.tsOptions
   + ts.new('Prometheus Network Usage')
   + ts.standardOptions.withUnit('binBps')
@@ -130,7 +138,10 @@ local prometheusNetwork =
     + prometheus.withLegendFormat('transmit ({{namespace}}: {{pod}})'),
   ]);
 
-dashboard.new('NFS and Prometheus Information')
+
+// Dashboard definition
+// --------------------
+dashboard.new('NFS and Prometheus diagnostics')
 + dashboard.withTags(['kubernetes', 'nfs', 'prometheus'])
 + dashboard.withEditable(true)
 + dashboard.withVariables([
@@ -151,10 +162,10 @@ dashboard.new('NFS and Prometheus Information')
       ]),
       row.new('Prometheus server diagnostics')
       + row.withPanels([
-        prometheusCPU,
-        prometheusMemory,
-        prometheusDiskSpace,
-        prometheusNetwork,
+        promServerCPU,
+        promServerMemory,
+        promServerDiskSpace,
+        promServerNetwork,
       ]),
     ],
     panelWidth=12,
