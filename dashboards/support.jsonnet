@@ -71,6 +71,28 @@ local nfsServerMemory =
     + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
   ]);
 
+local nfsServerNetwork =
+  common.tsOptions
+  + ts.new('NFS Server Network Usage')
+  + ts.standardOptions.withUnit('binBps')
+  + ts.standardOptions.withDecimals(0)
+  + ts.queryOptions.withTargets([
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        sum(irate(container_network_receive_bytes_total{pod=~".*-home-nfs-.*"}[5m])) by (namespace, pod)
+      |||
+    )
+    + prometheus.withLegendFormat('receive ({{namespace}}: {{pod}})'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        sum(irate(container_network_transmit_bytes_total{pod=~".*-home-nfs-.*"}[5m])) by (namespace, pod)
+      |||
+    )
+    + prometheus.withLegendFormat('transmit ({{namespace}}: {{pod}})'),
+  ]);
+
 
 // Prometheus server diagnostics
 // -----------------------------
@@ -141,7 +163,7 @@ local promServerNetwork =
 
 // Dashboard definition
 // --------------------
-dashboard.new('NFS and Prometheus diagnostics')
+dashboard.new('NFS usage, and NFS and Prometheus server diagnostics')
 + dashboard.withTags(['kubernetes', 'nfs', 'prometheus'])
 + dashboard.withEditable(true)
 + dashboard.withVariables([
@@ -159,6 +181,7 @@ dashboard.new('NFS and Prometheus diagnostics')
       + row.withPanels([
         nfsServerCPU,
         nfsServerMemory,
+        nfsServerNetwork,
       ]),
       row.new('Prometheus server diagnostics')
       + row.withPanels([
