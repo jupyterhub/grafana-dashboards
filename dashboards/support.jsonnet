@@ -66,22 +66,6 @@ local nfsServerMemory =
     + prometheus.withLegendFormat('{{namespace}}: {{pod}} ({{container}})'),
   ]);
 
-// Support Metrics
-
-// FIXME: Can we transition to using the function to generate the prometheus memory and cpu panels?
-//
-//        Currently held back by hardcoded label selection on the label
-//        "component" and selection on a single label instead of optionally
-//        multiple.
-//
-//local prometheusMemory = jupyterhub.memoryPanel(
-//  'Prometheus Memory (Working Set)',
-//  // app.kubernetes.io/component: server
-//  // app.kubernetes.io/name: prometheus
-//  component='singleuser-server',
-//  multi=false,
-//);
-
 local prometheusMemory =
   common.tsOptions
   + ts.new('Prometheus Memory (Working Set)')
