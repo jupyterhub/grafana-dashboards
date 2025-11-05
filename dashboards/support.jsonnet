@@ -23,20 +23,6 @@ local nodesNFSOps =
     + prometheus.withLegendFormat('{{ node }}'),
   ]);
 
-local nodesIOWait =
-  common.tsOptions
-  + ts.new('iowait % on each node')
-  + ts.standardOptions.withDecimals(0)
-  + ts.queryOptions.withTargets([
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        sum(rate(node_nfs_requests_total[5m])) by (node)
-      |||
-    )
-    + prometheus.withLegendFormat('{{ node }}'),
-  ]);
-
 local nodesHighNFSOps =
   common.tsOptions
   + ts.new('NFS Operation Types on nodes')
@@ -219,7 +205,6 @@ dashboard.new('NFS and Prometheus Information')
       row.new('NFS diagnostics')
       + row.withPanels([
         nodesNFSOps,
-        nodesIOWait,
         nodesHighNFSOps,
         nfsServerIOPS,
         nfsServerCPU,
