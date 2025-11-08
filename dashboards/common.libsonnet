@@ -144,7 +144,34 @@ local _getDashedLineOverride(pattern, color) = {
       + var.query.withDatasourceFromVariable(self.prometheus)
       + var.query.selectionOptions.withMulti()
       + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
-      + var.query.queryTypes.withLabelValues('node', 'kube_node_info'),
+      + var.query.queryTypes.withLabelValues('node', 'kube_node_info')
+    ,
+    show_requests:
+      var.custom.new('show_requests', [
+        { key: 'Show', value: '1' },
+        { key: 'Hide', value: '0' },
+      ])
+      + var.custom.generalOptions.withLabel('CPU/Memory requests')
+      + var.custom.generalOptions.withDescription("In panels showing containers' CPU/Memory usage, also show the containers' CPU/Memory requests.")
+      + var.custom.generalOptions.withCurrent('Show', '1')
+    ,
+    show_limits:
+      var.custom.new('show_limits', [
+        { key: 'Show', value: '1' },
+        { key: 'Hide', value: '0' },
+      ])
+      + var.custom.generalOptions.withLabel('CPU/Memory limits')
+      + var.custom.generalOptions.withDescription("In panels showing containers' CPU/Memory usage, also show the containers' CPU/Memory limits.")
+      + var.custom.generalOptions.withCurrent('Hide', '0')
+    ,
+    show_capacity:
+      var.custom.new('show_capacity', [
+        { key: 'Show', value: '1' },
+        { key: 'Hide', value: '0' },
+      ])
+      + var.custom.generalOptions.withLabel('Storage capacity')
+      + var.custom.generalOptions.withDescription("In panels showing storage usage, also show the storage's capacity.")
+      + var.custom.generalOptions.withCurrent('Show', '1'),
   },
 
   _nodePoolLabelKeys: [

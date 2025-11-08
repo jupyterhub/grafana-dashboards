@@ -59,6 +59,7 @@ local nfsServerCPU =
       '$PROMETHEUS_DS',
       |||
         sum(kube_pod_container_resource_requests{pod=~".*home-nfs-.*", container!="", resource="cpu"}) by (namespace, container)
+        and on() vector($show_requests) == 1
       |||
     )
     + prometheus.withLegendFormat('request ({{namespace}}: {{container}})'),
@@ -66,10 +67,10 @@ local nfsServerCPU =
       '$PROMETHEUS_DS',
       |||
         sum(kube_pod_container_resource_limits{pod=~".*home-nfs-.*", container!="", resource="cpu"}) by (namespace, container)
+        and on() vector($show_limits) == 1
       |||
     )
-    + prometheus.withLegendFormat('limit ({{namespace}}: {{container}})')
-    + prometheus.withHide(),
+    + prometheus.withLegendFormat('limit ({{namespace}}: {{container}})'),
   ]);
 
 local nfsServerMemory =
@@ -89,6 +90,7 @@ local nfsServerMemory =
       '$PROMETHEUS_DS',
       |||
         sum(kube_pod_container_resource_requests{pod=~".*home-nfs-.*", container!="", resource="memory"}) by (namespace, container)
+        and on() vector($show_requests) == 1
       |||
     )
     + prometheus.withLegendFormat('request ({{namespace}}: {{container}})'),
@@ -96,10 +98,10 @@ local nfsServerMemory =
       '$PROMETHEUS_DS',
       |||
         sum(kube_pod_container_resource_limits{pod=~".*home-nfs-.*", container!="", resource="memory"}) by (namespace, container)
+        and on() vector($show_limits) == 1
       |||
     )
-    + prometheus.withLegendFormat('limit ({{namespace}}: {{container}})')
-    + prometheus.withHide(),
+    + prometheus.withLegendFormat('limit ({{namespace}}: {{container}})'),
   ]);
 
 local nfsServerDiskSpace =
@@ -119,6 +121,7 @@ local nfsServerDiskSpace =
       '$PROMETHEUS_DS',
       |||
         sum(kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*home-nfs"}) by (namespace, persistentvolumeclaim)
+        and on() vector($show_capacity) == 1
       |||
     )
     + prometheus.withLegendFormat('capacity ({{namespace}}: {{persistentvolumeclaim}})'),
@@ -166,6 +169,7 @@ local promServerCPU =
       '$PROMETHEUS_DS',
       |||
         sum(kube_pod_container_resource_requests{pod=~".*prometheus-server-.*", container!="", resource="cpu"}) by (namespace, container)
+        and on() vector($show_requests) == 1
       |||
     )
     + prometheus.withLegendFormat('request ({{namespace}}: {{container}})'),
@@ -173,10 +177,10 @@ local promServerCPU =
       '$PROMETHEUS_DS',
       |||
         sum(kube_pod_container_resource_limits{pod=~".*prometheus-server-.*", container!="", resource="cpu"}) by (namespace, container)
+        and on() vector($show_limits) == 1
       |||
     )
-    + prometheus.withLegendFormat('limit ({{namespace}}: {{container}})')
-    + prometheus.withHide(),
+    + prometheus.withLegendFormat('limit ({{namespace}}: {{container}})'),
   ]);
 
 local promServerMemory =
@@ -196,6 +200,7 @@ local promServerMemory =
       '$PROMETHEUS_DS',
       |||
         sum(kube_pod_container_resource_requests{pod=~".*prometheus-server-.*", container!="", resource="memory"}) by (namespace, container)
+        and on() vector($show_requests) == 1
       |||
     )
     + prometheus.withLegendFormat('request ({{namespace}}: {{container}})'),
@@ -203,10 +208,10 @@ local promServerMemory =
       '$PROMETHEUS_DS',
       |||
         sum(kube_pod_container_resource_limits{pod=~".*prometheus-server-.*", container!="", resource="memory"}) by (namespace, container)
+        and on() vector($show_limits) == 1
       |||
     )
-    + prometheus.withLegendFormat('limit ({{namespace}}: {{container}})')
-    + prometheus.withHide(),
+    + prometheus.withLegendFormat('limit ({{namespace}}: {{container}})'),
   ]);
 
 local promServerDiskSpace =
@@ -226,6 +231,7 @@ local promServerDiskSpace =
       '$PROMETHEUS_DS',
       |||
         sum(kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*-prometheus-server"}) by (namespace, persistentvolumeclaim)
+        and on() vector($show_capacity) == 1
       |||
     )
     + prometheus.withLegendFormat('capacity ({{namespace}}: {{persistentvolumeclaim}})'),
@@ -261,6 +267,9 @@ dashboard.new('NFS usage, NFS server, and Prometheus server diagnostics')
 + dashboard.withEditable(true)
 + dashboard.withVariables([
   common.variables.prometheus,
+  common.variables.show_requests,
+  common.variables.show_limits,
+  common.variables.show_capacity,
 ])
 + dashboard.withPanels(
   grafonnet.util.grid.makeGrid(
