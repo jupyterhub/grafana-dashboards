@@ -1,5 +1,5 @@
 #!/usr/bin/env -S jsonnet -J ../vendor
-// Deploys a dashboard showing information about support resources
+// Deploys a dashboard showing information about NFS server and Prometheus.
 local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v11.1.0/main.libsonnet';
 local dashboard = grafonnet.dashboard;
 local ts = grafonnet.panel.timeSeries;
@@ -8,210 +8,290 @@ local row = grafonnet.panel.row;
 
 local common = import './common.libsonnet';
 
-// NFS Stats
-local userNodesNFSOps =
+
+// NFS usage diagnostics
+// ---------------------
+local nfsReqPerNode =
   common.tsOptions
-  + ts.new('User Nodes NFS Ops')
+  + ts.new('NFS requests, per node')
   + ts.standardOptions.withDecimals(0)
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(rate(node_nfs_requests_total[5m])) by (node) > 0
+        sum(irate(node_nfs_requests_total[5m])) by (node) > 0
       |||
     )
     + prometheus.withLegendFormat('{{ node }}'),
   ]);
 
-local userNodesIOWait =
+local nfsReqPerOp =
   common.tsOptions
-  + ts.new('iowait % on each node')
+  + ts.new('NFS requests, per operation')
   + ts.standardOptions.withDecimals(0)
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(rate(node_nfs_requests_total[5m])) by (node)
-      |||
-    )
-    + prometheus.withLegendFormat('{{ node }}'),
-  ]);
-
-local userNodesHighNFSOps =
-  common.tsOptions
-  + ts.new('NFS Operation Types on user nodes')
-  + ts.standardOptions.withDecimals(0)
-  + ts.queryOptions.withTargets([
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        sum(rate(node_nfs_requests_total[5m])) by (method) > 0
+        sum(irate(node_nfs_requests_total[5m])) by (method) > 0
       |||
     )
     + prometheus.withLegendFormat('{{ method }}'),
   ]);
 
+
+// NFS server diagnostics
+// ----------------------
 local nfsServerCPU =
   common.tsOptions
-  + ts.new('NFS Server CPU')
+  + common.tsRequestLimitStylingOverrides
+  + ts.new('NFS server CPU usage')
+  + ts.standardOptions.withUnit('sishort')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        avg(rate(node_cpu_seconds_total{job="prometheus-nfsd-server", mode!="idle"}[2m])) by (mode)
+        sum(irate(container_cpu_usage_seconds_total{pod=~".*home-nfs.*", container!=""}[5m])) by (namespace, container)
       |||
     )
-    + prometheus.withLegendFormat('{{ mode }}'),
+    + prometheus.withLegendFormat('{{namespace}}: {{container}}'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        sum(kube_pod_container_resource_requests{pod=~".*home-nfs-.*", container!="", resource="cpu"}) by (namespace, container)
+        and on() vector($show_requests) == 1
+      |||
+    )
+    + prometheus.withLegendFormat('request ({{namespace}}: {{container}})'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        sum(kube_pod_container_resource_limits{pod=~".*home-nfs-.*", container!="", resource="cpu"}) by (namespace, container)
+        and on() vector($show_limits) == 1
+      |||
+    )
+    + prometheus.withLegendFormat('limit ({{namespace}}: {{container}})'),
   ]);
 
-local nfsServerIOPS =
+local nfsServerMemory =
   common.tsOptions
-  + ts.new('NFS Server Disk ops')
+  + common.tsRequestLimitStylingOverrides
+  + ts.new('NFS server memory usage (working set)')
+  + ts.standardOptions.withUnit('bytes')
+  + ts.queryOptions.withTargets([
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        sum(container_memory_working_set_bytes{pod=~".*home-nfs-.*", container!=""}) by (namespace, container)
+      |||
+    )
+    + prometheus.withLegendFormat('{{namespace}}: {{container}}'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        sum(kube_pod_container_resource_requests{pod=~".*home-nfs-.*", container!="", resource="memory"}) by (namespace, container)
+        and on() vector($show_requests) == 1
+      |||
+    )
+    + prometheus.withLegendFormat('request ({{namespace}}: {{container}})'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        sum(kube_pod_container_resource_limits{pod=~".*home-nfs-.*", container!="", resource="memory"}) by (namespace, container)
+        and on() vector($show_limits) == 1
+      |||
+    )
+    + prometheus.withLegendFormat('limit ({{namespace}}: {{container}})'),
+  ]);
+
+local nfsServerDiskSpace =
+  common.tsOptions
+  + common.tsCapacityStylingOverrides
+  + ts.new('NFS server used disk space')
+  + ts.standardOptions.withUnit('bytes')
+  + ts.queryOptions.withTargets([
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        sum(kubelet_volume_stats_used_bytes{persistentvolumeclaim=~".*home-nfs"}) by (namespace, persistentvolumeclaim)
+      |||
+    )
+    + prometheus.withLegendFormat('{{namespace}}: {{persistentvolumeclaim}}'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        sum(kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*home-nfs"}) by (namespace, persistentvolumeclaim)
+        and on() vector($show_capacity) == 1
+      |||
+    )
+    + prometheus.withLegendFormat('capacity ({{namespace}}: {{persistentvolumeclaim}})'),
+  ]);
+
+local nfsServerNetwork =
+  common.tsOptions
+  + ts.new('NFS server network usage')
+  + ts.standardOptions.withUnit('binBps')
   + ts.standardOptions.withDecimals(0)
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(rate(node_nfsd_disk_bytes_read_total[5m]))
+        sum(irate(container_network_receive_bytes_total{pod=~".*-home-nfs-.*"}[5m])) by (namespace)
       |||
     )
-    + prometheus.withLegendFormat('Read'),
+    + prometheus.withLegendFormat('receive ({{namespace}})'),
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(rate(node_nfsd_disk_bytes_written_total[5m]))
+        sum(irate(container_network_transmit_bytes_total{pod=~".*-home-nfs-.*"}[5m])) by (namespace)
       |||
     )
-    + prometheus.withLegendFormat('Write'),
+    + prometheus.withLegendFormat('transmit ({{namespace}})'),
   ]);
 
-local nfsServerWriteLatency =
+
+// Prometheus server diagnostics
+// -----------------------------
+local promServerCPU =
   common.tsOptions
-  + ts.new('NFS Server disk write latency')
+  + common.tsRequestLimitStylingOverrides
+  + ts.new('Prometheus server CPU usage')
+  + ts.standardOptions.withUnit('sishort')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(rate(node_disk_write_time_seconds_total{job="prometheus-nfsd-server"}[5m])) by (device) / sum(rate(node_disk_writes_completed_total{job="prometheus-nfsd-server"}[5m])) by (device)
+        sum(irate(container_cpu_usage_seconds_total{pod=~".*prometheus-server-.*", container!=""}[5m])) by (namespace, container)
       |||
     )
-    + prometheus.withLegendFormat('{{ device }}'),
-  ]);
-
-local nfsServerReadLatency =
-  common.tsOptions
-  + ts.new('NFS Server disk read latency')
-  + ts.queryOptions.withTargets([
+    + prometheus.withLegendFormat('{{namespace}}: {{container}}'),
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(rate(node_disk_read_time_seconds_total{job="prometheus-nfsd-server"}[5m])) by (device) / sum(rate(node_disk_reads_completed_total{job="prometheus-nfsd-server"}[5m])) by (device)
+        sum(kube_pod_container_resource_requests{pod=~".*prometheus-server-.*", container!="", resource="cpu"}) by (namespace, container)
+        and on() vector($show_requests) == 1
       |||
     )
-    + prometheus.withLegendFormat('{{ device }}'),
+    + prometheus.withLegendFormat('request ({{namespace}}: {{container}})'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        sum(kube_pod_container_resource_limits{pod=~".*prometheus-server-.*", container!="", resource="cpu"}) by (namespace, container)
+        and on() vector($show_limits) == 1
+      |||
+    )
+    + prometheus.withLegendFormat('limit ({{namespace}}: {{container}})'),
   ]);
 
-// Support Metrics
-
-// FIXME: Can we transition to using the function to generate the prometheus memory and cpu panels?
-//
-//        Currently held back by hardcoded label selection on the label
-//        "component" and selection on a single label instead of optionally
-//        multiple.
-//
-//local prometheusMemory = jupyterhub.memoryPanel(
-//  'Prometheus Memory (Working Set)',
-//  // app.kubernetes.io/component: server
-//  // app.kubernetes.io/name: prometheus
-//  component='singleuser-server',
-//  multi=false,
-//);
-
-local prometheusMemory =
+local promServerMemory =
   common.tsOptions
-  + ts.new('Prometheus Memory (Working Set)')
+  + common.tsRequestLimitStylingOverrides
+  + ts.new('Prometheus server memory usage (working set)')
   + ts.standardOptions.withUnit('bytes')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(container_memory_working_set_bytes{pod=~"support-prometheus-server-.*", namespace="support"})
+        sum(container_memory_working_set_bytes{pod=~".*prometheus-server-.*", container!=""}) by (namespace, container)
       |||
-    ),
-  ]);
-
-local prometheusCPU =
-  common.tsOptions
-  + ts.new('Prometheus CPU')
-  + ts.queryOptions.withTargets([
+    )
+    + prometheus.withLegendFormat('{{namespace}}: {{container}}'),
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(rate(container_cpu_usage_seconds_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))
+        sum(kube_pod_container_resource_requests{pod=~".*prometheus-server-.*", container!="", resource="memory"}) by (namespace, container)
+        and on() vector($show_requests) == 1
       |||
-    ),
+    )
+    + prometheus.withLegendFormat('request ({{namespace}}: {{container}})'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        sum(kube_pod_container_resource_limits{pod=~".*prometheus-server-.*", container!="", resource="memory"}) by (namespace, container)
+        and on() vector($show_limits) == 1
+      |||
+    )
+    + prometheus.withLegendFormat('limit ({{namespace}}: {{container}})'),
   ]);
 
-local prometheusDiskSpace =
+local promServerDiskSpace =
   common.tsOptions
-  + ts.new('Prometheus Free Disk space')
+  + common.tsCapacityStylingOverrides
+  + ts.new('Prometheus server used disk space')
   + ts.standardOptions.withUnit('bytes')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kubelet_volume_stats_available_bytes{namespace="support",persistentvolumeclaim="support-prometheus-server"})
+        sum(kubelet_volume_stats_used_bytes{persistentvolumeclaim=~".*-prometheus-server"}) by (namespace, persistentvolumeclaim)
       |||
-    ),
+    )
+    + prometheus.withLegendFormat('{{namespace}}: {{persistentvolumeclaim}}'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        sum(kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*-prometheus-server"}) by (namespace, persistentvolumeclaim)
+        and on() vector($show_capacity) == 1
+      |||
+    )
+    + prometheus.withLegendFormat('capacity ({{namespace}}: {{persistentvolumeclaim}})'),
   ]);
 
-local prometheusNetwork =
+local promServerNetwork =
   common.tsOptions
-  + ts.new('Prometheus Network Usage')
-  + ts.standardOptions.withUnit('bytes')
+  + ts.new('Prometheus server network usage')
+  + ts.standardOptions.withUnit('binBps')
   + ts.standardOptions.withDecimals(0)
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(rate(container_network_receive_bytes_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))
+        sum(irate(container_network_receive_bytes_total{pod=~".*-prometheus-server-.*"}[5m])) by (namespace)
       |||
     )
-    + prometheus.withLegendFormat('receive'),
+    + prometheus.withLegendFormat('receive ({{namespace}})'),
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(rate(container_network_send_bytes_total{pod=~"support-prometheus-server-.*",namespace="support"}[5m]))
+        sum(irate(container_network_transmit_bytes_total{pod=~".*-prometheus-server-.*"}[5m])) by (namespace)
       |||
     )
-    + prometheus.withLegendFormat('send'),
+    + prometheus.withLegendFormat('transmit ({{namespace}})'),
   ]);
 
-dashboard.new('NFS and Support Information')
-+ dashboard.withTags(['support', 'kubernetes'])
+
+// Dashboard definition
+// --------------------
+dashboard.new('NFS usage, NFS server, and Prometheus server diagnostics')
++ dashboard.withTags(['kubernetes', 'nfs', 'jupyterhub-home-nfs', 'prometheus'])
 + dashboard.withEditable(true)
 + dashboard.withVariables([
   common.variables.prometheus,
+  common.variables.show_requests,
+  common.variables.show_limits,
+  common.variables.show_capacity,
 ])
 + dashboard.withPanels(
   grafonnet.util.grid.makeGrid(
     [
-      row.new('NFS diagnostics')
+      row.new('NFS usage diagnostics')
       + row.withPanels([
-        userNodesNFSOps,
-        userNodesIOWait,
-        userNodesHighNFSOps,
-        nfsServerCPU,
-        nfsServerIOPS,
-        nfsServerWriteLatency,
-        nfsServerReadLatency,
+        nfsReqPerNode,
+        nfsReqPerOp,
       ]),
-      row.new('Support system diagnostics')
+      row.new('NFS server diagnostics')
       + row.withPanels([
-        prometheusCPU,
-        prometheusMemory,
-        prometheusDiskSpace,
-        prometheusNetwork,
+        nfsServerCPU,
+        nfsServerMemory,
+        nfsServerDiskSpace,
+        nfsServerNetwork,
+      ]),
+      row.new('Prometheus server diagnostics')
+      + row.withPanels([
+        promServerCPU,
+        promServerMemory,
+        promServerDiskSpace,
+        promServerNetwork,
       ]),
     ],
     panelWidth=12,

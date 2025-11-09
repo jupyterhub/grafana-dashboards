@@ -6,6 +6,36 @@ local heatmap = grafonnet.panel.heatmap;
 local table = grafonnet.panel.table;
 local var = grafonnet.dashboard.variable;
 
+/**
+  * Local utility functions
+  */
+local _getDashedLineOverride(pattern, color) = {
+  matcher: {
+    id: 'byRegexp',
+    options: pattern,
+  },
+  properties: [
+    {
+      id: 'color',
+      value: {
+        mode: 'fixed',
+        fixedColor: color,
+      },
+    },
+    {
+      id: 'custom.fillOpacity',
+      value: 0,
+    },
+    {
+      id: 'custom.lineStyle',
+      value: {
+        fill: 'dash',
+        dash: [10, 10],
+      },
+    },
+  ],
+};
+
 {
   /**
    * Declare common panel options
@@ -48,6 +78,19 @@ local var = grafonnet.dashboard.variable;
 
   tableOptions:
     table.standardOptions.withMin(0)
+  ,
+
+  tsRequestLimitStylingOverrides:
+    ts.standardOptions.withOverrides([
+      _getDashedLineOverride('/request.*/', 'orange'),
+      _getDashedLineOverride('/limit.*/', 'red'),
+    ])
+  ,
+
+  tsCapacityStylingOverrides:
+    ts.standardOptions.withOverrides([
+      _getDashedLineOverride('/capacity.*/', 'red'),
+    ])
   ,
 
   // grafonnet ref: https://grafana.github.io/grafonnet/API/dashboard/variable.html
@@ -101,7 +144,34 @@ local var = grafonnet.dashboard.variable;
       + var.query.withDatasourceFromVariable(self.prometheus)
       + var.query.selectionOptions.withMulti()
       + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
-      + var.query.queryTypes.withLabelValues('node', 'kube_node_info'),
+      + var.query.queryTypes.withLabelValues('node', 'kube_node_info')
+    ,
+    show_requests:
+      var.custom.new('show_requests', [
+        { key: 'Show', value: '1' },
+        { key: 'Hide', value: '0' },
+      ])
+      + var.custom.generalOptions.withLabel('CPU/Memory requests')
+      + var.custom.generalOptions.withDescription("In panels showing containers' CPU/Memory usage, also show the containers' CPU/Memory requests.")
+      + var.custom.generalOptions.withCurrent('Show', '1')
+    ,
+    show_limits:
+      var.custom.new('show_limits', [
+        { key: 'Show', value: '1' },
+        { key: 'Hide', value: '0' },
+      ])
+      + var.custom.generalOptions.withLabel('CPU/Memory limits')
+      + var.custom.generalOptions.withDescription("In panels showing containers' CPU/Memory usage, also show the containers' CPU/Memory limits.")
+      + var.custom.generalOptions.withCurrent('Hide', '0')
+    ,
+    show_capacity:
+      var.custom.new('show_capacity', [
+        { key: 'Show', value: '1' },
+        { key: 'Hide', value: '0' },
+      ])
+      + var.custom.generalOptions.withLabel('Storage capacity')
+      + var.custom.generalOptions.withDescription("In panels showing storage usage, also show the storage's capacity.")
+      + var.custom.generalOptions.withCurrent('Show', '1'),
   },
 
   _nodePoolLabelKeys: [
