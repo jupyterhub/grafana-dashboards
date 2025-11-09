@@ -215,21 +215,42 @@ local hubDBUsage =
 local serverStartTimes =
   common.tsOptions
   + ts.new('Server Start Times')
+  + ts.panelOptions.withDescription(
+    |||
+      The resolution of server startup durations is limited, so what you see in this panel represents a spread of durations.
+
+      At any given time, if only one server reports a startup duration, you will see an even spread of points between the shortest and longest duration, but otherwise, you may see a skew. The lowest/highest percentile represents the shortest/longest possible startup duration.
+    |||
+  )
   + ts.fieldConfig.defaults.custom.withDrawStyle('points')
   + ts.standardOptions.withUnit('s')
   + ts.queryOptions.withInterval('5m')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
-      // Metrics from hub seems to have `namespace` rather than just `namespace`
-      'histogram_quantile(0.99, sum(rate(jupyterhub_server_spawn_duration_seconds_bucket{app="jupyterhub", namespace=~"$hub"}[5m])) by (le))',
+      'histogram_quantile(0.000001, sum(rate(jupyterhub_server_spawn_duration_seconds_bucket{app="jupyterhub", namespace=~"$hub"}[5m])) by (le))',
     )
-    + prometheus.withLegendFormat('99th percentile'),
+    + prometheus.withLegendFormat('0th percentile'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      'histogram_quantile(0.25, sum(rate(jupyterhub_server_spawn_duration_seconds_bucket{app="jupyterhub", namespace=~"$hub"}[5m])) by (le))',
+    )
+    + prometheus.withLegendFormat('25th percentile'),
     prometheus.new(
       '$PROMETHEUS_DS',
       'histogram_quantile(0.5, sum(rate(jupyterhub_server_spawn_duration_seconds_bucket{app="jupyterhub", namespace=~"$hub"}[5m])) by (le))',
     )
     + prometheus.withLegendFormat('50th percentile'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      'histogram_quantile(0.75, sum(rate(jupyterhub_server_spawn_duration_seconds_bucket{app="jupyterhub", namespace=~"$hub"}[5m])) by (le))',
+    )
+    + prometheus.withLegendFormat('75th percentile'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      'histogram_quantile(1.00, sum(rate(jupyterhub_server_spawn_duration_seconds_bucket{app="jupyterhub", namespace=~"$hub"}[5m])) by (le))',
+    )
+    + prometheus.withLegendFormat('100th percentile'),
   ]);
 
 local serverSpawnFailures =
