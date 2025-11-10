@@ -1,6 +1,7 @@
 rendered-dashboards
 
 # ---
+.env
 
 # Binaries for programs and plugins
 *.exe
