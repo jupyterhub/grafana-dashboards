@@ -36,7 +36,7 @@ local userMemoryDistribution =
 local userCPUDistribution =
   common.heatmapOptions
   + heatmap.new('User CPU usage distribution')
-  + heatmap.options.yAxis.withUnit('percentunit')
+  + heatmap.options.yAxis.withUnit('sishort')
   + heatmap.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -77,68 +77,33 @@ local userAgeDistribution =
 
 // Hub diagnostics
 local hubResponseLatency =
-  common.tsOptions
-  + ts.new('Hub response latency')
-  + ts.standardOptions.withUnit('s')
-  + ts.queryOptions.withInterval('1m')
-  + ts.queryOptions.withTargets([
+  common.heatmapOptions
+  + heatmap.new('Hub response latency')
+  + heatmap.options.yAxis.withUnit('s')
+  + heatmap.options.withCalculate(false)
+  + heatmap.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        histogram_quantile(
-          0.99,
-          sum(
-            rate(
-              jupyterhub_request_duration_seconds_bucket{
-                app="jupyterhub",
-                namespace=~"$hub",
-                # Ignore SpawnProgressAPIHandler, as it is a EventSource stream
-                # and keeps long lived connections open
-                handler!="jupyterhub.apihandlers.users.SpawnProgressAPIHandler"
-              }[5m]
-            )
-          ) by (le))
+        # Ignore SpawnProgressAPIHandler, as it is a EventSource stream
+        # and keeps long lived connections open
+        sum by (le) (
+          jupyterhub_request_duration_seconds_bucket{
+            app="jupyterhub",
+            namespace=~"$hub",
+            handler!="jupyterhub.apihandlers.users.SpawnProgressAPIHandler"
+          }
+          -
+          jupyterhub_request_duration_seconds_bucket{
+            app="jupyterhub",
+            namespace=~"$hub",
+            handler!="jupyterhub.apihandlers.users.SpawnProgressAPIHandler"
+          }
+          offset $__rate_interval
+        )
       |||,
     )
-    + prometheus.withLegendFormat('99th percentile'),
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        histogram_quantile(
-          0.50,
-          sum(
-            rate(
-              jupyterhub_request_duration_seconds_bucket{
-                app="jupyterhub",
-                namespace=~"$hub",
-                # Ignore SpawnProgressAPIHandler, as it is a EventSource stream
-                # and keeps long lived connections open
-                handler!="jupyterhub.apihandlers.users.SpawnProgressAPIHandler"
-              }[5m]
-            )
-          ) by (le))
-      |||,
-    )
-    + prometheus.withLegendFormat('50th percentile'),
-    prometheus.new(
-      '$PROMETHEUS_DS',
-      |||
-        histogram_quantile(
-          0.25,
-          sum(
-            rate(
-              jupyterhub_request_duration_seconds_bucket{
-                app="jupyterhub",
-                namespace=~"$hub",
-                # Ignore SpawnProgressAPIHandler, as it is a EventSource stream
-                # and keeps long lived connections open
-                handler!="jupyterhub.apihandlers.users.SpawnProgressAPIHandler"
-              }[5m]
-            )
-          ) by (le))
-      |||,
-    )
-    + prometheus.withLegendFormat('25th percentile'),
+    + prometheus.withFormat('heatmap'),
   ]);
 
 local hubResponseCodes =
@@ -212,7 +177,8 @@ local serverStartTimes =
         sum by (le) (
           jupyterhub_server_spawn_duration_seconds_bucket
           -
-          jupyterhub_server_spawn_duration_seconds_bucket offset $__rate_interval
+          jupyterhub_server_spawn_duration_seconds_bucket
+          offset $__rate_interval
         )
       |||
     )
