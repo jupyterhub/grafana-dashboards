@@ -489,7 +489,7 @@ local notebookImagesUsed =
         ) by(image_spec, namespace)
       |||
     )
-    + prometheus.withLegendFormat('{{ image_spec }} (prod)'),
+    + prometheus.withLegendFormat('{{ namespace }}: {{ image_spec }}'),
   ]);
 
 dashboard.new('JupyterHub Dashboard')
