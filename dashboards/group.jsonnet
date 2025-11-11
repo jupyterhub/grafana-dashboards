@@ -67,7 +67,7 @@ local cpuUsage =
       be set up. If the panels show no data, then please try selecting another time range where usage was active.
     |||
   )
-  + ts.standardOptions.withUnit('percentunit')
+  + ts.standardOptions.withUnit('sishort')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -211,7 +211,7 @@ local cpuRequests =
       be set up. If the panels show no data, then please try selecting another time range where usage was active.
     |||
   )
-  + ts.standardOptions.withUnit('percentunit')
+  + ts.standardOptions.withUnit('sishort')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',

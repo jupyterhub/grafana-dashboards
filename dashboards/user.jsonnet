@@ -40,7 +40,7 @@ local cpuUsage =
       Per user CPU usage
     |||
   )
-  + ts.standardOptions.withUnit('percentunit')
+  + ts.standardOptions.withUnit('sishort')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -129,7 +129,7 @@ local cpuRequests =
       Per user CPU requests
     |||
   )
-  + ts.standardOptions.withUnit('percentunit')
+  + ts.standardOptions.withUnit('sishort')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',

@@ -159,6 +159,5 @@ local prometheus = grafonnet.query.prometheus;
         irate(container_cpu_usage_seconds_total{name!=""}[5m])
       |||,
     )
-    + ts.standardOptions.withDecimals(1)
-    + ts.standardOptions.withUnit('percentunit'),
+    + ts.standardOptions.withUnit('sishort'),
 }
