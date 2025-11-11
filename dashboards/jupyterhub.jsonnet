@@ -276,6 +276,7 @@ local usersPerNode =
 
 local nonRunningPods =
   common.tsOptions
+  + common.tsPodStateStylingOverrides
   + ts.new('Non Running Pods')
   + ts.panelOptions.withDescription(
     |||
@@ -284,8 +285,6 @@ local nonRunningPods =
       Pods stuck in non-running states often indicate an error condition
     |||
   )
-  // decimalsY1=0,
-  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -311,7 +310,6 @@ local sharedVolumeFreeSpace =
       what extra deployment is needed.
     |||
   )
-  // decimalsY1=0,
   + ts.standardOptions.withMax(1)
   + ts.standardOptions.withUnit('percentunit')
   + ts.queryOptions.withTargets([
