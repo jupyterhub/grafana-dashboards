@@ -73,7 +73,12 @@ local _getDashedLineOverride(pattern, color) = {
   // grafonnet ref: https://grafana.github.io/grafonnet/API/panel/heatmap/index.html
   heatmapOptions:
     heatmap.options.withCalculate(true)
-    + heatmap.options.yAxis.withMin(0)
+    + heatmap.queryOptions.withMaxDataPoints('60')  // need to match xBuckets
+    + heatmap.options.color.withScheme('Greens')
+    + heatmap.options.calculation.xBuckets.withMode('count')
+    + heatmap.options.calculation.xBuckets.withValue('60')  // need to match withMaxDataPoints
+    + heatmap.options.calculation.yBuckets.withMode('count')
+    + heatmap.options.calculation.yBuckets.withValue('12')
   ,
 
   tableOptions:
