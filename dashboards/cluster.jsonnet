@@ -403,22 +403,23 @@ local nodeOOMKills =
   ]);
 
 local nonRunningPods =
-  common.barChartOptions
-  + barChart.new('Pods not in Running state')
-  + barChart.panelOptions.withDescription(
+  common.tsOptions
+  + common.tsPodStateStylingOverrides
+  + ts.new('Non Running Pods')
+  + ts.panelOptions.withDescription(
     |||
-      Pods in states other than 'Running'.
+      Pods in a non-running state in the hub's namespace.
 
-      In a functional clusters, pods should not be in non-Running states for long.
-    |||,
+      Pods stuck in non-running states often indicate an error condition
+    |||
   )
-  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
-  + barChart.standardOptions.withDecimals(0)
-  + barChart.queryOptions.withTargets([
+  + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kube_pod_status_phase{phase!="Running"}) by (phase)
+        sum(
+          kube_pod_status_phase{phase!="Running"}
+        ) by (phase)
       |||
     )
     + prometheus.withLegendFormat('{{phase}}'),

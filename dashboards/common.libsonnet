@@ -98,6 +98,61 @@ local _getDashedLineOverride(pattern, color) = {
     ])
   ,
 
+  tsPodStateStylingOverrides:
+    ts.standardOptions.withOverrides([
+      {
+        matcher: { id: 'byName', options: 'Pending' },
+        properties: [{
+          id: 'color',
+          value: {
+            fixedColor: 'yellow',
+            mode: 'fixed',
+          },
+        }],
+      },
+      {
+        matcher: { id: 'byName', options: 'Running' },
+        properties: [{
+          id: 'color',
+          value: {
+            fixedColor: 'blue',
+            mode: 'fixed',
+          },
+        }],
+      },
+      {
+        matcher: { id: 'byName', options: 'Succeeded' },
+        properties: [{
+          id: 'color',
+          value: {
+            fixedColor: 'green',
+            mode: 'fixed',
+          },
+        }],
+      },
+      {
+        matcher: { id: 'byName', options: 'Unknown' },
+        properties: [{
+          id: 'color',
+          value: {
+            fixedColor: 'orange',
+            mode: 'fixed',
+          },
+        }],
+      },
+      {
+        matcher: { id: 'byName', options: 'Failed' },
+        properties: [{
+          id: 'color',
+          value: {
+            fixedColor: 'red',
+            mode: 'fixed',
+          },
+        }],
+      },
+    ])
+  ,
+
   // grafonnet ref: https://grafana.github.io/grafonnet/API/dashboard/variable.html
   variables: {
     prometheus:
