@@ -129,19 +129,22 @@ local homedirSharedUsage =
           # make namespace/directory combinations become more namespace/directory/usergroup combinations
           * on (namespace, directory) group_right()
           group(
-            # FIXME: We assume ability to match the escaped username with the
-            #        directory name, but how usernames are escaped has changed
-            #        over time - the directory name may or may not match
-            #        `username_escaped`.
-            #
-            #        - actual:      my.name@example.com
-            #        - old escaped: my-2ename-40example-2ecom
-            #        - new escaped: my-name-example-com---abcd1234
-            #
-            # duplicate jupyterhub_user_group_info's username_escaped label as directory
-            label_replace(
-              jupyterhub_user_group_info{namespace=~"$hub_name", username_escaped=~".*", usergroup=~"$user_group"},
-              "directory", "$1", "username_escaped", "(.+)"
+            # match using username_safe (kubespawner's modern "safe" scheme)
+            (
+              # duplicate jupyterhub_user_group_info's username_safe label as directory
+              label_replace(
+                jupyterhub_user_group_info{namespace=~"$hub_name", username_safe=~".*", usergroup=~"$user_group"},
+                "directory", "$1", "username_safe", "(.+)"
+              )
+            )
+            or
+            # match using username_escaped (kubespawner's legacy "escape" scheme)
+            (
+              # duplicate jupyterhub_user_group_info's username_escaped label as directory
+              label_replace(
+                jupyterhub_user_group_info{namespace=~"$hub_name", username_escaped=~".*", usergroup=~"$user_group"},
+                "directory", "$1", "username_escaped", "(.+)"
+              )
             )
           ) by (namespace, directory, usergroup)
 
