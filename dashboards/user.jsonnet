@@ -38,9 +38,11 @@ local cpuUsage =
   + ts.panelOptions.withDescription(
     |||
       Per user CPU usage
+
+      The measured unit are CPU cores, and they are written out with SI prefixes, so 100m means 0.1 CPU cores.
     |||
   )
-  + ts.standardOptions.withUnit('percentunit')
+  + ts.standardOptions.withUnit('sishort')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
@@ -127,9 +129,11 @@ local cpuRequests =
   + ts.panelOptions.withDescription(
     |||
       Per user CPU requests
+
+      The measured unit are CPU cores, and they are written out with SI prefixes, so 100m means 0.1 CPU cores.
     |||
   )
-  + ts.standardOptions.withUnit('percentunit')
+  + ts.standardOptions.withUnit('sishort')
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
