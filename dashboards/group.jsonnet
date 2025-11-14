@@ -61,6 +61,8 @@ local cpuUsage =
     |||
       Per group CPU usage
 
+      The measured unit are CPU cores, and they are written out with SI prefixes, so 100m means 0.1 CPU cores.
+
       User groups are derived from authenticator managed groups where available, e.g. GitHub teams. If a user is a member of multiple groups, then they will be assigned to the group 'other' by default. 
 
       Requires https://github.com/2i2c-org/jupyterhub-groups-exporter to
@@ -204,6 +206,8 @@ local cpuRequests =
   + ts.panelOptions.withDescription(
     |||
       Per group CPU requests
+
+      The measured unit are CPU cores, and they are written out with SI prefixes, so 100m means 0.1 CPU cores.
 
       User groups are derived from authenticator managed groups where available, e.g. GitHub teams. If a user is a member of multiple groups, then they will be assigned to the group 'other' by default. 
 

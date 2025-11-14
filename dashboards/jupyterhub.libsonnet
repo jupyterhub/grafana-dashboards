@@ -159,5 +159,10 @@ local prometheus = grafonnet.query.prometheus;
         irate(container_cpu_usage_seconds_total{name!=""}[5m])
       |||,
     )
+    + ts.panelOptions.withDescription(
+      |||
+        The measured unit are CPU cores, and they are written out with SI prefixes, so 100m means 0.1 CPU cores.
+      |||
+    )
     + ts.standardOptions.withUnit('sishort'),
 }
