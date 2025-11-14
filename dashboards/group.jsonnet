@@ -25,17 +25,29 @@ local memoryUsage =
       '$PROMETHEUS_DS',
       |||
         sum(
-          container_memory_working_set_bytes{name!="", pod=~"jupyter-.*", namespace=~"$hub_name"}
-            * on (namespace, pod) group_left(annotation_hub_jupyter_org_username, usergroup)
+
+          # sum pod containers' Memory usage, for each namespace and user combination
+          sum(
+            container_memory_working_set_bytes{namespace=~"$hub_name", pod=~"jupyter-.*", name!=""}
+
+            # add an annotation_hub_jupyter_org_username label
+            * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
             group(
-                kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~".*", pod=~"jupyter-.*"}
-            ) by (pod, namespace, annotation_hub_jupyter_org_username)
-            * on (namespace, annotation_hub_jupyter_org_username) group_left(usergroup)
-            group(
-              label_replace(jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group"},
-                "annotation_hub_jupyter_org_username", "$1", "username", "(.+)")
-            ) by (annotation_hub_jupyter_org_username, usergroup, namespace)
-        ) by (usergroup, namespace)
+                kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~".*"}
+            ) by (namespace, pod, annotation_hub_jupyter_org_username)
+          ) by (namespace, annotation_hub_jupyter_org_username)
+
+          # make namespace/user combinations become more namespace/user/usergroup combinations
+          * on (namespace, annotation_hub_jupyter_org_username) group_right()
+          group(
+            # duplicate jupyterhub_user_group_info's username label as annotation_hub_jupyter_org_username
+            label_replace(
+              jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group"},
+              "annotation_hub_jupyter_org_username", "$1", "username", "(.+)"
+            )
+          ) by (namespace, annotation_hub_jupyter_org_username, usergroup)
+
+        ) by (namespace, usergroup)
       |||
     )
     + prometheus.withLegendFormat('{{ usergroup }} - ({{ namespace }})'),
@@ -61,20 +73,29 @@ local cpuUsage =
       '$PROMETHEUS_DS',
       |||
         sum(
-          # exclude name="" because the same container can be reported
-          # with both no name and `name=k8s_...`,
-          # in which case sum() by (pod) reports double the actual metric
-          irate(container_cpu_usage_seconds_total{name!="", pod=~"jupyter-.*"}[5m])
-          * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
+
+          # sum pod containers' CPU usage, for each namespace and user combination
+          sum(
+            irate(container_cpu_usage_seconds_total{pod=~"jupyter-.*", name!=""}[5m])
+
+            # add an annotation_hub_jupyter_org_username label
+            * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
+            group(
+                kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~".*"}
+            ) by (namespace, pod, annotation_hub_jupyter_org_username)
+          ) by (namespace, annotation_hub_jupyter_org_username)
+
+          # make namespace/user combinations become more namespace/user/usergroup combinations
+          * on (namespace, annotation_hub_jupyter_org_username) group_right()
           group(
-              kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~".*"}
-          ) by (pod, namespace, annotation_hub_jupyter_org_username)
-          * on (namespace, annotation_hub_jupyter_org_username) group_left(usergroup)
-          group(
-            label_replace(jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group"},
-              "annotation_hub_jupyter_org_username", "$1", "username", "(.+)")
-          ) by (annotation_hub_jupyter_org_username, usergroup, namespace)
-        ) by (usergroup, namespace)
+            # duplicate jupyterhub_user_group_info's username label as annotation_hub_jupyter_org_username
+            label_replace(
+              jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group"},
+              "annotation_hub_jupyter_org_username", "$1", "username", "(.+)"
+            )
+          ) by (namespace, annotation_hub_jupyter_org_username, usergroup)
+
+        ) by (namespace, usergroup)
       |||
     )
     + prometheus.withLegendFormat('{{ usergroup }} - ({{ namespace }})'),
@@ -99,15 +120,31 @@ local homedirSharedUsage =
       '$PROMETHEUS_DS',
       |||
         sum(
+
+          # max is used to de-duplicate data from multiple sources
           max(
             dirsize_total_size_bytes{namespace=~"$hub_name"}
           ) by (namespace, directory)
-          * on (namespace, directory) group_left(usergroup)
+
+          # make namespace/directory combinations become more namespace/directory/usergroup combinations
+          * on (namespace, directory) group_right()
           group(
+            # FIXME: We assume ability to match the escaped username with the
+            #        directory name, but how usernames are escaped has changed
+            #        over time - the directory name may or may not match
+            #        `username_escaped`.
+            #
+            #        - actual:      my.name@example.com
+            #        - old escaped: my-2ename-40example-2ecom
+            #        - new escaped: my-name-example-com---abcd1234
+            #
+            # duplicate jupyterhub_user_group_info's username_escaped label as directory
             label_replace(
               jupyterhub_user_group_info{namespace=~"$hub_name", username_escaped=~".*", usergroup=~"$user_group"},
-              "directory", "$1", "username_escaped", "(.+)")
-          ) by (directory, namespace, usergroup)
+              "directory", "$1", "username_escaped", "(.+)"
+            )
+          ) by (namespace, directory, usergroup)
+
         ) by (namespace, usergroup)
       |||
     )
@@ -133,16 +170,29 @@ local memoryRequests =
       '$PROMETHEUS_DS',
       |||
         sum(
-          kube_pod_container_resource_requests{resource="memory", namespace=~"$hub_name", pod=~"jupyter-.*"}  * on (namespace, pod)
-          group_left(annotation_hub_jupyter_org_username) group(
-            kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~".*"}
-            ) by (pod, namespace, annotation_hub_jupyter_org_username)
-          * on (namespace, annotation_hub_jupyter_org_username) group_left(usergroup)
+
+          # sum pod containers' Memory requests, for each namespace and user combination
+          sum(
+            kube_pod_container_resource_requests{resource="memory", namespace=~"$hub_name", pod=~"jupyter-.*"}
+
+            # add an annotation_hub_jupyter_org_username label
+            * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
+            group(
+                kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~".*"}
+            ) by (namespace, pod, annotation_hub_jupyter_org_username)
+          ) by (namespace, annotation_hub_jupyter_org_username)
+
+          # make namespace/user combinations become more namespace/user/usergroup combinations
+          * on (namespace, annotation_hub_jupyter_org_username) group_right()
           group(
-            label_replace(jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group"},
-              "annotation_hub_jupyter_org_username", "$1", "username", "(.+)")
-          ) by (annotation_hub_jupyter_org_username, usergroup, namespace)
-        ) by (usergroup, namespace)
+            # duplicate jupyterhub_user_group_info's username label as annotation_hub_jupyter_org_username
+            label_replace(
+              jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group"},
+              "annotation_hub_jupyter_org_username", "$1", "username", "(.+)"
+            )
+          ) by (namespace, annotation_hub_jupyter_org_username, usergroup)
+
+        ) by (namespace, usergroup)
       |||
     )
     + prometheus.withLegendFormat('{{ usergroup }} - ({{ namespace }})'),
@@ -167,16 +217,29 @@ local cpuRequests =
       '$PROMETHEUS_DS',
       |||
         sum(
-          kube_pod_container_resource_requests{resource="cpu", namespace=~"$hub_name", pod=~"jupyter-.*"} * on (namespace, pod)
-          group_left(annotation_hub_jupyter_org_username) group(
-            kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~".*"}
-            ) by (pod, namespace, annotation_hub_jupyter_org_username)
-          * on (namespace, annotation_hub_jupyter_org_username) group_left(usergroup)
+
+          # sum pod containers' CPU requests, for each namespace and user combination
+          sum(
+            kube_pod_container_resource_requests{resource="cpu", namespace=~"$hub_name", pod=~"jupyter-.*"}
+
+            # add an annotation_hub_jupyter_org_username label
+            * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
+            group(
+                kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~".*"}
+            ) by (namespace, pod, annotation_hub_jupyter_org_username)
+          ) by (namespace, annotation_hub_jupyter_org_username)
+
+          # make namespace/user combinations become more namespace/user/usergroup combinations
+          * on (namespace, annotation_hub_jupyter_org_username) group_right()
           group(
-            label_replace(jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group"},
-              "annotation_hub_jupyter_org_username", "$1", "username", "(.+)")
-          ) by (annotation_hub_jupyter_org_username, usergroup, namespace)
-        ) by (usergroup, namespace)
+            # duplicate jupyterhub_user_group_info's username label as annotation_hub_jupyter_org_username
+            label_replace(
+              jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group"},
+              "annotation_hub_jupyter_org_username", "$1", "username", "(.+)"
+            )
+          ) by (namespace, annotation_hub_jupyter_org_username, usergroup)
+
+        ) by (namespace, usergroup)
       |||
     )
     + prometheus.withLegendFormat('{{ usergroup }} - ({{ namespace }})'),
