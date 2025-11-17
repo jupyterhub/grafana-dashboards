@@ -46,6 +46,11 @@ local nfsServerCPU =
   common.tsOptions
   + common.tsRequestLimitStylingOverrides
   + ts.new('NFS server CPU usage')
+  + ts.panelOptions.withDescription(
+    |||
+      The measured unit are CPU cores, and they are written out with SI prefixes, so 100m means 0.1 CPU cores.
+    |||
+  )
   + ts.standardOptions.withUnit('sishort')
   + ts.queryOptions.withTargets([
     prometheus.new(
@@ -156,6 +161,11 @@ local promServerCPU =
   common.tsOptions
   + common.tsRequestLimitStylingOverrides
   + ts.new('Prometheus server CPU usage')
+  + ts.panelOptions.withDescription(
+    |||
+      The measured unit are CPU cores, and they are written out with SI prefixes, so 100m means 0.1 CPU cores.
+    |||
+  )
   + ts.standardOptions.withUnit('sishort')
   + ts.queryOptions.withTargets([
     prometheus.new(
