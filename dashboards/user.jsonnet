@@ -96,21 +96,17 @@ local homedirSharedUsage =
           * on (namespace, directory) group_right()
           group(
             # match using username_safe (kubespawner's modern "safe" scheme)
-            (
-              # duplicate jupyterhub_user_group_info's username_safe label as directory
-              label_replace(
-                jupyterhub_user_group_info{namespace=~"$hub_name", username_safe=~".*"},
-                "directory", "$1", "username_safe", "(.+)"
-              )
+            # duplicate jupyterhub_user_group_info's username_safe label as directory
+            label_replace(
+              jupyterhub_user_group_info{namespace=~"$hub_name", username_safe=~".*"},
+              "directory", "$1", "username_safe", "(.+)"
             )
             or
             # match using username_escaped (kubespawner's legacy "escape" scheme)
-            (
-              # duplicate jupyterhub_user_group_info's username_escaped label as directory
-              label_replace(
-                jupyterhub_user_group_info{namespace=~"$hub_name", username_escaped=~".*"},
-                "directory", "$1", "username_escaped", "(.+)"
-              )
+            # duplicate jupyterhub_user_group_info's username_escaped label as directory
+            label_replace(
+              jupyterhub_user_group_info{namespace=~"$hub_name", username_escaped=~".*"},
+              "directory", "$1", "username_escaped", "(.+)"
             )
           ) by (namespace, directory, username)
 
