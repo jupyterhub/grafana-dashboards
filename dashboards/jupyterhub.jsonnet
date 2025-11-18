@@ -201,7 +201,7 @@ local serverSpawnFailures =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(increase(jupyterhub_server_spawn_duration_seconds_count{status!="success"}[2m])) by (status)
+        sum(increase(jupyterhub_server_spawn_duration_seconds_count{status!="success", namespace=~"$hub"}[2m])) by (status)
       |||
     )
     + prometheus.withLegendFormat('{{status}}'),
