@@ -175,9 +175,9 @@ local serverStartTimes =
       '$PROMETHEUS_DS',
       |||
         sum by (le) (
-          jupyterhub_server_spawn_duration_seconds_bucket
+          jupyterhub_server_spawn_duration_seconds_bucket{namespace=~"$hub"}
           -
-          jupyterhub_server_spawn_duration_seconds_bucket
+          jupyterhub_server_spawn_duration_seconds_bucket{namespace=~"$hub"}
           offset $__rate_interval
         )
       |||
@@ -218,7 +218,7 @@ local usersPerNode =
         sum(
             # kube_pod_info.node identifies the pod node,
             # while kube_pod_labels.node is the metrics exporter's node
-            kube_pod_info{node!=""}
+            kube_pod_info{node!="", namespace=~"$hub"}
             %s
         ) by (node)
       |||
