@@ -438,7 +438,7 @@ local notebookImagesUsed =
         sum (
           # User pods are named "notebook" by kubespawner
           kube_pod_container_info{container="notebook", namespace=~"$hub"}
-        ) by(image_spec, namespace)
+        ) by (image_spec, namespace)
       |||
     )
     + prometheus.withLegendFormat('{{ namespace }}: {{ image_spec }}'),

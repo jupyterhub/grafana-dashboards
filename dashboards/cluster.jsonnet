@@ -391,11 +391,11 @@ local nodeOOMKills =
         # We use [2m] here, as node_exporter usually scrapes things at 1min intervals
         # And oom kills are distinct events, so we want to see 'how many have just happened',
         # rather than average over time.
-        increase(node_vmstat_oom_kill[2m]) * on(node) group_left(%s)
+        increase(node_vmstat_oom_kill[2m])
+        * on(node) group_left(%s)
         group(
           kube_node_labels
-        )
-        by(node, %s)
+        ) by (node, %s)
       |||
       % std.repeat([common.nodePoolLabels], 2)
     )
