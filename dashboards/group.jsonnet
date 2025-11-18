@@ -42,7 +42,7 @@ local memoryUsage =
           group(
             # duplicate jupyterhub_user_group_info's username label as annotation_hub_jupyter_org_username
             label_replace(
-              jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group"},
+              jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group", usergroup!="multiple"},
               "annotation_hub_jupyter_org_username", "$1", "username", "(.+)"
             )
           ) by (namespace, annotation_hub_jupyter_org_username, usergroup)
@@ -92,7 +92,7 @@ local cpuUsage =
           group(
             # duplicate jupyterhub_user_group_info's username label as annotation_hub_jupyter_org_username
             label_replace(
-              jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group"},
+              jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group", usergroup!="multiple"},
               "annotation_hub_jupyter_org_username", "$1", "username", "(.+)"
             )
           ) by (namespace, annotation_hub_jupyter_org_username, usergroup)
@@ -134,14 +134,14 @@ local homedirSharedUsage =
             # match using username_safe (kubespawner's modern "safe" scheme)
             # duplicate jupyterhub_user_group_info's username_safe label as directory
             label_replace(
-              jupyterhub_user_group_info{namespace=~"$hub_name", username_safe=~".*", usergroup=~"$user_group"},
+              jupyterhub_user_group_info{namespace=~"$hub_name", username_safe=~".*", usergroup=~"$user_group", usergroup!="multiple"},
               "directory", "$1", "username_safe", "(.+)"
             )
             or
             # match using username_escaped (kubespawner's legacy "escape" scheme)
             # duplicate jupyterhub_user_group_info's username_escaped label as directory
             label_replace(
-              jupyterhub_user_group_info{namespace=~"$hub_name", username_escaped=~".*", usergroup=~"$user_group"},
+              jupyterhub_user_group_info{namespace=~"$hub_name", username_escaped=~".*", usergroup=~"$user_group", usergroup!="multiple"},
               "directory", "$1", "username_escaped", "(.+)"
             )
           ) by (namespace, directory, usergroup)
@@ -188,7 +188,7 @@ local memoryRequests =
           group(
             # duplicate jupyterhub_user_group_info's username label as annotation_hub_jupyter_org_username
             label_replace(
-              jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group"},
+              jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group", usergroup!="multiple"},
               "annotation_hub_jupyter_org_username", "$1", "username", "(.+)"
             )
           ) by (namespace, annotation_hub_jupyter_org_username, usergroup)
@@ -237,7 +237,7 @@ local cpuRequests =
           group(
             # duplicate jupyterhub_user_group_info's username label as annotation_hub_jupyter_org_username
             label_replace(
-              jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group"},
+              jupyterhub_user_group_info{namespace=~"$hub_name", username=~".*", usergroup=~"$user_group", usergroup!="multiple"},
               "annotation_hub_jupyter_org_username", "$1", "username", "(.+)"
             )
           ) by (namespace, annotation_hub_jupyter_org_username, usergroup)

@@ -185,6 +185,13 @@ local _getDashedLineOverride(pattern, color) = {
       + var.query.withDatasourceFromVariable(self.prometheus)
       + var.query.selectionOptions.withMulti()
       + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
+      // If jupyterhub-groups-exporter is configured with `double_count=True` as
+      // it is by default, a pseudo group named `multiple` will also be reported
+      // by jupyterhub-groups-exporter next to real groups and the `none` group.
+      // A user part of multiple real groups, will also be part of the `multiple`
+      // pseudo-group. Presenting this groups is assumed to not improve the user
+      // experience, so we exclude it.
+      + var.query.withRegex('^(?!multiple$).+')
       + var.query.queryTypes.withLabelValues('usergroup', 'jupyterhub_user_group_info')
     ,
     user_name:
