@@ -34,7 +34,7 @@ jobs:
           - "latest"
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Download jsonnet (go-jsonnet)
         run: |
