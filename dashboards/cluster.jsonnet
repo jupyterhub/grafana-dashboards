@@ -40,7 +40,7 @@ local userNodes =
           ) by (node, %s)
         ) by (%s)
       |||
-      % std.repeat([common.nodePoolLabels], 2)
+      % std.repeat([common.nodePoolLabels], 2),
     )
     + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat),
   ]);
