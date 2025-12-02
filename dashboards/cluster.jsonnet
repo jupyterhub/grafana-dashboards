@@ -4,7 +4,6 @@ local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v11.1.0/mai
 local dashboard = grafonnet.dashboard;
 local table = grafonnet.panel.table;
 local ts = grafonnet.panel.timeSeries;
-local barChart = grafonnet.panel.barChart;
 local prometheus = grafonnet.query.prometheus;
 local row = grafonnet.panel.row;
 
@@ -371,34 +370,34 @@ local nodeCPUUtil =
   ]);
 
 local nodeOOMKills =
-  common.barChartOptions
-  + barChart.new('Out of Memory Kill Count')
-  + barChart.panelOptions.withDescription(
+  common.tsOptions
+  + ts.new('Out Of Memory killed processes, per node')
+  + ts.panelOptions.withDescription(
     |||
-      Number of Out of Memory (OOM) kills in a given node.
+      Number of processes forcefully terminated (killed) by the Out Of Memory (OOM) killer.
 
-      When users use up more memory than they are allowed, the notebook kernel they
-      were running usually gets killed and restarted. This graph shows the number of times
-      that happens on any given node, and helps validate that a notebook kernel restart was
-      infact caused by an OOM
+      When a user exceeds their memory limit, their memory-hungry processes will be forcefully terminated. Individual Jupyter kernels are often forcefully terminated like this, but sometimes the user server process itself is terminated.
+
+      If the user-server process terminates, it should trigger the automatic restart of the container running it.
     |||
   )
-  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
-  + barChart.standardOptions.withDecimals(0)
-  + barChart.queryOptions.withTargets([
+  + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        # We use [2m] here, as node_exporter usually scrapes things at 1min intervals
-        # And oom kills are distinct events, so we want to see 'how many have just happened',
-        # rather than average over time.
-        increase(node_vmstat_oom_kill[2m])
+        # oom kills are distinct events, so we want to see how many happened
+        # rather an average, to accomplish this we must do this subtraction
+        (
+          node_vmstat_oom_kill
+          -
+          node_vmstat_oom_kill offset $__rate_interval
+        )
         * on(node) group_left(%s)
         group(
           kube_node_labels
         ) by (node, %s)
       |||
-      % std.repeat([common.nodePoolLabels], 2)
+      % std.repeat([common.nodePoolLabels], 2),
     )
     + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat + '/{{node}}'),
   ]);
