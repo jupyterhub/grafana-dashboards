@@ -2,6 +2,7 @@
 // Deploys a dashboard showing cluster-wide information
 local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v11.1.0/main.libsonnet';
 local dashboard = grafonnet.dashboard;
+local table = grafonnet.panel.table;
 local ts = grafonnet.panel.timeSeries;
 local barChart = grafonnet.panel.barChart;
 local prometheus = grafonnet.query.prometheus;
@@ -402,6 +403,88 @@ local nodeOOMKills =
     + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat + '/{{node}}'),
   ]);
 
+local podsAndContainerTerminations =
+  common.tableOptions
+  + table.new('Pod and container terminations')
+  + table.panelOptions.withDescription(
+    |||
+      Pod terminations are row entries where the container column is `-`, and
+      the reason column can be
+      [Evicted|NodeAffinity|NodeLost|Shutdown|UnexpectedAdmissionError].
+
+      Container terminations are all other rows, where the reason column can at
+      least be OOMKilled, Error, Completed, or ContainerStatusUnknown.
+
+      This panel's queries depend on detecting changes, so if the time
+      resolution is too low due to a too large time window, it may fail to
+      detect pod or container terminations. We recommend using time windows no
+      larger than a week.
+    |||
+  )
+  + table.options.withSortBy({ displayName: 'Time', desc: true })
+  + table.queryOptions.withTransformations([
+    {
+      id: 'merge',
+    },
+    {
+      id: 'organize',
+      options: {
+        excludeByName: {
+          Value: true,
+          'Value #A': true,
+          'Value #B': true,
+        },
+        orderByMode: 'manual',
+        indexByName: {
+          Time: 0,
+          reason: 1,
+          namespace: 2,
+          pod: 3,
+          container: 4,
+        },
+      },
+    },
+  ])
+  + table.queryOptions.withTargets([
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        label_replace(
+          count(
+            # kube_pod_status_reason's timeries values can be either zero or
+            # one, but only when its one do we have a pod termination reason to
+            # consider.
+            #
+            # ref: https://github.com/kubernetes/kube-state-metrics/blob/main/docs/metrics/workload/pod-metrics.md
+            #
+            kube_pod_status_reason == 1
+            unless
+            kube_pod_status_reason offset $__interval == 1
+          ) by (reason, namespace, pod),
+          "container", "-", "", ""
+        )
+      |||
+    )
+    + prometheus.withFormat('table'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        count(
+          # kube_pod_container_status_terminated_reason metric's values are always
+          # zero as of kube-state-metrics 2.17.1, but the reason label is always set
+          # when the timeseries has a value.
+          #
+          # ref: https://github.com/kubernetes/kube-state-metrics/blob/main/docs/metrics/workload/pod-metrics.md
+          #
+          kube_pod_container_status_terminated_reason
+          unless
+          kube_pod_container_status_terminated_reason offset $__interval
+        ) by (reason, namespace, pod, container)
+      |||
+    )
+    + prometheus.withFormat('table'),
+  ]);
+
 local nonRunningPods =
   common.tsOptions
   + common.tsPodStateStylingOverrides
@@ -425,6 +508,34 @@ local nonRunningPods =
     + prometheus.withLegendFormat('{{phase}}'),
   ]);
 
+local panelHeight = 10;
+local grid = grafonnet.util.grid.makeGrid(
+  [
+    row.new('Cluster Utilization')
+    + row.withPanels([
+      userPods,
+      userNodes,
+    ]),
+    row.new('Cluster Health')
+    + row.withPanels([
+      nonRunningPods,
+      podsAndContainerTerminations,
+      nodeOOMKills,
+    ]),
+    row.new('Node Stats')
+    + row.withPanels([
+      nodeCPUUtil,
+      nodeMemoryUtil,
+      nodeCPUCommit,
+      nodeMemoryCommit,
+      nodepoolCPUCommitment,
+      nodepoolMemoryCommitment,
+    ]),
+  ],
+  panelWidth=12,
+  panelHeight=panelHeight,
+);
+
 dashboard.new('Cluster Information')
 + dashboard.withTags(['jupyterhub', 'kubernetes'])
 + dashboard.withEditable(true)
@@ -432,29 +543,9 @@ dashboard.new('Cluster Information')
   common.variables.prometheus,
 ])
 + dashboard.withPanels(
-  grafonnet.util.grid.makeGrid(
-    [
-      row.new('Cluster Utilization')
-      + row.withPanels([
-        userPods,
-        userNodes,
-      ]),
-      row.new('Cluster Health')
-      + row.withPanels([
-        nonRunningPods,
-        nodeOOMKills,
-      ]),
-      row.new('Node Stats')
-      + row.withPanels([
-        nodeCPUUtil,
-        nodeMemoryUtil,
-        nodeCPUCommit,
-        nodeMemoryCommit,
-        nodepoolCPUCommitment,
-        nodepoolMemoryCommitment,
-      ]),
-    ],
-    panelWidth=12,
-    panelHeight=10,
+  common.adjustGridPanelHeight(
+    grid,
+    'Pod and container terminations',
+    panelHeight * 2
   )
 )
