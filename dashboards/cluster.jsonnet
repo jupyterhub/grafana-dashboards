@@ -381,21 +381,25 @@ local nodeOOMKills =
       If the user-server process terminates, it should trigger the automatic restart of the container running it.
     |||
   )
+  + ts.fieldConfig.defaults.custom.withDrawStyle('points')
+  + ts.fieldConfig.defaults.custom.withPointSize(10)
   + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        # oom kills are distinct events, so we want to see how many happened
-        # rather an average, to accomplish this we must do this subtraction
         (
-          node_vmstat_oom_kill
-          -
-          node_vmstat_oom_kill offset $__rate_interval
-        )
-        * on(node) group_left(%s)
-        group(
-          kube_node_labels
-        ) by (node, %s)
+          # oom kills are distinct events, so we want to see how many happened
+          # rather an average, to accomplish this we must do this subtraction
+          (
+            node_vmstat_oom_kill
+            -
+            node_vmstat_oom_kill offset $__interval
+          )
+          * on(node) group_left(%s)
+          group(
+            kube_node_labels
+          ) by (node, %s)
+        ) > 0
       |||
       % std.repeat([common.nodePoolLabels], 2),
     )
