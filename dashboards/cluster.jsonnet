@@ -406,22 +406,63 @@ local nodeOOMKills =
     + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat + '/{{node}}'),
   ]);
 
-local podsAndContainerTerminations =
+local podTerminations =
   common.tableOptions
-  + table.new('Pod and container terminations')
+  + table.new('Detected pod terminations')
   + table.panelOptions.withDescription(
     |||
-      Pod terminations are row entries where the container column is `-`, and
-      the reason column can be
-      [Evicted|NodeAffinity|NodeLost|Shutdown|UnexpectedAdmissionError].
+      This panel detects changes in pods' reported "status.reason". It is a
+      fragile strategy that could fail to detect pod terminations.
 
-      Container terminations are all other rows, where the reason column can at
-      least be OOMKilled, Error, Completed, or ContainerStatusUnknown.
+      A pod termination reason can be either Evicted, NodeAffinity, NodeLost,
+      Shutdown, or UnexpectedAdmissionError.
+    |||
+  )
+  + table.options.withSortBy({ displayName: 'Time', desc: true })
+  + table.queryOptions.withTransformations([
+    {
+      id: 'organize',
+      options: {
+        excludeByName: {
+          Value: true,
+        },
+        orderByMode: 'manual',
+        indexByName: {
+          Time: 0,
+          reason: 1,
+          namespace: 2,
+          pod: 3,
+        },
+      },
+    },
+  ])
+  + table.queryOptions.withTargets([
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        count(
+          # kube_pod_status_reason's timeries values can be either zero or
+          # one, but only when its one do we have a pod termination reason to
+          # consider.
+          #
+          # ref: https://github.com/kubernetes/kube-state-metrics/blob/main/docs/metrics/workload/pod-metrics.md
+          #
+          kube_pod_status_reason == 1
+          unless
+          kube_pod_status_reason offset $__interval == 1
+        ) by (reason, namespace, pod)
+      |||
+    )
+    + prometheus.withFormat('table'),
+  ]);
 
-      This panel's queries depend on detecting changes, so if the time
-      resolution is too low due to a too large time window, it may fail to
-      detect pod or container terminations. We recommend using time windows no
-      larger than a week.
+local containerRestarts =
+  common.tableOptions
+  + table.new('Container restarts')
+  + table.panelOptions.withDescription(
+    |||
+      The reasons for a container restart can be at least be OOMKilled, Error,
+      Completed, or ContainerStatusUnknown.
     |||
   )
   + table.options.withSortBy({ displayName: 'Time', desc: true })
@@ -433,7 +474,6 @@ local podsAndContainerTerminations =
       id: 'organize',
       options: {
         excludeByName: {
-          Value: true,
           'Value #A': true,
           'Value #B': true,
         },
@@ -452,37 +492,39 @@ local podsAndContainerTerminations =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        label_replace(
-          count(
-            # kube_pod_status_reason's timeries values can be either zero or
-            # one, but only when its one do we have a pod termination reason to
-            # consider.
-            #
-            # ref: https://github.com/kubernetes/kube-state-metrics/blob/main/docs/metrics/workload/pod-metrics.md
-            #
-            kube_pod_status_reason == 1
-            unless
-            kube_pod_status_reason offset $__interval == 1
-          ) by (reason, namespace, pod),
-          "container", "-", "", ""
-        )
+        # container restarts
+        group(
+          kube_pod_container_status_restarts_total
+          -
+          (
+            kube_pod_container_status_restarts_total offset $__interval
+            or
+            kube_pod_container_status_restarts_total * 0
+          )
+          > 0
+        ) by (namespace, pod, container)
+        * on (namespace, pod, container) group_left(reason)
+        topk(1, last_over_time(kube_pod_container_status_last_terminated_reason[$__interval])) by (namespace, pod, container)
       |||
     )
     + prometheus.withFormat('table'),
+    // init-container restarts should be exactly like container restarts
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        count(
-          # kube_pod_container_status_terminated_reason metric's values are always
-          # zero as of kube-state-metrics 2.17.1, but the reason label is always set
-          # when the timeseries has a value.
-          #
-          # ref: https://github.com/kubernetes/kube-state-metrics/blob/main/docs/metrics/workload/pod-metrics.md
-          #
-          kube_pod_container_status_terminated_reason
-          unless
-          kube_pod_container_status_terminated_reason offset $__interval
-        ) by (reason, namespace, pod, container)
+        # init-container restarts
+        group(
+          kube_pod_init_container_status_restarts_total
+          -
+          (
+            kube_pod_init_container_status_restarts_total offset $__interval
+            or
+            kube_pod_init_container_status_restarts_total * 0
+          )
+          > 0
+        ) by (namespace, pod, container)
+        * on (namespace, pod, container) group_left(reason)
+        topk(1, last_over_time(kube_pod_init_container_status_last_terminated_reason[$__interval])) by (namespace, pod, container)
       |||
     )
     + prometheus.withFormat('table'),
@@ -511,34 +553,6 @@ local nonRunningPods =
     + prometheus.withLegendFormat('{{phase}}'),
   ]);
 
-local panelHeight = 10;
-local grid = grafonnet.util.grid.makeGrid(
-  [
-    row.new('Cluster Utilization')
-    + row.withPanels([
-      userPods,
-      userNodes,
-    ]),
-    row.new('Cluster Health')
-    + row.withPanels([
-      nonRunningPods,
-      podsAndContainerTerminations,
-      nodeOOMKills,
-    ]),
-    row.new('Node Stats')
-    + row.withPanels([
-      nodeCPUUtil,
-      nodeMemoryUtil,
-      nodeCPUCommit,
-      nodeMemoryCommit,
-      nodepoolCPUCommitment,
-      nodepoolMemoryCommitment,
-    ]),
-  ],
-  panelWidth=12,
-  panelHeight=panelHeight,
-);
-
 dashboard.new('Cluster Information')
 + dashboard.withTags(['jupyterhub', 'kubernetes'])
 + dashboard.withEditable(true)
@@ -546,9 +560,31 @@ dashboard.new('Cluster Information')
   common.variables.prometheus,
 ])
 + dashboard.withPanels(
-  common.adjustGridPanelHeight(
-    grid,
-    'Pod and container terminations',
-    panelHeight * 2
+  grafonnet.util.grid.makeGrid(
+    [
+      row.new('Cluster Utilization')
+      + row.withPanels([
+        userPods,
+        userNodes,
+      ]),
+      row.new('Cluster Health')
+      + row.withPanels([
+        nonRunningPods,
+        podTerminations,
+        nodeOOMKills,
+        containerRestarts,
+      ]),
+      row.new('Node Stats')
+      + row.withPanels([
+        nodeCPUUtil,
+        nodeMemoryUtil,
+        nodeCPUCommit,
+        nodeMemoryCommit,
+        nodepoolCPUCommitment,
+        nodepoolMemoryCommitment,
+      ]),
+    ],
+    panelWidth=12,
+    panelHeight=10,
   )
 )

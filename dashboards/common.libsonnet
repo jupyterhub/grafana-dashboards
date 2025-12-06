@@ -260,17 +260,4 @@ local _getDashedLineOverride(pattern, color) = {
    * human readable name of the nodepool in question.
    */
   nodePoolLabelsLegendFormat: '{{' + std.join('}}{{', self._nodePoolLabelKeys) + '}}',
-
-  /**
-   * Utility function to adjust a panel's height after a grid of panels has been
-   * made.
-   */
-  adjustGridPanelHeight(grid, panelTitle, newHeight): std.map(
-    function(p) (
-      if p.title == panelTitle
-      then p { gridPos+: { h: newHeight } }
-      else p
-    ),
-    grid
-  ),
 }
