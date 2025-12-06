@@ -2,8 +2,8 @@
 // Deploys a dashboard showing cluster-wide information
 local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v11.1.0/main.libsonnet';
 local dashboard = grafonnet.dashboard;
+local table = grafonnet.panel.table;
 local ts = grafonnet.panel.timeSeries;
-local barChart = grafonnet.panel.barChart;
 local prometheus = grafonnet.query.prometheus;
 local row = grafonnet.panel.row;
 
@@ -40,7 +40,7 @@ local userNodes =
           ) by (node, %s)
         ) by (%s)
       |||
-      % std.repeat([common.nodePoolLabels], 2)
+      % std.repeat([common.nodePoolLabels], 2),
     )
     + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat),
   ]);
@@ -370,36 +370,164 @@ local nodeCPUUtil =
   ]);
 
 local nodeOOMKills =
-  common.barChartOptions
-  + barChart.new('Out of Memory Kill Count')
-  + barChart.panelOptions.withDescription(
+  common.tsOptions
+  + ts.new('Out Of Memory killed processes, per node')
+  + ts.panelOptions.withDescription(
     |||
-      Number of Out of Memory (OOM) kills in a given node.
+      Number of processes forcefully terminated (killed) by the Out Of Memory (OOM) killer.
 
-      When users use up more memory than they are allowed, the notebook kernel they
-      were running usually gets killed and restarted. This graph shows the number of times
-      that happens on any given node, and helps validate that a notebook kernel restart was
-      infact caused by an OOM
+      When a user exceeds their memory limit, their memory-hungry processes will be forcefully terminated. Individual Jupyter kernels are often forcefully terminated like this, but sometimes the user server process itself is terminated.
+
+      If the user-server process terminates, it should trigger the automatic restart of the container running it.
     |||
   )
-  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
-  + barChart.standardOptions.withDecimals(0)
-  + barChart.queryOptions.withTargets([
+  + ts.fieldConfig.defaults.custom.withDrawStyle('points')
+  + ts.fieldConfig.defaults.custom.withPointSize(10)
+  + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        # We use [2m] here, as node_exporter usually scrapes things at 1min intervals
-        # And oom kills are distinct events, so we want to see 'how many have just happened',
-        # rather than average over time.
-        increase(node_vmstat_oom_kill[2m])
-        * on(node) group_left(%s)
-        group(
-          kube_node_labels
-        ) by (node, %s)
+        (
+          # oom kills are distinct events, so we want to see how many happened
+          # rather an average, to accomplish this we must do this subtraction
+          (
+            node_vmstat_oom_kill
+            -
+            node_vmstat_oom_kill offset $__interval
+          )
+          * on(node) group_left(%s)
+          group(
+            kube_node_labels
+          ) by (node, %s)
+        ) > 0
       |||
-      % std.repeat([common.nodePoolLabels], 2)
+      % std.repeat([common.nodePoolLabels], 2),
     )
     + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat + '/{{node}}'),
+  ]);
+
+local podTerminations =
+  common.tableOptions
+  + table.new('Detected pod terminations')
+  + table.panelOptions.withDescription(
+    |||
+      This panel detects changes in pods' reported "status.reason". It is a
+      fragile strategy that could fail to detect pod terminations.
+
+      A pod termination reason can be either Evicted, NodeAffinity, NodeLost,
+      Shutdown, or UnexpectedAdmissionError.
+    |||
+  )
+  + table.options.withSortBy({ displayName: 'Time', desc: true })
+  + table.queryOptions.withTransformations([
+    {
+      id: 'organize',
+      options: {
+        excludeByName: {
+          Value: true,
+        },
+        orderByMode: 'manual',
+        indexByName: {
+          Time: 0,
+          reason: 1,
+          namespace: 2,
+          pod: 3,
+        },
+      },
+    },
+  ])
+  + table.queryOptions.withTargets([
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        count(
+          # kube_pod_status_reason's timeries values can be either zero or
+          # one, but only when its one do we have a pod termination reason to
+          # consider.
+          #
+          # ref: https://github.com/kubernetes/kube-state-metrics/blob/main/docs/metrics/workload/pod-metrics.md
+          #
+          kube_pod_status_reason == 1
+          unless
+          kube_pod_status_reason offset $__interval == 1
+        ) by (reason, namespace, pod)
+      |||
+    )
+    + prometheus.withFormat('table'),
+  ]);
+
+local containerRestarts =
+  common.tableOptions
+  + table.new('Container restarts')
+  + table.panelOptions.withDescription(
+    |||
+      The reasons for a container restart can be at least be OOMKilled, Error,
+      Completed, or ContainerStatusUnknown.
+    |||
+  )
+  + table.options.withSortBy({ displayName: 'Time', desc: true })
+  + table.queryOptions.withTransformations([
+    {
+      id: 'merge',
+    },
+    {
+      id: 'organize',
+      options: {
+        excludeByName: {
+          'Value #A': true,
+          'Value #B': true,
+        },
+        orderByMode: 'manual',
+        indexByName: {
+          Time: 0,
+          reason: 1,
+          namespace: 2,
+          pod: 3,
+          container: 4,
+        },
+      },
+    },
+  ])
+  + table.queryOptions.withTargets([
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        # container restarts
+        group(
+          kube_pod_container_status_restarts_total
+          -
+          (
+            kube_pod_container_status_restarts_total offset $__interval
+            or
+            kube_pod_container_status_restarts_total * 0
+          )
+          > 0
+        ) by (namespace, pod, container)
+        * on (namespace, pod, container) group_left(reason)
+        topk(1, last_over_time(kube_pod_container_status_last_terminated_reason[$__interval])) by (namespace, pod, container)
+      |||
+    )
+    + prometheus.withFormat('table'),
+    // init-container restarts should be exactly like container restarts
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        # init-container restarts
+        group(
+          kube_pod_init_container_status_restarts_total
+          -
+          (
+            kube_pod_init_container_status_restarts_total offset $__interval
+            or
+            kube_pod_init_container_status_restarts_total * 0
+          )
+          > 0
+        ) by (namespace, pod, container)
+        * on (namespace, pod, container) group_left(reason)
+        topk(1, last_over_time(kube_pod_init_container_status_last_terminated_reason[$__interval])) by (namespace, pod, container)
+      |||
+    )
+    + prometheus.withFormat('table'),
   ]);
 
 local nonRunningPods =
@@ -425,36 +553,39 @@ local nonRunningPods =
     + prometheus.withLegendFormat('{{phase}}'),
   ]);
 
+local panelHeight = 10;
+local grid = grafonnet.util.grid.makeGrid(
+  [
+    row.new('Cluster Utilization')
+    + row.withPanels([
+      userPods,
+      userNodes,
+    ]),
+    row.new('Cluster Health')
+    + row.withPanels([
+      nonRunningPods,
+      podTerminations,
+      nodeOOMKills,
+      containerRestarts,
+    ]),
+    row.new('Node Stats')
+    + row.withPanels([
+      nodeCPUUtil,
+      nodeMemoryUtil,
+      nodeCPUCommit,
+      nodeMemoryCommit,
+      nodepoolCPUCommitment,
+      nodepoolMemoryCommitment,
+    ]),
+  ],
+  panelWidth=12,
+  panelHeight=panelHeight,
+);
+
 dashboard.new('Cluster Information')
 + dashboard.withTags(['jupyterhub', 'kubernetes'])
 + dashboard.withEditable(true)
 + dashboard.withVariables([
   common.variables.prometheus,
 ])
-+ dashboard.withPanels(
-  grafonnet.util.grid.makeGrid(
-    [
-      row.new('Cluster Utilization')
-      + row.withPanels([
-        userPods,
-        userNodes,
-      ]),
-      row.new('Cluster Health')
-      + row.withPanels([
-        nonRunningPods,
-        nodeOOMKills,
-      ]),
-      row.new('Node Stats')
-      + row.withPanels([
-        nodeCPUUtil,
-        nodeMemoryUtil,
-        nodeCPUCommit,
-        nodeMemoryCommit,
-        nodepoolCPUCommitment,
-        nodepoolMemoryCommitment,
-      ]),
-    ],
-    panelWidth=12,
-    panelHeight=10,
-  )
-)
++ dashboard.withPanels(grid)
