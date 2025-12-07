@@ -371,14 +371,18 @@ local nodeCPUUtil =
 
 local nodeOOMKills =
   common.tsOptions
-  + ts.new('Out Of Memory killed processes, per node')
+  + ts.new('Processes terminated by the out-of-memory killer, per node')
   + ts.panelOptions.withDescription(
     |||
-      Number of processes forcefully terminated (killed) by the Out Of Memory (OOM) killer.
+      When a Kubernetes Pod's container exceeds its memory limit, the oom-killer
+      terminates one or more of the container's memory-hungry processes. If a
+      container's init process terminates, the container typically restarts
+      automatically, as it is the default behavior for k8s Pods' containers.
 
-      When a user exceeds their memory limit, their memory-hungry processes will be forcefully terminated. Individual Jupyter kernels are often forcefully terminated like this, but sometimes the user server process itself is terminated.
-
-      If the user-server process terminates, it should trigger the automatic restart of the container running it.
+      For example, a Jupyter server could be a container's init process that, in
+      turn, starts a few Jupyter kernel processes. If a kernel process used the
+      most memory, the oom-killer could terminate it without triggering a
+      container restart.
     |||
   )
   + ts.fieldConfig.defaults.custom.withDrawStyle('points')
@@ -412,7 +416,8 @@ local podTerminations =
   + table.panelOptions.withDescription(
     |||
       This panel detects changes in pods' reported "status.reason". It is a
-      fragile strategy that could fail to detect pod terminations.
+      fragile strategy that could fail to detect pod terminations if the Pod is
+      deleted quickly after it is terminated.
 
       A pod termination reason can be either Evicted, NodeAffinity, NodeLost,
       Shutdown, or UnexpectedAdmissionError.
@@ -461,7 +466,7 @@ local containerRestarts =
   + table.new('Container restarts')
   + table.panelOptions.withDescription(
     |||
-      The reasons for a container restart can be at least be OOMKilled, Error,
+      The reasons for a container restart can include OOMKilled, Error,
       Completed, or ContainerStatusUnknown.
     |||
   )
