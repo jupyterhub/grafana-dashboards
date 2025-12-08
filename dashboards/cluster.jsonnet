@@ -428,7 +428,7 @@ local nodeOOMKills =
 
 local podTerminations =
   common.tableOptions
-  + table.new('Pod terminiations')
+  + table.new('Pod terminations')
   + table.panelOptions.withDescription(
     |||
       This panel tracks pod terminations, for example, a pod being evicted from
@@ -482,13 +482,17 @@ local podTerminations =
     + prometheus.withFormat('table'),
   ]);
 
-local containerRestarts =
+local containerTerminations =
   common.tableOptions
-  + table.new('Container restarts')
+  + table.new('Container terminations (only failures)')
   + table.panelOptions.withDescription(
     |||
-      The reasons for a container restart can include OOMKilled, Error,
-      Completed, or ContainerStatusUnknown.
+      This panel tracks the (init-)container termination reasons: OOMKilled,
+      Error, and ContainerStatusUnknown, excluding Completed.
+
+      Note that container terminations that coincide with pod deletions may not
+      be detected because, after the deletion, the termination reason is no
+      longer available.
     |||
   )
   + table.options.withSortBy({ displayName: 'Time', desc: true })
@@ -502,6 +506,8 @@ local containerRestarts =
         excludeByName: {
           'Value #A': true,
           'Value #B': true,
+          'Value #C': true,
+          'Value #D': true,
         },
         orderByMode: 'manual',
         indexByName: {
@@ -510,6 +516,7 @@ local containerRestarts =
           namespace: 2,
           pod: 3,
           container: 4,
+          restarted: 5,
         },
       },
     },
@@ -518,39 +525,92 @@ local containerRestarts =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        # container restarts
-        group(
-          kube_pod_container_status_restarts_total
-          -
-          (
-            kube_pod_container_status_restarts_total offset $__interval
-            or
-            kube_pod_container_status_restarts_total * 0
-          )
-          > 0
-        ) by (namespace, pod, container)
-        * on (namespace, pod, container) group_left(reason)
-        topk(1, last_over_time(kube_pod_container_status_last_terminated_reason[$__interval])) by (namespace, pod, container)
+        # container failures, reliably detected via restarts counter
+        label_replace(
+          group(
+            kube_pod_container_status_restarts_total
+            -
+            (
+              kube_pod_container_status_restarts_total offset $__interval
+              or
+              kube_pod_container_status_restarts_total * 0
+            )
+            > 0
+          ) by (namespace, pod, container)
+          * on (namespace, pod, container) group_left(reason)
+          # topk ensures a single reason label if multiple were available during
+          # the time interval, while last_over_time helps us get the terminated
+          # reason more reliably
+          topk(1, last_over_time(kube_pod_container_status_last_terminated_reason{reason!="Completed"}[$__interval])) by (namespace, pod, container),
+          "restarted", "yes", "", ""
+        )
       |||
     )
     + prometheus.withFormat('table'),
-    // init-container restarts should be exactly like container restarts
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        # init-container restarts
-        group(
-          kube_pod_init_container_status_restarts_total
-          -
-          (
-            kube_pod_init_container_status_restarts_total offset $__interval
-            or
-            kube_pod_init_container_status_restarts_total * 0
-          )
-          > 0
-        ) by (namespace, pod, container)
-        * on (namespace, pod, container) group_left(reason)
-        topk(1, last_over_time(kube_pod_init_container_status_last_terminated_reason[$__interval])) by (namespace, pod, container)
+        # init-container failures, reliably detected via restarts counter
+        label_replace(
+          group(
+            kube_pod_init_container_status_restarts_total
+            -
+            (
+              kube_pod_init_container_status_restarts_total offset $__interval
+              or
+              kube_pod_init_container_status_restarts_total * 0
+            )
+            > 0
+          ) by (namespace, pod, container)
+          * on (namespace, pod, container) group_left(reason)
+          # topk ensures a single reason label if multiple were available during
+          # the time interval, while last_over_time helps us get the terminated
+          # reason more reliably
+          topk(1, last_over_time(kube_pod_init_container_status_last_terminated_reason{reason!="Completed"}[$__interval])) by (namespace, pod, container),
+          "restarted", "yes", "", ""
+        )
+      |||
+    )
+    + prometheus.withFormat('table'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        # remaining container terminations, not so reliably detected,
+        # because pods can be removed shortly after a container termination,
+        # and the termination reason needs to be scraped before that
+        label_replace(
+          group(
+            kube_pod_container_status_terminated_reason{reason!="Completed"} == 1
+            unless on (namespace, pod)
+            (
+              kube_pod_container_status_terminated_reason{reason!="Completed"} offset $__interval == 1
+              or
+              kube_pod_container_status_restarts_total > 0
+            )
+          ) by (reason, namespace, pod, container),
+          "restarted", "no", "", ""
+        )
+      |||
+    )
+    + prometheus.withFormat('table'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        # remaining init-container terminations, not so reliably detected,
+        # because pods can be removed shortly after a container termination,
+        # and the termination reason needs to be scraped before that
+        label_replace(
+          group(
+            kube_pod_init_container_status_terminated_reason{reason!="Completed"} == 1
+            unless on (namespace, pod)
+            (
+              kube_pod_init_container_status_terminated_reason{reason!="Completed"} offset $__interval == 1
+              or
+              kube_pod_init_container_status_restarts_total > 0
+            )
+          ) by (reason, namespace, pod, container),
+          "restarted", "no", "", ""
+        )
       |||
     )
     + prometheus.withFormat('table'),
@@ -598,7 +658,7 @@ dashboard.new('Cluster Information')
         nonRunningPods,
         podTerminations,
         nodeOOMKills,
-        containerRestarts,
+        containerTerminations,
       ]),
       row.new('Node Stats')
       + row.withPanels([
