@@ -439,9 +439,19 @@ local podTerminations =
       A pod termination reason can be either Evicted, NodeAffinity, NodeLost,
       Shutdown, or UnexpectedAdmissionError.
 
+      [Node-pressure eviction] is the process by which the kubelet proactively
+      terminates pods to reclaim resources on nodes, such as memory. If you
+      observe pod evictions, consider adjusting the pod's [resource requests and
+      limits]. If a JupyterHub-started user-server pod is evicted, the user must
+      restart it manually via JupyterHub, which is a poor user experience to
+      avoid.
+
       As this panel detects changes in pods' reported "status.reason", it can
       fail to detect pod terminations if the Pod is deleted quickly after it is
       terminated.
+
+      [node-pressure eviction]: https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/
+      [resource requests and limits]: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
     |||
   )
   + table.options.withSortBy({ displayName: 'Time', desc: true })
