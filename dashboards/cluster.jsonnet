@@ -374,15 +374,31 @@ local nodeOOMKills =
   + ts.new('Processes terminated by the out-of-memory killer, per node')
   + ts.panelOptions.withDescription(
     |||
-      When a Kubernetes Pod's container exceeds its memory limit, the oom-killer
-      terminates one or more of the container's memory-hungry processes. If a
-      container's init process terminates, the container typically restarts
-      automatically, as it is the default behavior for k8s Pods' containers.
+      When a Kubernetes Pod's container exceeds its memory limit, the Linux
+      oom-killer terminates one or more of the container's high-memory
+      processes. If the container's main process (PID 1) is terminated, the
+      container typically restarts automatically, as it is the default behavior
+      for k8s Pods' containers.
 
-      For example, a Jupyter server could be a container's init process that, in
-      turn, starts a few Jupyter kernel processes. If a kernel process used the
-      most memory, the oom-killer could terminate it without triggering a
-      container restart.
+      However, if a non-main process is terminated, the container continues to
+      run. For example, a Jupyter server running as PID 1 might spawn multiple
+      Jupyter kernel processes. If the OOM killer terminates one of these kernel
+      processes (because it consumed the most memory), only that kernel dies—the
+      container itself does not restart.
+
+      ---
+
+      As a Kubernetes administrator, you could check logs on the Kubernetes node
+      for details about what specific process was killed. You can see the
+      command (like python or node), but not the full command-line arguments.
+
+      ```shell
+      # access node via a very privileged pod
+      kubectl debug node/<node-name> -it --image=docker.io/library/ubuntu --profile=sysadmin -- chroot /host bash
+
+      # inspect relevant logs
+      dmesg -T
+      ```
     |||
   )
   + ts.fieldConfig.defaults.custom.withDrawStyle('points')
