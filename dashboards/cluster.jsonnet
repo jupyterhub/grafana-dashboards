@@ -428,15 +428,20 @@ local nodeOOMKills =
 
 local podTerminations =
   common.tableOptions
-  + table.new('Detected pod terminations')
+  + table.new('Pod terminiations')
   + table.panelOptions.withDescription(
     |||
-      This panel detects changes in pods' reported "status.reason". It is a
-      fragile strategy that could fail to detect pod terminations if the Pod is
-      deleted quickly after it is terminated.
+      This panel tracks pod terminations, for example, a pod being evicted from
+      a node under memory pressure. A Pod can, however, be in a "Failed" or
+      "Completed" state without being listed here, for instance, if one of its
+      containers exits with or without an error code.
 
       A pod termination reason can be either Evicted, NodeAffinity, NodeLost,
       Shutdown, or UnexpectedAdmissionError.
+
+      As this panel detects changes in pods' reported "status.reason", it can
+      fail to detect pod terminations if the Pod is deleted quickly after it is
+      terminated.
     |||
   )
   + table.options.withSortBy({ displayName: 'Time', desc: true })
