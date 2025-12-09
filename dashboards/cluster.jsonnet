@@ -477,8 +477,8 @@ local podTerminations =
       '$PROMETHEUS_DS',
       |||
         count(
-          # kube_pod_status_reason's timeries values can be either zero or
-          # one, but only when its one do we have a pod termination reason to
+          # kube_pod_status_reason's time series values can be either zero or
+          # one, but only when it is one do we have a pod termination reason to
           # consider.
           #
           # ref: https://github.com/kubernetes/kube-state-metrics/blob/main/docs/metrics/workload/pod-metrics.md
@@ -501,7 +501,7 @@ local containerTerminations =
       Error, and ContainerStatusUnknown, excluding Completed.
 
       Note that container terminations that coincide with pod deletions may not
-      be detected because, after the deletion, the termination reason is no
+      be detected because, after the pod deletion, the container termination reason is no
       longer available.
     |||
   )
