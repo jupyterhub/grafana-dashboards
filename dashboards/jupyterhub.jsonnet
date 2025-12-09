@@ -62,12 +62,11 @@ local userAgeDistribution =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
+        time()
+        -
         (
-          time()
-          - (
-            kube_pod_created
-            %s
-          )
+          kube_pod_created
+          %s
         )
       |||
       % jupyterhub.onComponentLabel('singleuser-server'),

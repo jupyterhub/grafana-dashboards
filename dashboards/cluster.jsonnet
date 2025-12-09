@@ -2,8 +2,8 @@
 // Deploys a dashboard showing cluster-wide information
 local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v11.1.0/main.libsonnet';
 local dashboard = grafonnet.dashboard;
+local table = grafonnet.panel.table;
 local ts = grafonnet.panel.timeSeries;
-local barChart = grafonnet.panel.barChart;
 local prometheus = grafonnet.query.prometheus;
 local row = grafonnet.panel.row;
 
@@ -40,7 +40,7 @@ local userNodes =
           ) by (node, %s)
         ) by (%s)
       |||
-      % std.repeat([common.nodePoolLabels], 2)
+      % std.repeat([common.nodePoolLabels], 2),
     )
     + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat),
   ]);
@@ -370,36 +370,260 @@ local nodeCPUUtil =
   ]);
 
 local nodeOOMKills =
-  common.barChartOptions
-  + barChart.new('Out of Memory Kill Count')
-  + barChart.panelOptions.withDescription(
+  common.tsOptions
+  + ts.new('Processes terminated by the out-of-memory killer, per node')
+  + ts.panelOptions.withDescription(
     |||
-      Number of Out of Memory (OOM) kills in a given node.
+      When a Kubernetes Pod's container exceeds its memory limit, the Linux
+      oom-killer terminates one or more of the container's high-memory
+      processes. If the container's main process (PID 1) is terminated, the
+      container typically restarts automatically, as it is the default behavior
+      for k8s Pods' containers.
 
-      When users use up more memory than they are allowed, the notebook kernel they
-      were running usually gets killed and restarted. This graph shows the number of times
-      that happens on any given node, and helps validate that a notebook kernel restart was
-      infact caused by an OOM
+      However, if a non-main process is terminated, the container continues to
+      run. For example, a Jupyter server running as PID 1 might spawn multiple
+      Jupyter kernel processes. If the OOM killer terminates one of these kernel
+      processes (because it consumed the most memory), only that kernel dies—the
+      container itself does not restart.
+
+      ---
+
+      As a Kubernetes administrator, you could check logs on the Kubernetes node
+      for details about what specific process was killed. You can see the
+      command (like python or node), but not the full command-line arguments.
+
+      ```shell
+      # access node via a very privileged pod
+      kubectl debug node/<node-name> -it --image=docker.io/library/ubuntu --profile=sysadmin -- chroot /host bash
+
+      # inspect relevant logs
+      dmesg -T
+      ```
     |||
   )
-  + ts.fieldConfig.defaults.custom.stacking.withMode('normal')
-  + barChart.standardOptions.withDecimals(0)
-  + barChart.queryOptions.withTargets([
+  + ts.fieldConfig.defaults.custom.withDrawStyle('points')
+  + ts.fieldConfig.defaults.custom.withPointSize(10)
+  + ts.queryOptions.withTargets([
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        # We use [2m] here, as node_exporter usually scrapes things at 1min intervals
-        # And oom kills are distinct events, so we want to see 'how many have just happened',
-        # rather than average over time.
-        increase(node_vmstat_oom_kill[2m])
-        * on(node) group_left(%s)
-        group(
-          kube_node_labels
-        ) by (node, %s)
+        (
+          # oom kills are distinct events, so we want to see how many happened
+          # rather an average, to accomplish this we must do this subtraction
+          (
+            node_vmstat_oom_kill
+            -
+            node_vmstat_oom_kill offset $__interval
+          )
+          * on(node) group_left(%s)
+          group(
+            kube_node_labels
+          ) by (node, %s)
+        ) > 0
       |||
-      % std.repeat([common.nodePoolLabels], 2)
+      % std.repeat([common.nodePoolLabels], 2),
     )
     + prometheus.withLegendFormat(common.nodePoolLabelsLegendFormat + '/{{node}}'),
+  ]);
+
+local podTerminations =
+  common.tableOptions
+  + table.new('Pod terminations')
+  + table.panelOptions.withDescription(
+    |||
+      This panel tracks pod terminations, for example, a pod being evicted from
+      a node under memory pressure. A Pod can, however, be in a "Failed" or
+      "Completed" state without being listed here, for instance, if one of its
+      containers exits with or without an error code.
+
+      A pod termination reason can be either Evicted, NodeAffinity, NodeLost,
+      Shutdown, or UnexpectedAdmissionError.
+
+      [Node-pressure eviction] is the process by which the kubelet proactively
+      terminates pods to reclaim resources on nodes, such as memory. If you
+      observe pod evictions, consider adjusting the pod's [resource requests and
+      limits]. If a JupyterHub-started user-server pod is evicted, the user must
+      restart it manually via JupyterHub, which is a poor user experience to
+      avoid.
+
+      As this panel detects changes in pods' reported "status.reason", it can
+      fail to detect pod terminations if the Pod is deleted quickly after it is
+      terminated.
+
+      [node-pressure eviction]: https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/
+      [resource requests and limits]: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+    |||
+  )
+  + table.options.withSortBy({ displayName: 'Time', desc: true })
+  + table.queryOptions.withTransformations([
+    {
+      id: 'organize',
+      options: {
+        excludeByName: {
+          Value: true,
+        },
+        orderByMode: 'manual',
+        indexByName: {
+          Time: 0,
+          reason: 1,
+          namespace: 2,
+          pod: 3,
+        },
+      },
+    },
+  ])
+  + table.queryOptions.withTargets([
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        count(
+          # kube_pod_status_reason's time series values can be either zero or
+          # one, but only when it is one do we have a pod termination reason to
+          # consider.
+          #
+          # ref: https://github.com/kubernetes/kube-state-metrics/blob/main/docs/metrics/workload/pod-metrics.md
+          #
+          kube_pod_status_reason == 1
+          unless
+          kube_pod_status_reason offset $__interval == 1
+        ) by (reason, namespace, pod)
+      |||
+    )
+    + prometheus.withFormat('table'),
+  ]);
+
+local containerTerminations =
+  common.tableOptions
+  + table.new('Container terminations (only failures)')
+  + table.panelOptions.withDescription(
+    |||
+      This panel tracks the (init-)container termination reasons: OOMKilled,
+      Error, and ContainerStatusUnknown, excluding Completed.
+
+      Note that container terminations that coincide with pod deletions may not
+      be detected because, after the pod deletion, the container termination reason is no
+      longer available.
+    |||
+  )
+  + table.options.withSortBy({ displayName: 'Time', desc: true })
+  + table.queryOptions.withTransformations([
+    {
+      id: 'merge',
+    },
+    {
+      id: 'organize',
+      options: {
+        excludeByName: {
+          'Value #A': true,
+          'Value #B': true,
+          'Value #C': true,
+          'Value #D': true,
+        },
+        orderByMode: 'manual',
+        indexByName: {
+          Time: 0,
+          reason: 1,
+          namespace: 2,
+          pod: 3,
+          container: 4,
+          restarted: 5,
+        },
+      },
+    },
+  ])
+  + table.queryOptions.withTargets([
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        # container failures, reliably detected via restarts counter
+        label_replace(
+          group(
+            kube_pod_container_status_restarts_total
+            -
+            (
+              kube_pod_container_status_restarts_total offset $__interval
+              or
+              kube_pod_container_status_restarts_total * 0
+            )
+            > 0
+          ) by (namespace, pod, container)
+          * on (namespace, pod, container) group_left(reason)
+          # topk ensures a single reason label if multiple were available during
+          # the time interval, while last_over_time helps us get the terminated
+          # reason more reliably
+          topk(1, last_over_time(kube_pod_container_status_last_terminated_reason{reason!="Completed"}[$__interval])) by (namespace, pod, container),
+          "restarted", "yes", "", ""
+        )
+      |||
+    )
+    + prometheus.withFormat('table'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        # init-container failures, reliably detected via restarts counter
+        label_replace(
+          group(
+            kube_pod_init_container_status_restarts_total
+            -
+            (
+              kube_pod_init_container_status_restarts_total offset $__interval
+              or
+              kube_pod_init_container_status_restarts_total * 0
+            )
+            > 0
+          ) by (namespace, pod, container)
+          * on (namespace, pod, container) group_left(reason)
+          # topk ensures a single reason label if multiple were available during
+          # the time interval, while last_over_time helps us get the terminated
+          # reason more reliably
+          topk(1, last_over_time(kube_pod_init_container_status_last_terminated_reason{reason!="Completed"}[$__interval])) by (namespace, pod, container),
+          "restarted", "yes", "", ""
+        )
+      |||
+    )
+    + prometheus.withFormat('table'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        # remaining container terminations, not so reliably detected,
+        # because pods can be removed shortly after a container termination,
+        # and the termination reason needs to be scraped before that
+        label_replace(
+          group(
+            kube_pod_container_status_terminated_reason{reason!="Completed"} == 1
+            unless on (namespace, pod)
+            (
+              kube_pod_container_status_terminated_reason{reason!="Completed"} offset $__interval == 1
+              or
+              kube_pod_container_status_restarts_total > 0
+            )
+          ) by (reason, namespace, pod, container),
+          "restarted", "no", "", ""
+        )
+      |||
+    )
+    + prometheus.withFormat('table'),
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        # remaining init-container terminations, not so reliably detected,
+        # because pods can be removed shortly after a container termination,
+        # and the termination reason needs to be scraped before that
+        label_replace(
+          group(
+            kube_pod_init_container_status_terminated_reason{reason!="Completed"} == 1
+            unless on (namespace, pod)
+            (
+              kube_pod_init_container_status_terminated_reason{reason!="Completed"} offset $__interval == 1
+              or
+              kube_pod_init_container_status_restarts_total > 0
+            )
+          ) by (reason, namespace, pod, container),
+          "restarted", "no", "", ""
+        )
+      |||
+    )
+    + prometheus.withFormat('table'),
   ]);
 
 local nonRunningPods =
@@ -442,7 +666,9 @@ dashboard.new('Cluster Information')
       row.new('Cluster Health')
       + row.withPanels([
         nonRunningPods,
+        podTerminations,
         nodeOOMKills,
+        containerTerminations,
       ]),
       row.new('Node Stats')
       + row.withPanels([
