@@ -11,7 +11,7 @@
 exclude: ^vendor/.*
 repos:
   - repo: https://github.com/google/go-jsonnet
-    rev: v0.21.0
+    rev: v0.22.0
     hooks:
       - id: jsonnet-format
       # To workaround https://github.com/google/go-jsonnet/issues/591, we run
@@ -59,7 +59,7 @@ repos:
 
   # Autoformat: Python code
   - repo: https://github.com/PyCQA/autoflake
-    rev: v2.3.3
+    rev: v2.4.0
     hooks:
       - id: autoflake
         # args ref: https://github.com/PyCQA/autoflake#advanced-usage
@@ -68,13 +68,13 @@ repos:
 
   # Autoformat: Python code
   - repo: https://github.com/pycqa/isort
-    rev: 8.0.1
+    rev: 9.0.1
     hooks:
       - id: isort
 
   # Autoformat: Python code
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 26.1.0
+    rev: 26.5.1
     hooks:
       - id: black
 
