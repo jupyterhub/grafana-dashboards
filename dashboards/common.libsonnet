@@ -195,11 +195,13 @@ local _getDashedLineOverride(pattern, color) = {
       + var.query.queryTypes.withLabelValues('usergroup', 'jupyterhub_user_group_info')
     ,
     user_name:
-      var.query.new('user_name')
-      + var.query.withDatasourceFromVariable(self.prometheus)
-      + var.query.selectionOptions.withMulti()
-      + var.query.selectionOptions.withIncludeAll(value=true, customAllValue='.*')
-      + var.query.queryTypes.withLabelValues('annotation_hub_jupyter_org_username', 'kube_pod_annotations{ namespace=~"$hub_name"}')
+      var.textbox.new('user_name')
+      + var.textbox.generalOptions.withLabel('Username')
+      + {
+        // Keep URLs generated for the former query variable compatible.
+        includeAll: true,
+        allValue: '.*',
+      }
     ,
     // Queries should use the 'instance' label when querying metrics that
     // come from collectors present on each node - such as node_exporter or
