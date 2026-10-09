@@ -46,7 +46,8 @@ jobs:
               JSONNET_URL=https://github.com/google/go-jsonnet/releases/download/${JSONNET_VERSION}/go-jsonnet_${JSONNET_VERSION#v}_Linux_x86_64.tar.gz
           fi
 
-          wget -qO- "$JSONNET_URL" | tar -xvz --one-top-level=$HOME/.local/bin
+          mkdir -p "$HOME/.local/bin"
+          wget -qO- "$JSONNET_URL" | tar -xvz -C $HOME/.local/bin
 
       - run: jsonnet --version
 
