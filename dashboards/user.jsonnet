@@ -178,13 +178,13 @@ local userSessions =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-            max by (annotation_hub_jupyter_org_username, namespace) (
-              (kube_pod_status_phase{namespace=~"$hub_name", phase="Running", pod=~"jupyter-.*"} == 1)
-              * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
-              group(
-                kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"(?i).*$user_name.*", pod=~"jupyter-.*"}
-              ) by (namespace, pod, annotation_hub_jupyter_org_username)
-            )
+        max by (annotation_hub_jupyter_org_username, namespace) (
+          (kube_pod_status_phase{namespace=~"$hub_name", phase="Running", pod=~"jupyter-.*"} == 1)
+          * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
+          group(
+            kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"(?i).*$user_name.*", pod=~"jupyter-.*"}
+          ) by (namespace, pod, annotation_hub_jupyter_org_username)
+        )
       |||
     )
     + prometheus.withLegendFormat('{{ annotation_hub_jupyter_org_username }} ({{ namespace }})'),
