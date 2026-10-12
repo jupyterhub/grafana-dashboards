@@ -39,7 +39,7 @@ jobs:
       - name: Download jsonnet (go-jsonnet)
         run: |
           JSONNET_VERSION=${{ matrix.jsonnet-version }}
-          if [ "$JSONNET_VERSION" == "latest" ]; then
+          if [ "$JSONNET_VERSION" = "latest" ]; then
               JSONNET_VERSION=$(curl -s https://api.github.com/repos/google/go-jsonnet/releases/latest | jq -r .tag_name)
               JSONNET_URL=https://github.com/google/go-jsonnet/releases/download/${JSONNET_VERSION}/go-jsonnet_${JSONNET_VERSION#v}_linux_amd64.tar.gz
           else

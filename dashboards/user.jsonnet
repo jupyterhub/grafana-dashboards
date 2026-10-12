@@ -2,6 +2,7 @@
 local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-v11.1.0/main.libsonnet';
 local dashboard = grafonnet.dashboard;
 local ts = grafonnet.panel.timeSeries;
+local stateTimeline = grafonnet.panel.stateTimeline;
 local prometheus = grafonnet.query.prometheus;
 
 local common = import './common.libsonnet';
@@ -23,7 +24,7 @@ local memoryUsage =
           container_memory_working_set_bytes{name!="", pod=~"jupyter-.*", namespace=~"$hub_name"}
             * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
             group(
-                kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"$user_name", pod=~"jupyter-.*"}
+                kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"(?i).*$user_name.*", pod=~"jupyter-.*"}
             ) by (pod, namespace, annotation_hub_jupyter_org_username)
         ) by (annotation_hub_jupyter_org_username, namespace)
       |||
@@ -54,7 +55,7 @@ local cpuUsage =
           irate(container_cpu_usage_seconds_total{name!="", pod=~"jupyter-.*"}[5m])
           * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
           group(
-              kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"$user_name"}
+              kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"(?i).*$user_name.*"}
           ) by (pod, namespace, annotation_hub_jupyter_org_username)
         ) by (annotation_hub_jupyter_org_username, namespace)
       |||
@@ -132,7 +133,7 @@ local memoryRequests =
         sum(
           kube_pod_container_resource_requests{resource="memory", namespace=~"$hub_name", pod=~"jupyter-.*"}  * on (namespace, pod)
           group_left(annotation_hub_jupyter_org_username) group(
-            kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"$user_name"}
+            kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"(?i).*$user_name.*"}
             ) by (pod, namespace, annotation_hub_jupyter_org_username)
         ) by (annotation_hub_jupyter_org_username, namespace)
       |||
@@ -158,13 +159,56 @@ local cpuRequests =
         sum(
           kube_pod_container_resource_requests{resource="cpu", namespace=~"$hub_name", pod=~"jupyter-.*"} * on (namespace, pod)
           group_left(annotation_hub_jupyter_org_username) group(
-            kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"$user_name"}
+            kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"(?i).*$user_name.*"}
             ) by (pod, namespace, annotation_hub_jupyter_org_username)
         ) by (annotation_hub_jupyter_org_username, namespace)
       |||
     )
     + prometheus.withLegendFormat('{{ annotation_hub_jupyter_org_username }} - ({{ namespace }})'),
   ]);
+
+local userSessions =
+  stateTimeline.new('User Sessions')
+  + stateTimeline.panelOptions.withDescription(
+    |||
+      This timeline shows how long a user's server session was running.
+    |||
+  )
+  + stateTimeline.queryOptions.withTargets([
+    prometheus.new(
+      '$PROMETHEUS_DS',
+      |||
+        max by (annotation_hub_jupyter_org_username, namespace) (
+          (kube_pod_status_phase{namespace=~"$hub_name", phase="Running", pod=~"jupyter-.*"} == 1)
+          * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
+          group(
+            kube_pod_annotations{namespace=~"$hub_name", annotation_hub_jupyter_org_username=~"(?i).*$user_name.*", pod=~"jupyter-.*"}
+          ) by (namespace, pod, annotation_hub_jupyter_org_username)
+        )
+      |||
+    )
+    + prometheus.withLegendFormat('{{ annotation_hub_jupyter_org_username }} ({{ namespace }})'),
+  ])
+  + stateTimeline.options.withMergeValues(true)
+  + stateTimeline.options.withShowValue('never')
+  + stateTimeline.options.withAlignValue('left')
+  + stateTimeline.options.withRowHeight(0.9)
+  + stateTimeline.options.tooltip.withMode('single')
+  + stateTimeline.standardOptions.withDecimals(0)
+  + stateTimeline.fieldConfig.defaults.custom.withFillOpacity(100)
+  + stateTimeline.fieldConfig.defaults.custom.withLineWidth(0)
+  + {
+    fieldConfig+: {
+      defaults+: {
+        // one distinct color per user row
+        color: { mode: 'palette-classic-by-name' },
+      },
+    },
+    options+: {
+      // the y-axis already labels each row with the user
+      legend: { showLegend: false },
+    },
+  };
 
 dashboard.new('User Diagnostics Dashboard')
 + dashboard.withTags(['jupyterhub'])
@@ -178,6 +222,7 @@ dashboard.new('User Diagnostics Dashboard')
 + dashboard.withPanels(
   grafonnet.util.grid.makeGrid(
     [
+      userSessions,
       memoryUsage,
       cpuUsage,
       homedirSharedUsage,
