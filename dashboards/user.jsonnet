@@ -228,7 +228,7 @@ dashboard.new('User Diagnostics Dashboard')
       homedirSharedUsage,
       memoryRequests,
       cpuRequests,
-    ]),
+    ],
     panelWidth=24,
     panelHeight=12,
   )
