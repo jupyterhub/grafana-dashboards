@@ -56,14 +56,14 @@ local nfsServerCPU =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(irate(container_cpu_usage_seconds_total{pod=~".*home-nfs.*", container!=""}[5m])) by (namespace, container)
+        sum(irate(container_cpu_usage_seconds_total{pod=~".*home-nfs.*", hub_jupyter_org_node_purpose="core", container!=""}[5m])) by (namespace, container)
       |||
     )
     + prometheus.withLegendFormat('{{namespace}}: {{container}}'),
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kube_pod_container_resource_requests{pod=~".*home-nfs-.*", container!="", resource="cpu"}) by (namespace, container)
+        sum(kube_pod_container_resource_requests{pod=~".*home-nfs-.*", hub_jupyter_org_node_purpose="core", container!="", resource="cpu"}) by (namespace, container)
         and on() vector($show_requests) == 1
       |||
     )
@@ -71,7 +71,7 @@ local nfsServerCPU =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kube_pod_container_resource_limits{pod=~".*home-nfs-.*", container!="", resource="cpu"}) by (namespace, container)
+        sum(kube_pod_container_resource_limits{pod=~".*home-nfs-.*", hub_jupyter_org_node_purpose="core", container!="", resource="cpu"}) by (namespace, container)
         and on() vector($show_limits) == 1
       |||
     )
@@ -87,14 +87,14 @@ local nfsServerMemory =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(container_memory_working_set_bytes{pod=~".*home-nfs-.*", container!=""}) by (namespace, container)
+        sum(container_memory_working_set_bytes{pod=~".*home-nfs-.*", hub_jupyter_org_node_purpose="core", container!=""}) by (namespace, container)
       |||
     )
     + prometheus.withLegendFormat('{{namespace}}: {{container}}'),
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kube_pod_container_resource_requests{pod=~".*home-nfs-.*", container!="", resource="memory"}) by (namespace, container)
+        sum(kube_pod_container_resource_requests{pod=~".*home-nfs-.*", hub_jupyter_org_node_purpose="core", container!="", resource="memory"}) by (namespace, container)
         and on() vector($show_requests) == 1
       |||
     )
@@ -102,7 +102,7 @@ local nfsServerMemory =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kube_pod_container_resource_limits{pod=~".*home-nfs-.*", container!="", resource="memory"}) by (namespace, container)
+        sum(kube_pod_container_resource_limits{pod=~".*home-nfs-.*", hub_jupyter_org_node_purpose="core", container!="", resource="memory"}) by (namespace, container)
         and on() vector($show_limits) == 1
       |||
     )
@@ -118,14 +118,14 @@ local nfsServerDiskSpace =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kubelet_volume_stats_used_bytes{persistentvolumeclaim=~".*home-nfs"}) by (namespace, persistentvolumeclaim)
+        sum(kubelet_volume_stats_used_bytes{persistentvolumeclaim=~".*home-nfs", hub_jupyter_org_node_purpose="core"}) by (namespace, persistentvolumeclaim)
       |||
     )
     + prometheus.withLegendFormat('{{namespace}}: {{persistentvolumeclaim}}'),
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*home-nfs"}) by (namespace, persistentvolumeclaim)
+        sum(kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*home-nfs", hub_jupyter_org_node_purpose="core"}) by (namespace, persistentvolumeclaim)
         and on() vector($show_capacity) == 1
       |||
     )
@@ -141,14 +141,14 @@ local nfsServerNetwork =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(irate(container_network_receive_bytes_total{pod=~".*-home-nfs-.*"}[5m])) by (namespace)
+        sum(irate(container_network_receive_bytes_total{pod=~".*-home-nfs-.*", hub_jupyter_org_node_purpose="core"}[5m])) by (namespace)
       |||
     )
     + prometheus.withLegendFormat('receive ({{namespace}})'),
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(irate(container_network_transmit_bytes_total{pod=~".*-home-nfs-.*"}[5m])) by (namespace)
+        sum(irate(container_network_transmit_bytes_total{pod=~".*-home-nfs-.*", hub_jupyter_org_node_purpose="core"}[5m])) by (namespace)
       |||
     )
     + prometheus.withLegendFormat('transmit ({{namespace}})'),
