@@ -127,8 +127,8 @@ def main():
         help='Whether or not to skip TLS certificate validation',
     )
     parser.add_argument(
-        '--dashboard-tla',
-        nargs='*',
+        "--dashboard-tla",
+        action="append",
         default=[],
         help='Jsonnet TLA declarations for a specific dashboard, defined as <dashboard>.<name>=<value> which are mapped onto --tla-str <name>=<value>',
     )
@@ -157,9 +157,18 @@ def main():
     )
     ensure_folder(args.folder_name, args.folder_uid, api)
 
-    for dashboard in glob(f'{args.dashboards_dir}/*.jsonnet'):
-        deploy_dashboard(dashboard, args.folder_uid, api)
-        print(f'Deployed {dashboard}')
+    # Parse TLA declarations per-dashboard
+    dashboard_tlas = {}
+    for arg in args.dashboard_tla:
+        name, arg_spec = arg.split(".", maxsplit=1)
+        dashboard_tlas.setdefault(name, []).append(arg_spec)
+
+    for dashboard in glob(f"{args.dashboards_dir}/*.jsonnet"):
+        dashboard_stem = os.path.splitext(os.path.basename(dashboard))[0]
+        deploy_dashboard(
+            dashboard, args.folder_uid, api, tlas=dashboard_tlas.get(dashboard_stem)
+        )
+        print(f"Deployed {dashboard}")
 
 
 if __name__ == '__main__':
