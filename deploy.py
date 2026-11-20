@@ -57,19 +57,25 @@ def ensure_folder(title, uid, api):
             raise
 
 
-def build_dashboard(dashboard_path, api):
+def build_dashboard(dashboard_path, api, tlas=None):
     """
     Returns JSON representing a Grafana dashboard by rendering an individual
     `.jsonnet` dashboard template with `jsonnet`.
     """
+    cmd = [
+        "jsonnet",
+        "-J",
+        "vendor",
+        dashboard_path,
+    ]
+    if tlas:
+        for decl in tlas:
+            cmd.append("--tla-str")
+            cmd.append(decl)
+        print("Setting TLAs", tlas)
     dashboard = json.loads(
         subprocess.check_output(
-            [
-                "jsonnet",
-                "-J",
-                "vendor",
-                dashboard_path,
-            ],
+            cmd,
             text=True,
         )
     )
@@ -78,11 +84,11 @@ def build_dashboard(dashboard_path, api):
     return dashboard
 
 
-def deploy_dashboard(dashboard_path, folder_uid, api):
+def deploy_dashboard(dashboard_path, folder_uid, api, tlas=None):
     """
     Creates a new dashboard or updates an existing dashboard.
     """
-    db = build_dashboard(dashboard_path, api)
+    db = build_dashboard(dashboard_path, api, tlas)
 
     # without this modification, deploying to a second folder deletes deployed
     # dashboards in another folder, likely due to generated dashboard UID is the
@@ -120,6 +126,12 @@ def main():
         default=False,
         help='Whether or not to skip TLS certificate validation',
     )
+    parser.add_argument(
+        "--dashboard-tla",
+        action="append",
+        default=[],
+        help='Jsonnet TLA declarations for a specific dashboard, defined as <dashboard>.<name>=<value> which are mapped onto --tla-str <name>=<value>',
+    )
 
     args = parser.parse_args()
 
@@ -145,9 +157,18 @@ def main():
     )
     ensure_folder(args.folder_name, args.folder_uid, api)
 
-    for dashboard in glob(f'{args.dashboards_dir}/*.jsonnet'):
-        deploy_dashboard(dashboard, args.folder_uid, api)
-        print(f'Deployed {dashboard}')
+    # Parse TLA declarations per-dashboard
+    dashboard_tlas = {}
+    for arg in args.dashboard_tla:
+        name, arg_spec = arg.split(".", maxsplit=1)
+        dashboard_tlas.setdefault(name, []).append(arg_spec)
+
+    for dashboard in glob(f"{args.dashboards_dir}/*.jsonnet"):
+        dashboard_stem = os.path.splitext(os.path.basename(dashboard))[0]
+        deploy_dashboard(
+            dashboard, args.folder_uid, api, tlas=dashboard_tlas.get(dashboard_stem)
+        )
+        print(f"Deployed {dashboard}")
 
 
 if __name__ == '__main__':
