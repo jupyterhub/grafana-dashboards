@@ -8,6 +8,10 @@ local row = grafonnet.panel.row;
 
 local common = import './common.libsonnet';
 
+function(nfs_pvc_name='home-nfs', nfs_pod_name='home-nfs') 
+local nfs_pvc_name_const = dashboard.variable.constant.new('nfs_pvc_name', nfs_pvc_name);
+local nfs_pod_name_const = dashboard.variable.constant.new('nfs_pod_name', nfs_pod_name);
+
 
 // NFS usage diagnostics
 // ---------------------
@@ -56,14 +60,14 @@ local nfsServerCPU =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(irate(container_cpu_usage_seconds_total{pod=~".*home-nfs.*", container!=""}[5m])) by (namespace, container)
+        sum(irate(container_cpu_usage_seconds_total{pod=~".*$nfs_pod_name*", container!=""}[5m])) by (namespace, container)
       |||
     )
     + prometheus.withLegendFormat('{{namespace}}: {{container}}'),
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kube_pod_container_resource_requests{pod=~".*home-nfs-.*", container!="", resource="cpu"}) by (namespace, container)
+        sum(kube_pod_container_resource_requests{pod=~".*$nfs_pod_name.*", container!="", resource="cpu"}) by (namespace, container)
         and on() vector($show_requests) == 1
       |||
     )
@@ -71,7 +75,7 @@ local nfsServerCPU =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kube_pod_container_resource_limits{pod=~".*home-nfs-.*", container!="", resource="cpu"}) by (namespace, container)
+        sum(kube_pod_container_resource_limits{pod=~".*$nfs_pod_name.*", container!="", resource="cpu"}) by (namespace, container)
         and on() vector($show_limits) == 1
       |||
     )
@@ -87,14 +91,14 @@ local nfsServerMemory =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(container_memory_working_set_bytes{pod=~".*home-nfs-.*", container!=""}) by (namespace, container)
+        sum(container_memory_working_set_bytes{pod=~".*$nfs_pod_name.*", container!=""}) by (namespace, container)
       |||
     )
     + prometheus.withLegendFormat('{{namespace}}: {{container}}'),
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kube_pod_container_resource_requests{pod=~".*home-nfs-.*", container!="", resource="memory"}) by (namespace, container)
+        sum(kube_pod_container_resource_requests{pod=~".*$nfs_pod_name.*", container!="", resource="memory"}) by (namespace, container)
         and on() vector($show_requests) == 1
       |||
     )
@@ -102,7 +106,7 @@ local nfsServerMemory =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kube_pod_container_resource_limits{pod=~".*home-nfs-.*", container!="", resource="memory"}) by (namespace, container)
+        sum(kube_pod_container_resource_limits{pod=~".*$nfs_pod_name.*", container!="", resource="memory"}) by (namespace, container)
         and on() vector($show_limits) == 1
       |||
     )
@@ -118,14 +122,14 @@ local nfsServerDiskSpace =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kubelet_volume_stats_used_bytes{persistentvolumeclaim=~".*home-nfs"}) by (namespace, persistentvolumeclaim)
+        sum(kubelet_volume_stats_used_bytes{persistentvolumeclaim=~".*$nfs_pvc_name.*"}) by (namespace, persistentvolumeclaim)
       |||
     )
     + prometheus.withLegendFormat('{{namespace}}: {{persistentvolumeclaim}}'),
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*home-nfs"}) by (namespace, persistentvolumeclaim)
+        sum(kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*$nfs_pvc_name.*"}) by (namespace, persistentvolumeclaim)
         and on() vector($show_capacity) == 1
       |||
     )
@@ -141,14 +145,14 @@ local nfsServerNetwork =
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(irate(container_network_receive_bytes_total{pod=~".*-home-nfs-.*"}[5m])) by (namespace)
+        sum(irate(container_network_receive_bytes_total{pod=~".*$nfs_pod_name.*"}[5m])) by (namespace)
       |||
     )
     + prometheus.withLegendFormat('receive ({{namespace}})'),
     prometheus.new(
       '$PROMETHEUS_DS',
       |||
-        sum(irate(container_network_transmit_bytes_total{pod=~".*-home-nfs-.*"}[5m])) by (namespace)
+        sum(irate(container_network_transmit_bytes_total{pod=~".*$nfs_pod_name.*"}[5m])) by (namespace)
       |||
     )
     + prometheus.withLegendFormat('transmit ({{namespace}})'),
@@ -280,6 +284,8 @@ dashboard.new('NFS usage, NFS server, and Prometheus server diagnostics')
   common.variables.show_requests,
   common.variables.show_limits,
   common.variables.show_capacity,
+  nfs_pvc_name_const,
+  nfs_pod_name_const
 ])
 + dashboard.withPanels(
   grafonnet.util.grid.makeGrid(
@@ -308,3 +314,4 @@ dashboard.new('NFS usage, NFS server, and Prometheus server diagnostics')
     panelHeight=10,
   )
 )
+
