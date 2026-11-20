@@ -127,8 +127,8 @@ def main():
         help='Whether or not to skip TLS certificate validation',
     )
     parser.add_argument(
-        '--dashboard-tla', 
-        nargs='*', 
+        '--dashboard-tla',
+        nargs='*',
         default=[],
         help='Jsonnet TLA declarations for a specific dashboard, defined as <dashboard>.<name>=<value> which are mapped onto --tla-str <name>=<value>',
     )
